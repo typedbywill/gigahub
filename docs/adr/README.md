@@ -20,6 +20,7 @@ permitidas; mudança material cria novo ADR e referencia o anterior.
 - [ADR-0003 — Usar Redis como infraestrutura efêmera](./0003-redis-efemero.md)
 - [ADR-0004 — Usar JWT curto com refresh token rotativo](./0004-jwt-e-sessoes.md)
 - [ADR-0005 — Gamificação orientada a eventos e ledger](./0005-gamificacao-eventos-ledger.md)
+- [ADR-0006 — Adotar MongoDB com Mongoose como banco de dados principal](./0006-mongodb-mongoose.md)
 
 ## Template
 

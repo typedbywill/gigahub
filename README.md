@@ -1,96 +1,95 @@
-# Gigahub
+# GigaHub Monorepo
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+GigaHub is a unified modular application built with NestJS, Vite + React, TypeScript, MongoDB (Mongoose), Redis, and MinIO S3 object storage.
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is ready ✨.
+## Workspace Layout
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
-
-## Run tasks
-
-To run tasks with Nx use:
-
-```sh
-npx nx <target> <project-name>
+```
+gigahub/
+├── apps/
+│   ├── api/             # NestJS backend application (Global prefix /api/v1)
+│   └── web/             # Vite + React frontend (Tailwind CSS v4 + HeroUI)
+├── libs/
+│   └── shared/
+│       ├── config/      # Shared Zod environment schema & validator
+│       ├── contracts/   # Shared TypeScript DTOs, interfaces & error envelopes
+│       └── tsconfig/    # Shared TypeScript configuration rules
+├── docs/                # Architecture documentation and ADRs
+├── docker-compose.yml   # Infrastructure setup (MongoDB rs0, Redis, MinIO)
+└── package.json         # Workspace root package.json
 ```
 
-For example:
+## Quick Start (Local Development)
 
-```sh
-npx nx build myproject
+### 1. Prerequisites
+
+- **Node.js**: v22.x
+- **pnpm**: v11.x
+- **Docker & Docker Compose**: For running infrastructure services
+
+### 2. Infrastructure Setup
+
+Launch MongoDB replica set (`rs0`), Redis, and MinIO (with automatic `gigahub` bucket creation):
+
+```bash
+pnpm docker:up
 ```
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+To stop containers:
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Add new projects
-
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
-
-To install a new plugin you can use the `nx add` command. Here's an example of adding the React plugin:
-```sh
-npx nx add @nx/react
+```bash
+pnpm docker:down
 ```
 
-Use the plugin's generator to create new projects. For example, to create a new React app or library:
+### 3. Environment Variables
 
-```sh
-# Generate an app
-npx nx g @nx/react:app demo
+Copy `.env.example` to `.env`:
 
-# Generate a library
-npx nx g @nx/react:lib some-lib
+```bash
+cp .env.example .env
 ```
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+### 4. Running Applications
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Start the backend API (`apps/api` at http://localhost:3000/api/v1):
 
-## Set up CI!
-
-### Step 1
-
-To connect to Nx Cloud, run the following command:
-
-```sh
-npx nx connect
+```bash
+pnpm nx serve api
+# OR
+pnpm dev:api
 ```
 
-Connecting to Nx Cloud ensures a [fast and scalable CI](https://nx.dev/ci/intro/why-nx-cloud?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) pipeline. It includes features such as:
+Start the web application (`apps/web` at http://localhost:4200):
 
-- [Remote caching](https://nx.dev/ci/features/remote-cache?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task distribution across multiple machines](https://nx.dev/ci/features/distribute-task-execution?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Automated e2e test splitting](https://nx.dev/ci/features/split-e2e-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Task flakiness detection and rerunning](https://nx.dev/ci/features/flaky-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-### Step 2
-
-Use the following command to configure a CI workflow for your workspace:
-
-```sh
-npx nx g ci-workflow
+```bash
+pnpm nx serve web
+# OR
+pnpm dev:web
 ```
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+### 5. Building Applications
 
-## Install Nx Console
+```bash
+pnpm nx build api
+pnpm nx build web
+# OR
+pnpm build:api
+pnpm build:web
+```
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+### 6. Linting & Formatting
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+```bash
+pnpm lint
+pnpm format
+```
 
-## Useful links
+## Architecture & ADRs
 
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/getting-started/intro#learn-nx?utm_source=nx_project&amp;utm_medium=readme&amp;utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+Decision records are available under [`docs/adr/`](./docs/adr/README.md):
+- **ADR-0001**: Modular Monolith Strategy
+- **ADR-0002**: Unified React Frontend
+- **ADR-0003**: Ephemeral Redis Infrastructure
+- **ADR-0004**: Short-Lived JWT & Rotating Refresh Tokens
+- **ADR-0005**: Event-Driven Gamification Ledger
+- **ADR-0006**: MongoDB + Mongoose Primary Database

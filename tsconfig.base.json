@@ -1,0 +1,28 @@
+{
+  "compileOnSave": false,
+  "compilerOptions": {
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": false,
+    "moduleResolution": "bundler",
+    "ignoreDeprecations": "6.0",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "es2022",
+    "module": "esnext",
+    "lib": ["es2022", "dom"],
+    "skipLibCheck": true,
+    "skipDefaultLibCheck": true,
+    "strict": true,
+    "paths": {
+      "@gigahub/shared/contracts": ["./libs/shared/contracts/src/index.ts"],
+      "@shared/contracts": ["./libs/shared/contracts/src/index.ts"],
+      "@gigahub/shared/config": ["./libs/shared/config/src/index.ts"],
+      "@shared/config": ["./libs/shared/config/src/index.ts"],
+      "@gigahub/shared/tsconfig": ["./libs/shared/tsconfig/src/index.ts"],
+      "@shared/tsconfig": ["./libs/shared/tsconfig/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "tmp"]
+}
