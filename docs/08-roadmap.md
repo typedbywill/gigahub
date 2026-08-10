@@ -33,7 +33,7 @@ prematura.
 
 - estabelecer monorepo e boundaries;
 - separar domain, application e adapters por módulo;
-- manter REST e Telegram sobre os mesmos casos de uso;
+- manter REST e UI sobre os mesmos casos de uso;
 - padronizar erros, validação, idempotency key e `traceId`;
 - OpenAPI e testes de contrato;
 - logs estruturados e health endpoints;
@@ -46,7 +46,7 @@ inteira.
 
 - boundaries verificadas;
 - caso de uso atravessa frontend/API/domínio/adapter;
-- Telegram e Web demonstram paridade;
+- campo e operações usam os mesmos casos de uso via UI;
 - outbox recupera falha sem duplicar;
 - deploy atual continua operacional.
 
@@ -179,7 +179,7 @@ Em todas as fases:
 
 - preservar contratos de OS, geofence, assuntos, financeiro e ONU;
 - atualizar docs junto das mudanças;
-- medir divergência entre Telegram, Web e integrações;
+- medir divergência entre UI e integrações;
 - retirar caminhos legados somente após paridade e período de observação;
 - registrar decisões relevantes em ADR.
 

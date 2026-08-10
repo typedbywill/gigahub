@@ -5,7 +5,7 @@
 
 ## Contexto
 
-O GigaCenter concentra API, Telegram, rotinas e integrações em um processo. O GigaHub
+O GigaCenter concentra API, rotinas e integrações em um processo. O GigaHub
 precisa escalar e isolar falhas, mas os limites de domínio e contratos ainda estão em
 formação. Separar tudo imediatamente criaria rede, consistência distribuída, múltiplos
 deploys e observabilidade antes de existir necessidade comprovada.

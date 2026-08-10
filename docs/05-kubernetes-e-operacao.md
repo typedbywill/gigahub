@@ -22,8 +22,6 @@ obrigar que todo componente de dados rode dentro do cluster.
 - `gigahub-web`: assets do frontend servidos por CDN ou servidor estático.
 - `gigahub-api`: HTTP, BFF e Socket.IO.
 - `gigahub-worker`: consumidores contínuos.
-- `gigahub-telegram`: webhook/bot quando separado.
-- `gigahub-pdf`: renderização Chromium quando extraída.
 
 Cada workload possui ServiceAccount, recursos, probes, política de rollout e acesso
 mínimo às dependências.

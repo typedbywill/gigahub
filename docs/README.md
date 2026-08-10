@@ -30,8 +30,8 @@ nos documentos antigos antes de uma migração.
 
 ## Princípios
 
-1. **Domínio antes do canal**: Web, Telegram, Socket.IO e futuros agentes usam os
-   mesmos casos de uso.
+1. **Domínio antes do canal**: Web, Socket.IO e futuros agentes usam os mesmos
+   casos de uso.
 2. **Migração incremental**: começar com um monólito modular e extrair processos
    somente quando escala, isolamento ou ciclo de vida justificarem.
 3. **IXC continua sendo o ERP**: o GigaHub orquestra a operação e protege o domínio

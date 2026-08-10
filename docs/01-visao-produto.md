@@ -3,7 +3,7 @@
 ## Propósito
 
 O GigaHub será o ponto único de trabalho operacional da Giganet. A plataforma deve
-reduzir a fragmentação entre Telegram, aplicações de campo, back-office e integrações,
+reduzir a fragmentação entre aplicações de campo, back-office e integrações,
 sem perder os fluxos já consolidados no GigaCenter.
 
 O produto não substitui o IXC como ERP. Ele organiza a experiência dos colaboradores,
@@ -71,7 +71,7 @@ responsividade, navegação, contexto e autorização — não aplicações inde
 - **Inventory**: estoque, requisições, transferências e materiais da OS.
 - **Finance Ops**: caixas e fluxos financeiros operacionais.
 - **Customer Care**: consulta de clientes, suporte e CRM.
-- **Messaging**: Telegram, WhatsApp e notificações.
+- **Messaging**: WhatsApp e notificações.
 - **Telemetry**: localização, presença e rastreamento.
 - **Automation**: sincronizações, agendamentos e processos assíncronos.
 - **Gamification**: regras, eventos pontuáveis, ledger e projeções.
@@ -86,7 +86,7 @@ A migração deve preservar, até que uma decisão de produto os altere:
 - geofence de 300 m e exigência de localização recente;
 - cadeia de fechamento, transferência, recebimento e vistoria de caixa;
 - autorização automatizada de ONU;
-- paridade de regra entre Telegram e Web;
+- mesma regra de negócio na UI de campo e na de operações;
 - IXC como fonte operacional de OS, clientes e estoque ERP.
 
 ## Métricas de sucesso

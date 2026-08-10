@@ -16,8 +16,7 @@ segurança ou ciclo de entrega — não um objetivo isolado.
 flowchart LR
   FieldUser[EquipeDeCampo] --> Web[FrontendGigaHub]
   InternalUser[EquipeInterna] --> Web
-  Telegram[Telegram] --> Hub[GigaHub]
-  Web --> Hub
+  Web --> Hub[GigaHub]
   Hub --> IXC[IXC]
   Hub --> CRM[CRM]
   Hub --> OPA[OPA]
@@ -32,7 +31,6 @@ flowchart TB
   Client[Browser] --> Ingress[Ingress]
   Ingress --> UI[FrontendReact]
   Ingress --> API[API_BFF_NestJS]
-  Telegram[TelegramWebhook] --> API
   API --> Modules[ModulosDeDominio]
   Workers[Workers_CronJobs] --> Modules
   Modules --> AppDB[(BancoGigaHub)]
@@ -47,10 +45,9 @@ Containers iniciais:
 - `apps/web`: frontend React unificado.
 - `apps/api`: HTTP, BFF, autenticação e composição dos módulos.
 - `apps/worker`: consumidores e tarefas assíncronas de longa duração.
-- `apps/telegram`: opcionalmente isolado quando o webhook exigir ciclo próprio.
 - `libs/domain-*`: entidades, políticas e regras sem dependência de framework.
 - `libs/application-*`: casos de uso, portas e eventos.
-- `libs/adapters-*`: IXC, bancos, Redis, CRM, WAHA e demais integrações.
+- `libs/adapters-*`: IXC, bancos, Redis, CRM, demais integrações.
 - `libs/contracts`: DTOs e contratos publicados, sem lógica de domínio.
 - `libs/observability`: logging, métricas e tracing padronizados.
 - `deploy`: artefatos de implantação por ambiente.
@@ -62,7 +59,7 @@ código de uma vez.
 
 ```mermaid
 flowchart LR
-  Entry[HTTP_Telegram_Worker] --> Application[Application]
+  Entry[HTTP_Worker] --> Application[Application]
   Application --> Domain[Domain]
   Adapters[Adapters] --> Application
   Adapters --> Domain
@@ -105,8 +102,8 @@ Consulta de cliente, conectividade, suporte, OPA e tickets CRM.
 
 ### Messaging
 
-Telegram, WhatsApp e notificações. Canais são adapters; mensagens agendadas ou
-repetíveis devem passar por worker.
+WhatsApp e notificações. Canais são adapters; mensagens agendadas ou repetíveis
+devem passar por worker.
 
 ### Telemetry
 

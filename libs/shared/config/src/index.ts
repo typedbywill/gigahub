@@ -4,7 +4,9 @@ export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.coerce.number().default(3000),
   GLOBAL_PREFIX: z.string().default('/api/v1'),
-  MONGODB_URI: z.string().default('mongodb://localhost:27017/gigahub?replicaSet=rs0'),
+  MONGODB_URI: z
+    .string()
+    .default('mongodb://127.0.0.1:27017/gigahub?replicaSet=rs0&directConnection=true'),
   REDIS_URL: z.string().default('redis://localhost:6379'),
   MINIO_ENDPOINT: z.string().default('localhost'),
   MINIO_PORT: z.coerce.number().default(9000),

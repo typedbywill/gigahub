@@ -2,9 +2,9 @@
 
 ## Objetivo
 
-Oferecer uma identidade única para frontend, Telegram e ferramentas internas, com
-sessões seguras, revogação, auditoria e um caminho evolutivo para grupos, roles e
-permissões individuais.
+Oferecer uma identidade única para o frontend unificado e ferramentas internas, com
+sessões seguras, revogação, auditoria e autorização baseada em RBAC com grants
+diretos por usuário. Grupos e escopos ficam como evolução.
 
 A v1 é single-tenant e atende colaboradores da Giganet. Autenticação e autorização
 são responsabilidades distintas.
@@ -16,12 +16,13 @@ são responsabilidades distintas.
 - **Session**: login revogável associado a dispositivo e refresh token.
 - **Role**: conjunto nomeado de permissões para uma função de trabalho.
 - **Permission**: ação atômica no formato `recurso:acao`.
-- **Grant**: associação de role ou permission a um usuário.
+- **Grant**: vínculo auditável de acesso a um usuário. Pode ser de role
+  (`GrantRole`) ou de permissão direta (`GrantPermission`).
 - **Service account**: identidade não humana para workers e integrações.
 - **Audit event**: registro de login, falha, revogação e alteração de acesso.
 
-O identificador interno do usuário não deve ser o e-mail, matrícula IXC ou ID do
-Telegram. Esses valores são identidades externas vinculáveis e mutáveis.
+O identificador interno do usuário não deve ser o e-mail ou a matrícula IXC.
+Esses valores são identidades externas vinculáveis e mutáveis.
 
 ## Autenticação
 
@@ -73,6 +74,18 @@ fica no banco. Uma indisponibilidade do Redis não deve apagar ou reativar sess�
 
 ## Autorização
 
+Modelo adotado: **RBAC com grants diretos por usuário**. A role cobre o padrão da
+função; a permissão direta cobre exceção fina sem criar role descartável.
+
+```text
+User ──GrantRole──────► Role ──possui──► Permission
+  └──GrantPermission─────────────────────► Permission
+```
+
+Permissão efetiva = união das permissões das roles ativas do usuário com as
+permissões concedidas diretamente a ele. O caso de uso pergunta apenas
+`usuario.pode(permissao)`; não diferencia a origem na verificação.
+
 ### Convenção
 
 Permissões são estáveis e orientadas a capacidade:
@@ -90,14 +103,56 @@ access:manage
 O backend verifica permissões no caso de uso. O frontend usa o mesmo catálogo para
 experiência e navegação, mas nunca é a barreira de segurança.
 
-### Fase inicial
+### Roles (padrão)
 
-- Roles correspondem a funções operacionais conhecidas.
+- Correspondem a funções operacionais conhecidas (`tecnico`, `supervisor`,
+  `financeiro`, `admin-acesso`, etc.).
 - Um usuário pode possuir mais de uma role.
-- Grants individuais resolvem exceções temporárias ou específicas.
-- Negação explícita não será introduzida inicialmente; ela dificulta a explicação da
-  política. Exceções usam remoção de grant ou escopo.
-- Alterações incrementam uma versão de autorização para invalidar cache.
+- Roles são a forma preferida de conceder acesso recorrente e reutilizável.
+- Alterar a composição de uma role afeta todos os usuários que a possuem.
+
+### Grants diretos (controle fino)
+
+Usados quando a necessidade é pontual e não justifica uma role nova:
+
+- liberar uma permissão extra a um colaborador específico;
+- acesso temporário com `expiresAt`;
+- exceção operacional documentada (ex.: `gamification:adjust` só para um gestor).
+
+Regras:
+
+- Todo grant direto exige justificativa auditável.
+- Preferir prazo (`expiresAt`) em exceções temporárias; grant sem prazo é permanente
+  até remoção explícita.
+- Não criar role com uma única permissão só para atender um usuário — use
+  `GrantPermission`.
+- Não acumular dezenas de grants diretos no mesmo usuário como substituto de role;
+  nesse caso, criar ou ajustar a role.
+
+### Resolução
+
+1. Carregar `GrantRole` e `GrantPermission` vigentes do usuário (não expirados,
+   não revogados).
+2. Expandir roles para o conjunto de permissões do catálogo.
+3. Unir com as permissões diretas.
+4. Autorizar se a permissão requerida estiver no conjunto efetivo.
+
+Negação explícita não será introduzida inicialmente; ela dificulta a explicação da
+política. Exceções usam remoção de grant, ajuste de role ou escopo futuro.
+
+Alterações de role, grant ou catálogo incrementam a versão de autorização do
+usuário (ou global, conforme implementação) para invalidar cache. O JWT pode
+carregar essa versão; o backend revalida quando a versão divergir.
+
+### Administração e revisão
+
+- Quem possui `access:manage` administra roles, grants e o catálogo.
+- A UI de acesso deve mostrar, por usuário: roles, permissões efetivas e a origem
+  de cada permissão (role X ou grant direto), para explicar por que uma ação foi
+  permitida.
+- Grants com prazo entram em revisão automática próximo do vencimento.
+- Revisões periódicas listam grants diretos permanentes como candidatos a
+  consolidação em role.
 
 ### Evolução futura
 
@@ -113,13 +168,11 @@ Antes dessa evolução, devem ser respondidas:
 - como revisar acessos periodicamente;
 - como demonstrar por que uma ação foi permitida ou negada.
 
-## Integração com IXC e Telegram
+## Integração com IXC
 
 - O sync do IXC atualiza atributos profissionais, não substitui a identidade interna.
 - Desativação no sistema oficial deve bloquear novos logins e revogar sessões conforme
   política definida.
-- Vínculo com Telegram exige prova no GigaHub; conhecer um chat ID não autentica alguém.
-- O bot age como canal do usuário vinculado e chama os mesmos casos de uso da Web.
 
 ## Service accounts
 
@@ -154,6 +207,8 @@ ser assistida por TI com dupla verificação documentada.
 - refresh token rotativo com detecção de reuso;
 - logout e revogação efetivos;
 - autorização aplicada no backend e coberta por testes;
+- permissão efetiva = união de roles + grants diretos vigentes;
+- grant direto auditável, com justificativa e suporte a `expiresAt`;
 - chaves de assinatura rotacionáveis;
 - ações sensíveis auditadas;
 - Redis não é a única fonte de sessões ou grants;

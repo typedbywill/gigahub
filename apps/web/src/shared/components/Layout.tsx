@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Chip } from '@heroui/react';
 import { useAuthStore } from '../stores/auth.store';
 import { useRealtimeStore } from '../stores/realtime.store';
 
@@ -22,12 +23,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
               <span>GigaHub</span>
             </Link>
-            <span className="text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">v0.1.0</span>
+            <Chip size="sm" variant="soft">
+              v0.1.0
+            </Chip>
           </div>
 
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2 text-xs">
-              <span className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-500'}`} />
+              <span
+                className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-500'}`}
+              />
               <span className="text-slate-400 font-mono">
                 Socket: {isConnected ? 'connected' : 'offline'}
               </span>

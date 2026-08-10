@@ -149,7 +149,7 @@ acesso. Toda flag possui owner, objetivo, data de revisão e estratégia de remo
 
 Usos iniciais:
 
-- migrar jornada do Telegram para Web;
+- migrar jornadas de campo e back-office para o frontend unificado;
 - liberar módulo por equipe;
 - ativar visualização individual de pontos;
 - testar ranking somente após aprovação.

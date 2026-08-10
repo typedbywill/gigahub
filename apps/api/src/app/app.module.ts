@@ -11,6 +11,7 @@ import { RealtimeModule } from '../realtime/realtime.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env', '../../.env'],
       validate: validateEnv,
     }),
     LoggerModule.forRoot({
@@ -24,7 +25,10 @@ import { RealtimeModule } from '../realtime/realtime.module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGODB_URI', 'mongodb://localhost:27017/gigahub?replicaSet=rs0'),
+        uri: configService.get<string>(
+          'MONGODB_URI',
+          'mongodb://127.0.0.1:27017/gigahub?replicaSet=rs0&directConnection=true',
+        ),
       }),
       inject: [ConfigService],
     }),

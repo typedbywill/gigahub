@@ -9,7 +9,7 @@ Documentação do estado **atual** do monorepo **GigaCenter** (pacote npm `gigan
 | [01 — Visão geral](./01-visao-geral.md) | O que é o GigaCenter, para quem serve, escopo geográfico e canais |
 | [02 — Arquitetura](./02-arquitetura.md) | Monorepo Nx, apps, camadas da API, padrões de código |
 | [03 — Lógicas de negócio](./03-logicas-de-negocio.md) | Domínio, OS, CTO/ONU, estoque, financeiro, políticas de campo |
-| [04 — Canais e apps](./04-canais-e-apps.md) | Telegram, UI externa, UI interna, REST, MCP, WebSocket |
+| [04 — Canais e apps](./04-canais-e-apps.md) | UI externa, UI interna, REST, MCP, WebSocket |
 | [05 — Integrações e dados](./05-integracoes-e-dados.md) | IXC, OPA, CRM, WAHA, bancos, rotinas, env |
 | [06 — Visão GigaHub](./06-visao-gigahub.md) | Unificação modular, bounded contexts e direção K8s |
 
@@ -25,7 +25,6 @@ Documentação do estado **atual** do monorepo **GigaCenter** (pacote npm `gigan
 |------|-------------------|
 | Bootstrap API | `apps/api/src/main.ts` |
 | Use-cases compartilhados | `apps/api/src/application/use-cases/` |
-| Features Telegram | `apps/api/src/application/features/telegram/` |
 | REST v1 | `apps/api/src/application/api/v1/` |
 | Rotinas (cron) | `apps/api/src/application/routines/` |
 | Adapters externos | `apps/api/src/infrastructure/` |

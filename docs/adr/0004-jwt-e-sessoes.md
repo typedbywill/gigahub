@@ -5,7 +5,7 @@
 
 ## Contexto
 
-Frontend, Socket.IO, Telegram e futuros serviços precisam de identidade consistente.
+Frontend, Socket.IO e futuros serviços precisam de identidade consistente.
 O sistema legado possui JWT, mas também dívida de senha em claro. Tokens longos sem
 sessão dificultam revogação; armazenar credenciais persistentes no browser aumenta
 impacto de XSS.

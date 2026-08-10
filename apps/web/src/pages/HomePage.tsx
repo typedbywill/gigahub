@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Button } from '@heroui/react';
 import { HealthCheckResponse } from '@gigahub/shared/contracts';
 import { useRealtimeStore } from '../shared/stores/realtime.store';
 
@@ -69,12 +70,9 @@ export const HomePage: React.FC = () => {
             </span>
           )}
         </div>
-        <button
-          onClick={fetchHealth}
-          className="px-4 py-2 text-xs font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer"
-        >
+        <Button size="sm" variant="primary" onPress={() => void fetchHealth()}>
           Refresh Status
-        </button>
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -143,13 +141,14 @@ export const HomePage: React.FC = () => {
       <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-white">Realtime Gateway Test</h2>
-          <button
-            onClick={sendRealtimePing}
-            disabled={!isConnected}
-            className="px-3 py-1.5 text-xs font-semibold rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-indigo-300 transition-colors cursor-pointer"
+          <Button
+            size="sm"
+            variant="secondary"
+            isDisabled={!isConnected}
+            onPress={sendRealtimePing}
           >
             Send Ping Event
-          </button>
+          </Button>
         </div>
         <p className="text-xs text-slate-400">
           Connected to Socket.IO namespace <code className="text-indigo-300 font-mono">/realtime</code>.
