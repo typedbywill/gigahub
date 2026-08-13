@@ -115,6 +115,9 @@ experiência e navegação, mas nunca é a barreira de segurança.
 
 - Correspondem a funções operacionais conhecidas (`tecnico`, `supervisor`,
   `financeiro`, `admin-acesso`, etc.).
+- São criadas no bootstrap da API de forma idempotente (não há seed de usuário).
+- `admin-acesso` inclui `access:manage` para o primeiro admin concedido manualmente
+  no banco (após sync ou insert local) poder gerenciar os demais.
 - Um usuário pode possuir mais de uma role.
 - Roles são a forma preferida de conceder acesso recorrente e reutilizável.
 - Alterar a composição de uma role afeta todos os usuários que a possuem.

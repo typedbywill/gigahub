@@ -4,17 +4,25 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
 import {
   ChangePasswordUseCase,
+  ClearUserAvatarUseCase,
   GetUserUseCase,
   InactivateUserUseCase,
+  ListRolesUseCase,
   ListUsersUseCase,
   LoginUseCase,
   RenewTokenUseCase,
+  ReplaceUserRolesUseCase,
   SeedDefaultRolesUseCase,
+  SetUserAvatarUseCase,
   SyncUsersFromErpUseCase,
+  UpdateUserProfileUseCase,
   type ErpUserDirectory,
+  type ObjectStoragePort,
 } from '@gigahub/application-identity';
 import { MysqlErpUserDirectory } from '@gigahub/adapters-ixc';
 import type { EnvConfig } from '@gigahub/shared/config';
+import { StorageModule } from '../storage/storage.module';
+import { STORAGE_PORT } from '../storage/storage.port';
 import { UserModel, UserSchema } from './persistence/user.schema';
 import { CredentialModel, CredentialSchema } from './persistence/credential.schema';
 import { SessionModel, SessionSchema } from './persistence/session.schema';
@@ -34,15 +42,18 @@ import {
 import { JoseAccessTokenIssuer } from './crypto/jose-token.issuer';
 import { AuthController } from './auth.controller';
 import { UsersController } from './users.controller';
+import { RolesController } from './roles.controller';
 import { AuthRolesBootstrapService } from './auth-roles-bootstrap.service';
 import { SyncUsersScheduler } from './sync-users.scheduler';
 import { AccessTokenGuard } from './access-token.guard';
 
 export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
+export const AVATAR_BUCKET = 'AVATAR_BUCKET';
 
 @Module({
   imports: [
     ScheduleModule.forRoot(),
+    StorageModule,
     MongooseModule.forFeature([
       { name: UserModel.name, schema: UserSchema },
       { name: CredentialModel.name, schema: CredentialSchema },
@@ -51,7 +62,7 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
       { name: GrantModel.name, schema: GrantSchema },
     ]),
   ],
-  controllers: [AuthController, UsersController],
+  controllers: [AuthController, UsersController, RolesController],
   providers: [
     MongoUserRepository,
     MongoCredentialRepository,
@@ -64,6 +75,12 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
     SystemClock,
     JoseAccessTokenIssuer,
     AccessTokenGuard,
+    {
+      provide: AVATAR_BUCKET,
+      useFactory: (config: ConfigService<EnvConfig, true>) =>
+        config.get('MINIO_BUCKET', { infer: true }),
+      inject: [ConfigService],
+    },
     {
       provide: SeedDefaultRolesUseCase,
       useFactory: (roles: MongoRoleRepository, ids: UuidGenerator) =>
@@ -163,8 +180,12 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
     },
     {
       provide: ListUsersUseCase,
-      useFactory: (users: MongoUserRepository) => new ListUsersUseCase(users),
-      inject: [MongoUserRepository],
+      useFactory: (
+        users: MongoUserRepository,
+        storage: ObjectStoragePort,
+        bucket: string,
+      ) => new ListUsersUseCase(users, storage, bucket),
+      inject: [MongoUserRepository, STORAGE_PORT, AVATAR_BUCKET],
     },
     {
       provide: GetUserUseCase,
@@ -172,20 +193,15 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
         users: MongoUserRepository,
         roles: MongoRoleRepository,
         grants: MongoGrantRepository,
-        config: ConfigService<EnvConfig, true>,
-      ) =>
-        new GetUserUseCase(
-          users,
-          roles,
-          grants,
-          null,
-          config.get('MINIO_BUCKET', { infer: true }),
-        ),
+        storage: ObjectStoragePort,
+        bucket: string,
+      ) => new GetUserUseCase(users, roles, grants, storage, bucket),
       inject: [
         MongoUserRepository,
         MongoRoleRepository,
         MongoGrantRepository,
-        ConfigService,
+        STORAGE_PORT,
+        AVATAR_BUCKET,
       ],
     },
     {
@@ -197,7 +213,8 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
         clock: SystemClock,
         roles: MongoRoleRepository,
         grants: MongoGrantRepository,
-        config: ConfigService<EnvConfig, true>,
+        storage: ObjectStoragePort,
+        bucket: string,
       ) =>
         new InactivateUserUseCase(
           users,
@@ -206,8 +223,8 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
           clock,
           roles,
           grants,
-          null,
-          config.get('MINIO_BUCKET', { infer: true }),
+          storage,
+          bucket,
         ),
       inject: [
         MongoUserRepository,
@@ -216,8 +233,87 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
         SystemClock,
         MongoRoleRepository,
         MongoGrantRepository,
-        ConfigService,
+        STORAGE_PORT,
+        AVATAR_BUCKET,
       ],
+    },
+    {
+      provide: UpdateUserProfileUseCase,
+      useFactory: (
+        users: MongoUserRepository,
+        roles: MongoRoleRepository,
+        grants: MongoGrantRepository,
+        storage: ObjectStoragePort,
+        bucket: string,
+      ) => new UpdateUserProfileUseCase(users, roles, grants, storage, bucket),
+      inject: [
+        MongoUserRepository,
+        MongoRoleRepository,
+        MongoGrantRepository,
+        STORAGE_PORT,
+        AVATAR_BUCKET,
+      ],
+    },
+    {
+      provide: SetUserAvatarUseCase,
+      useFactory: (
+        users: MongoUserRepository,
+        roles: MongoRoleRepository,
+        grants: MongoGrantRepository,
+        storage: ObjectStoragePort,
+        bucket: string,
+        ids: UuidGenerator,
+      ) => new SetUserAvatarUseCase(users, roles, grants, storage, bucket, ids),
+      inject: [
+        MongoUserRepository,
+        MongoRoleRepository,
+        MongoGrantRepository,
+        STORAGE_PORT,
+        AVATAR_BUCKET,
+        UuidGenerator,
+      ],
+    },
+    {
+      provide: ClearUserAvatarUseCase,
+      useFactory: (
+        users: MongoUserRepository,
+        roles: MongoRoleRepository,
+        grants: MongoGrantRepository,
+        storage: ObjectStoragePort,
+        bucket: string,
+      ) => new ClearUserAvatarUseCase(users, roles, grants, storage, bucket),
+      inject: [
+        MongoUserRepository,
+        MongoRoleRepository,
+        MongoGrantRepository,
+        STORAGE_PORT,
+        AVATAR_BUCKET,
+      ],
+    },
+    {
+      provide: ReplaceUserRolesUseCase,
+      useFactory: (
+        users: MongoUserRepository,
+        roles: MongoRoleRepository,
+        grants: MongoGrantRepository,
+        storage: ObjectStoragePort,
+        bucket: string,
+        ids: UuidGenerator,
+      ) =>
+        new ReplaceUserRolesUseCase(users, roles, grants, storage, bucket, ids),
+      inject: [
+        MongoUserRepository,
+        MongoRoleRepository,
+        MongoGrantRepository,
+        STORAGE_PORT,
+        AVATAR_BUCKET,
+        UuidGenerator,
+      ],
+    },
+    {
+      provide: ListRolesUseCase,
+      useFactory: (roles: MongoRoleRepository) => new ListRolesUseCase(roles),
+      inject: [MongoRoleRepository],
     },
     {
       provide: SyncUsersFromErpUseCase,
