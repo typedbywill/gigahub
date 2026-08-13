@@ -25,7 +25,7 @@ export const LoginPage: React.FC = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const login = useAuthStore((s) => s.login);
 
-  const [email, setEmail] = useState('admin@gigahub.local');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -97,7 +97,7 @@ export const LoginPage: React.FC = () => {
                 <Input
                   fullWidth
                   autoComplete="username"
-                  placeholder="voce@giganet.com.br"
+                  placeholder="você@giga.com.br"
                   className={fieldClassName}
                 />
               </TextField>
