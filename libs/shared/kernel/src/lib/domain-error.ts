@@ -17,6 +17,10 @@ export const DomainErrorCodes = {
   CustomerNotOperable: 'CUSTOMER_NOT_OPERABLE',
   InboxInactive: 'INBOX_INACTIVE',
   TicketNotAssignable: 'TICKET_NOT_ASSIGNABLE',
+  UserCannotAuthenticate: 'USER_CANNOT_AUTHENTICATE',
+  WeakPassword: 'WEAK_PASSWORD',
+  SessionNotUsable: 'SESSION_NOT_USABLE',
+  RefreshTokenReuse: 'REFRESH_TOKEN_REUSE',
 } as const;
 
 export type DomainErrorCode =

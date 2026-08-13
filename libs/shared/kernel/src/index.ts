@@ -13,6 +13,9 @@ export {
   type CareInboxId,
   type CareTicketId,
   type FiberAccessTerminalId,
+  type UserId,
+  type CredentialId,
+  type SessionId,
   customerId,
   contractId,
   employeeId,
@@ -21,6 +24,9 @@ export {
   careInboxId,
   careTicketId,
   fiberAccessTerminalId,
+  userId,
+  credentialId,
+  sessionId,
 } from './lib/ids';
 export {
   type GeoPoint,

@@ -1,6 +1,19 @@
 export type { HealthServiceStatus, HealthCheckResponse } from './lib/health';
 export type { ApiErrorEnvelope } from './lib/errors';
-export type { UserStub } from './lib/identity';
+export type {
+  UserStub,
+  PublicUserDto,
+  LoginRequestDto,
+  LoginResponseDto,
+  RenewTokenResponseDto,
+} from './lib/identity';
+export {
+  userStatusSchema,
+  publicUserDtoSchema,
+  loginRequestDtoSchema,
+  loginResponseDtoSchema,
+  renewTokenResponseDtoSchema,
+} from './lib/identity';
 export {
   geoPointDtoSchema,
   customerStatusSchema,

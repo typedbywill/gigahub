@@ -7,3 +7,4 @@ allowBuilds:
   less: true
   '@swc/core': false
   esbuild: false
+  argon2: true

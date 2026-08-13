@@ -1,29 +1,72 @@
 import { create } from 'zustand';
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-}
+import type { PublicUserDto } from '@gigahub/shared/contracts';
+import {
+  ApiClientError,
+  loginRequest,
+  renewTokenRequest,
+} from '../api/auth.api';
 
 interface AuthState {
-  user: User | null;
+  user: PublicUserDto | null;
+  accessToken: string | null;
   isAuthenticated: boolean;
-  token: string | null;
-  login: (user: User, token: string) => void;
+  bootstrapped: boolean;
+  isBootstrapping: boolean;
+  bootstrap: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
+  setSession: (user: PublicUserDto, accessToken: string) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: {
-    id: 'usr_admin_01',
-    name: 'GigaHub Admin',
-    email: 'admin@gigahub.local',
-    role: 'ADMIN',
+  user: null,
+  accessToken: null,
+  isAuthenticated: false,
+  bootstrapped: false,
+  isBootstrapping: false,
+  setSession: (user, accessToken) =>
+    set({
+      user,
+      accessToken,
+      isAuthenticated: true,
+    }),
+  logout: () =>
+    set({
+      user: null,
+      accessToken: null,
+      isAuthenticated: false,
+    }),
+  bootstrap: async () => {
+    set({ isBootstrapping: true });
+    try {
+      const result = await renewTokenRequest();
+      set({
+        user: result.user,
+        accessToken: result.accessToken,
+        isAuthenticated: true,
+        bootstrapped: true,
+        isBootstrapping: false,
+      });
+    } catch (error) {
+      if (!(error instanceof ApiClientError) || error.status >= 500) {
+        console.warn('Auth bootstrap failed', error);
+      }
+      set({
+        user: null,
+        accessToken: null,
+        isAuthenticated: false,
+        bootstrapped: true,
+        isBootstrapping: false,
+      });
+    }
   },
-  isAuthenticated: true,
-  token: 'stub-jwt-token-gigahub',
-  login: (user, token) => set({ user, isAuthenticated: true, token }),
-  logout: () => set({ user: null, isAuthenticated: false, token: null }),
+  login: async (email, password) => {
+    const result = await loginRequest({ email, password });
+    set({
+      user: result.user,
+      accessToken: result.accessToken,
+      isAuthenticated: true,
+      bootstrapped: true,
+    });
+  },
 }));

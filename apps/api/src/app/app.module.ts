@@ -6,6 +6,7 @@ import { validateEnv } from '@gigahub/shared/config';
 import { HealthModule } from '../health/health.module';
 import { StorageModule } from '../storage/storage.module';
 import { RealtimeModule } from '../realtime/realtime.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { RealtimeModule } from '../realtime/realtime.module';
     HealthModule,
     StorageModule,
     RealtimeModule,
+    AuthModule,
   ],
 })
 export class AppModule {}

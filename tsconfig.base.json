@@ -35,6 +35,14 @@
       ],
       "@shared/domain/fiber-access-terminal": [
         "./libs/domain/fiber-access-terminal/src/index.ts"
+      ],
+      "@gigahub/domain/identity": ["./libs/domain/identity/src/index.ts"],
+      "@shared/domain/identity": ["./libs/domain/identity/src/index.ts"],
+      "@gigahub/application-identity": [
+        "./libs/application-identity/src/index.ts"
+      ],
+      "@shared/application-identity": [
+        "./libs/application-identity/src/index.ts"
       ]
     }
   },

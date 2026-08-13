@@ -1,24 +1,30 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Chip } from '@heroui/react';
+import { LuLogOut } from 'react-icons/lu';
 import { useAuthStore } from '../stores/auth.store';
 import { useRealtimeStore } from '../stores/realtime.store';
+import { ThemeToggle } from '../ui/ThemeToggle';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
   const { isConnected } = useRealtimeStore();
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      <header className="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+    <div className="flex min-h-screen flex-col bg-background text-foreground">
+      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-4">
-            <Link to="/" className="flex items-center gap-2 font-bold text-xl text-indigo-400">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-extrabold text-lg">
+            <Link
+              to="/"
+              className="font-display flex items-center gap-2 text-xl font-bold tracking-tight text-accent"
+            >
+              <div className="flex size-8 items-center justify-center rounded-lg bg-accent text-lg font-extrabold text-accent-foreground">
                 G
               </div>
               <span>GigaHub</span>
@@ -28,37 +34,48 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </Chip>
           </div>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-2 text-xs">
               <span
-                className={`w-2.5 h-2.5 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-amber-500'}`}
+                className={`size-2.5 rounded-full ${isConnected ? 'animate-pulse bg-success' : 'bg-warning'}`}
               />
-              <span className="text-slate-400 font-mono">
+              <span className="hidden font-mono text-muted sm:inline">
                 Socket: {isConnected ? 'connected' : 'offline'}
               </span>
             </div>
 
+            <ThemeToggle />
+
             {user && (
-              <div className="flex items-center gap-3 border-l border-slate-800 pl-6">
-                <div className="text-right hidden sm:block">
-                  <div className="text-sm font-medium text-slate-200">{user.name}</div>
-                  <div className="text-xs text-slate-400 font-mono">{user.role}</div>
+              <div className="flex items-center gap-3 border-l border-border pl-4 sm:pl-6">
+                <div className="hidden text-right sm:block">
+                  <div className="text-sm font-medium">{user.name}</div>
+                  <div className="font-mono text-xs text-muted">{user.email}</div>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-indigo-400 text-sm">
+                <div className="flex size-8 items-center justify-center rounded-full border border-border bg-default text-sm font-bold text-accent">
                   {user.name.substring(0, 2).toUpperCase()}
                 </div>
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="rounded-md p-1.5 text-muted transition hover:bg-default hover:text-foreground"
+                  aria-label="Sair"
+                  title="Sair (local)"
+                >
+                  <LuLogOut className="size-4" />
+                </button>
               </div>
             )}
           </div>
         </div>
       </header>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-8 sm:px-6 lg:px-8">
         {children}
       </main>
 
-      <footer className="border-t border-slate-900 bg-slate-950 py-6 text-center text-xs text-slate-500">
-        <p>GigaHub Monorepo &copy; 2026 — Built with NestJS, Vite, React, MongoDB & MinIO</p>
+      <footer className="border-t border-border py-6 text-center text-xs text-muted">
+        <p>GigaHub Monorepo &copy; 2026 — NestJS, Vite, React, MongoDB & MinIO</p>
       </footer>
     </div>
   );
