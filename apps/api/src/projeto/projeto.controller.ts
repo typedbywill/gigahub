@@ -43,11 +43,24 @@ export class ProjetoController {
   ): Promise<NearbyFiberAccessTerminalsResponseDto> {
     const parsed = this.parseNearbyQuery(query);
     try {
-      return await this.listNearbyFats.execute({
+      const result = await this.listNearbyFats.execute({
         latitude: parsed.lat,
         longitude: parsed.lng,
         radiusMeters: parsed.radius,
       });
+      return {
+        radiusMeters: result.radiusMeters,
+        items: result.items.map((item) => ({
+          id: item.id,
+          idErp: item.idErp,
+          name: item.name,
+          location: {
+            latitude: item.location.latitude,
+            longitude: item.location.longitude,
+          },
+          distanceMeters: item.distanceMeters,
+        })),
+      };
     } catch (error) {
       this.rethrowNearbyError(error);
     }
@@ -59,11 +72,26 @@ export class ProjetoController {
   ): Promise<NearbyFiberCablesResponseDto> {
     const parsed = this.parseNearbyQuery(query);
     try {
-      return await this.listNearbyCables.execute({
+      const result = await this.listNearbyCables.execute({
         latitude: parsed.lat,
         longitude: parsed.lng,
         radiusMeters: parsed.radius,
       });
+      return {
+        radiusMeters: result.radiusMeters,
+        items: result.items.map((item) => ({
+          id: item.id,
+          idErp: item.idErp,
+          name: item.name,
+          projectIdErp: item.projectIdErp,
+          lengthMeters: item.lengthMeters,
+          path: item.path.map((point) => ({
+            latitude: point.latitude,
+            longitude: point.longitude,
+          })),
+          distanceMeters: item.distanceMeters,
+        })),
+      };
     } catch (error) {
       this.rethrowNearbyError(error);
     }
