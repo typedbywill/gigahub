@@ -17,7 +17,6 @@ function brandedId<B extends string>(
 
 export type CustomerId = Brand<string, 'CustomerId'>;
 export type ContractId = Brand<string, 'ContractId'>;
-export type EmployeeId = Brand<string, 'EmployeeId'>;
 export type WorkOrderId = Brand<string, 'WorkOrderId'>;
 export type SubjectId = Brand<string, 'SubjectId'>;
 export type CareInboxId = Brand<string, 'CareInboxId'>;
@@ -31,8 +30,6 @@ export const customerId = (value: string): CustomerId =>
   brandedId(value, 'CustomerId');
 export const contractId = (value: string): ContractId =>
   brandedId(value, 'ContractId');
-export const employeeId = (value: string): EmployeeId =>
-  brandedId(value, 'EmployeeId');
 export const workOrderId = (value: string): WorkOrderId =>
   brandedId(value, 'WorkOrderId');
 export const subjectId = (value: string): SubjectId =>

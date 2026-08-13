@@ -7,7 +7,6 @@ export {
 export {
   type CustomerId,
   type ContractId,
-  type EmployeeId,
   type WorkOrderId,
   type SubjectId,
   type CareInboxId,
@@ -18,7 +17,6 @@ export {
   type SessionId,
   customerId,
   contractId,
-  employeeId,
   workOrderId,
   subjectId,
   careInboxId,

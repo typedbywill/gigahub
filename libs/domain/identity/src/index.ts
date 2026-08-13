@@ -4,6 +4,8 @@ export {
   type UserStatus,
   type UserSnapshot,
   type CreateUserInput,
+  type LinkErpInput,
+  type SyncProfessionalProfileInput,
 } from './lib/user';
 export {
   Credential,

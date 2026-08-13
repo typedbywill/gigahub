@@ -17,6 +17,24 @@ export class UserModel {
   @Prop({ required: true, enum: ['active', 'blocked'] })
   status!: 'active' | 'blocked';
 
+  @Prop()
+  idErp?: string;
+
+  @Prop()
+  idErpEmployee?: string;
+
+  @Prop()
+  jobTitle?: string;
+
+  @Prop()
+  cashboxId?: string;
+
+  @Prop()
+  warehouseId?: string;
+
+  @Prop()
+  planningId?: string;
+
   createdAt!: Date;
   updatedAt!: Date;
 }

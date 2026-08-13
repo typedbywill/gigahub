@@ -30,6 +30,12 @@ export class MongoUserRepository implements UserRepository {
             email: snap.email,
             name: snap.name,
             status: snap.status,
+            idErp: snap.idErp ?? null,
+            idErpEmployee: snap.idErpEmployee ?? null,
+            jobTitle: snap.jobTitle ?? null,
+            cashboxId: snap.cashboxId ?? null,
+            warehouseId: snap.warehouseId ?? null,
+            planningId: snap.planningId ?? null,
             updatedAt: snap.updatedAt,
           },
           $setOnInsert: {
@@ -47,6 +53,12 @@ export class MongoUserRepository implements UserRepository {
     email: string;
     name: string;
     status: 'active' | 'blocked';
+    idErp?: string | null;
+    idErpEmployee?: string | null;
+    jobTitle?: string | null;
+    cashboxId?: string | null;
+    warehouseId?: string | null;
+    planningId?: string | null;
     createdAt: Date;
     updatedAt: Date;
   }): User {
@@ -55,6 +67,12 @@ export class MongoUserRepository implements UserRepository {
       email: doc.email,
       name: doc.name,
       status: doc.status,
+      idErp: doc.idErp ?? undefined,
+      idErpEmployee: doc.idErpEmployee ?? undefined,
+      jobTitle: doc.jobTitle ?? undefined,
+      cashboxId: doc.cashboxId ?? undefined,
+      warehouseId: doc.warehouseId ?? undefined,
+      planningId: doc.planningId ?? undefined,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     });

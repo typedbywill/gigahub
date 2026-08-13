@@ -2,14 +2,14 @@ import {
   type CareInboxId,
   type CareTicketId,
   type CustomerId,
-  type EmployeeId,
+  type UserId,
   type WorkOrderId,
   DomainError,
   DomainErrorCodes,
   careInboxId,
   careTicketId,
   customerId,
-  employeeId,
+  userId,
   workOrderId,
 } from '@gigahub/shared/kernel';
 import {
@@ -28,7 +28,7 @@ export interface CareTicketSnapshot {
   workOrderId?: WorkOrderId;
   status: CareTicketStatus;
   channel: CareChannel;
-  assignedAgentId?: EmployeeId;
+  assignedAgentId?: UserId;
   externalId?: string;
   openedAt: Date;
   updatedAt: Date;
@@ -83,7 +83,7 @@ export class CareTicket {
       status: input.status,
       channel: input.channel,
       assignedAgentId: input.assignedAgentId
-        ? employeeId(input.assignedAgentId)
+        ? userId(input.assignedAgentId)
         : undefined,
       externalId: input.externalId,
       openedAt: now,
@@ -119,7 +119,7 @@ export class CareTicket {
     return this.props.status;
   }
 
-  get assignedAgentId(): EmployeeId | undefined {
+  get assignedAgentId(): UserId | undefined {
     return this.props.assignedAgentId;
   }
 
@@ -143,7 +143,7 @@ export class CareTicket {
         { ticketId: this.props.id },
       );
     }
-    this.props.assignedAgentId = employeeId(agentId);
+    this.props.assignedAgentId = userId(agentId);
     if (this.props.status === 'open' || this.props.status === 'queued') {
       this.transitionTo('in_progress');
     } else {

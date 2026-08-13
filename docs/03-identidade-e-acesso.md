@@ -11,7 +11,11 @@ são responsabilidades distintas.
 
 ## Modelo inicial
 
-- **User**: identidade do colaborador no GigaHub.
+- **User**: identidade do colaborador no GigaHub (auth + perfil operacional).
+  Une o que no IXC está em `usuarios` (login) e `funcionarios` (colaborador HR/ops).
+  Vínculos externos opcionais: `idErp` (`usuarios.id`) e `idErpEmployee`
+  (`funcionarios.id`). O id interno não é a matrícula IXC. Refs de técnico em OS e
+  agente em tickets usam `UserId`.
 - **Credential**: material de autenticação; nunca exposto no perfil.
 - **Session**: login revogável associado a dispositivo e refresh token.
 - **Role**: conjunto nomeado de permissões para uma função de trabalho.
@@ -170,7 +174,9 @@ Antes dessa evolução, devem ser respondidas:
 
 ## Integração com IXC
 
-- O sync do IXC atualiza atributos profissionais, não substitui a identidade interna.
+- O sync do IXC atualiza atributos profissionais (`name`, `jobTitle`, caixa,
+  almoxarifado, planejamento) e o espelhamento de ativo/inativo via
+  `applyErpActive`; não substitui a identidade interna (`UserId`).
 - Desativação no sistema oficial deve bloquear novos logins e revogar sessões conforme
   política definida.
 

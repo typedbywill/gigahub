@@ -7,6 +7,9 @@ export const publicUserDtoSchema = z.object({
   email: z.string().email(),
   name: z.string().min(1),
   status: userStatusSchema,
+  idErp: z.string().min(1).optional(),
+  idErpEmployee: z.string().min(1).optional(),
+  jobTitle: z.string().min(1).optional(),
 });
 
 export type PublicUserDto = z.infer<typeof publicUserDtoSchema>;

@@ -1,16 +1,16 @@
 import {
   type CustomerId,
-  type EmployeeId,
   type GeoPoint,
   type SubjectId,
+  type UserId,
   type WorkOrderId,
   DomainError,
   DomainErrorCodes,
   assertNonEmpty,
   customerId,
-  employeeId,
   isWithinRadius,
   subjectId,
+  userId,
   workOrderId,
 } from '@gigahub/shared/kernel';
 import {
@@ -27,7 +27,7 @@ export interface WorkOrderSnapshot {
   idErp: string;
   status: WorkOrderStatus;
   customerId: CustomerId;
-  technicianId?: EmployeeId;
+  technicianId?: UserId;
   subjectId?: SubjectId;
   location?: GeoPoint;
   scheduledAt?: Date;
@@ -61,7 +61,7 @@ export class WorkOrder {
       status: input.status,
       customerId: customerId(input.customerId),
       technicianId: input.technicianId
-        ? employeeId(input.technicianId)
+        ? userId(input.technicianId)
         : undefined,
       subjectId: input.subjectId ? subjectId(input.subjectId) : undefined,
       location: input.location,

@@ -7,5 +7,8 @@ export function toPublicUserDto(user: User): PublicUserDto {
     email: user.email,
     name: user.name,
     status: user.status,
+    idErp: user.idErp,
+    idErpEmployee: user.idErpEmployee,
+    jobTitle: user.jobTitle,
   };
 }
