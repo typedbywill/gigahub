@@ -36,7 +36,9 @@ export class SeedDefaultRolesUseCase {
         continue;
       }
 
-      const before = new Set(existing.permissionIds);
+      const before = new Set(
+        existing.permissionIds.map((id) => id as string),
+      );
       let changed = false;
       for (const permissionId of seed.permissionIds) {
         if (!before.has(permissionId)) {

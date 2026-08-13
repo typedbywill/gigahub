@@ -17,6 +17,7 @@ import { ListPermissionsUseCase } from './list-permissions.use-case';
 import { CreateRoleUseCase } from './create-role.use-case';
 import { ReplaceRolePermissionsUseCase } from './replace-role-permissions.use-case';
 import { ReplaceUserRolesUseCase } from './replace-user-roles.use-case';
+import { ResolveEffectiveAccess } from './resolve-effective-access';
 import {
   ApplicationError,
   ApplicationErrorCodes,
@@ -31,6 +32,33 @@ import {
 describe('Users admin use cases', () => {
   const now = new Date('2026-08-13T12:00:00.000Z');
   const bucket = 'gigahub';
+  const actorUserId = 'actor-1';
+
+  function allowAccess(): ResolveEffectiveAccess {
+    return {
+      forUser: jest.fn(),
+      permissionIds: jest.fn(async () => []),
+      assertCan: jest.fn(async () => undefined),
+    } as unknown as ResolveEffectiveAccess;
+  }
+
+  function denyAccess(
+    denied: string = 'users:read',
+  ): ResolveEffectiveAccess {
+    return {
+      forUser: jest.fn(),
+      permissionIds: jest.fn(async () => []),
+      assertCan: jest.fn(async (_actor, permission) => {
+        if (permission === denied || denied === '*') {
+          throw new ApplicationError(
+            ApplicationErrorCodes.PermissionDenied,
+            `Permission denied: ${permission}`,
+            { permissionId: permission },
+          );
+        }
+      }),
+    } as unknown as ResolveEffectiveAccess;
+  }
 
   function makeUser(
     overrides: Partial<{
@@ -147,6 +175,7 @@ describe('Users admin use cases', () => {
       roles: buildRoleRepo([]),
       grants: buildGrantRepo([]),
       storage: null as ObjectStoragePort | null,
+      access: allowAccess(),
     };
   }
 
@@ -163,13 +192,19 @@ describe('Users admin use cases', () => {
       }),
     ];
     const repo = buildUserRepo(users);
-    const list = new ListUsersUseCase(repo);
+    const list = new ListUsersUseCase(repo, allowAccess());
 
-    const all = await list.execute({ page: 1, pageSize: 20, status: 'all' });
+    const all = await list.execute({
+      actorUserId,
+      page: 1,
+      pageSize: 20,
+      status: 'all',
+    });
     expect(all.total).toBe(2);
     expect(all.items).toHaveLength(2);
 
     const active = await list.execute({
+      actorUserId,
       page: 1,
       pageSize: 20,
       status: 'active',
@@ -178,6 +213,7 @@ describe('Users admin use cases', () => {
     expect(active.items[0]?.name).toBe('Alice');
 
     const erp = await list.execute({
+      actorUserId,
       page: 1,
       pageSize: 20,
       status: 'all',
@@ -187,12 +223,20 @@ describe('Users admin use cases', () => {
     expect(erp.items[0]?.name).toBe('Bob');
 
     const search = await list.execute({
+      actorUserId,
       page: 1,
       pageSize: 20,
       status: 'all',
       q: 'bob',
     });
     expect(search.total).toBe(1);
+  });
+
+  it('denies listing users without users:read', async () => {
+    const list = new ListUsersUseCase(buildUserRepo([]), denyAccess('users:read'));
+    await expect(
+      list.execute({ actorUserId, page: 1, pageSize: 20, status: 'all' }),
+    ).rejects.toMatchObject({ code: ApplicationErrorCodes.PermissionDenied });
   });
 
   it('gets user by id or throws NotFound', async () => {
@@ -202,15 +246,18 @@ describe('Users admin use cases', () => {
       deps.users,
       deps.roles,
       deps.grants,
+      deps.access,
       deps.storage,
       bucket,
     );
 
-    const detail = await get.execute({ userId: 'usr-1' });
+    const detail = await get.execute({ actorUserId, userId: 'usr-1' });
     expect(detail.email).toBe('alice@gigahub.local');
     expect(detail.roles).toEqual([]);
 
-    await expect(get.execute({ userId: 'missing' })).rejects.toMatchObject({
+    await expect(
+      get.execute({ actorUserId, userId: 'missing' }),
+    ).rejects.toMatchObject({
       code: ApplicationErrorCodes.NotFound,
     });
   });
@@ -222,11 +269,13 @@ describe('Users admin use cases', () => {
       deps.users,
       deps.roles,
       deps.grants,
+      deps.access,
       deps.storage,
       bucket,
     );
 
     const result = await useCase.execute({
+      actorUserId,
       userId: 'usr-1',
       name: 'Alice Updated',
       email: 'alice.new@gigahub.local',
@@ -245,12 +294,17 @@ describe('Users admin use cases', () => {
       deps.users,
       deps.roles,
       deps.grants,
+      deps.access,
       deps.storage,
       bucket,
     );
 
     await expect(
-      useCase.execute({ userId: 'usr-1', email: 'bob@gigahub.local' }),
+      useCase.execute({
+        actorUserId,
+        userId: 'usr-1',
+        email: 'bob@gigahub.local',
+      }),
     ).rejects.toMatchObject({ code: ApplicationErrorCodes.Conflict });
   });
 
@@ -266,6 +320,7 @@ describe('Users admin use cases', () => {
       deps.users,
       deps.roles,
       deps.grants,
+      deps.access,
       storage,
       bucket,
       { generate: () => 'file-1' },
@@ -274,11 +329,13 @@ describe('Users admin use cases', () => {
       deps.users,
       deps.roles,
       deps.grants,
+      deps.access,
       storage,
       bucket,
     );
 
     const setResult = await setAvatar.execute({
+      actorUserId,
       userId: 'usr-1',
       file: Buffer.from('fake-image'),
       contentType: 'image/png',
@@ -288,13 +345,16 @@ describe('Users admin use cases', () => {
     );
     expect(users[0]!.avatarObjectKey).toBe('avatars/usr-1/file-1.png');
 
-    const clearResult = await clearAvatar.execute({ userId: 'usr-1' });
+    const clearResult = await clearAvatar.execute({
+      actorUserId,
+      userId: 'usr-1',
+    });
     expect(clearResult.user.avatarUrl).toBeUndefined();
     expect(users[0]!.avatarObjectKey).toBeUndefined();
     expect(storage.deleteFile).toHaveBeenCalled();
   });
 
-  it('seeds default roles idempotently', async () => {
+  it('seeds default roles idempotently and merges new permissions', async () => {
     const roles: Role[] = [];
     const repo = buildRoleRepo(roles);
     const useCase = new SeedDefaultRolesUseCase(repo, {
@@ -304,10 +364,21 @@ describe('Users admin use cases', () => {
     const first = await useCase.execute();
     expect(first.created).toBe(4);
     expect(first.skipped).toBe(0);
+    expect(first.updated).toBe(0);
 
     const second = await useCase.execute();
     expect(second.created).toBe(0);
     expect(second.skipped).toBe(4);
+    expect(second.updated).toBe(0);
+
+    const admin = roles.find((role) => role.slug === 'admin-acesso');
+    expect(admin).toBeDefined();
+    admin!.removePermission('users:read');
+    await repo.save(admin!);
+
+    const third = await useCase.execute();
+    expect(third.updated).toBe(1);
+    expect(admin!.permissionIds).toContain('users:read');
   });
 
   it('lists active roles', async () => {
@@ -319,15 +390,18 @@ describe('Users admin use cases', () => {
         permissionIds: ['work-order:read'],
       }),
     ];
-    const list = new ListRolesUseCase(buildRoleRepo(roles));
-    const result = await list.execute();
+    const list = new ListRolesUseCase(buildRoleRepo(roles), allowAccess());
+    const result = await list.execute({ actorUserId });
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.slug).toBe('tecnico');
   });
 
   it('lists permission catalog', async () => {
-    const result = await new ListPermissionsUseCase().execute();
+    const result = await new ListPermissionsUseCase(allowAccess()).execute({
+      actorUserId,
+    });
     expect(result.items.length).toBeGreaterThan(0);
+    expect(result.items.some((item) => item.id === 'users:read')).toBe(true);
     expect(result.items.some((item) => item.id === 'access:manage')).toBe(
       true,
     );
@@ -335,10 +409,11 @@ describe('Users admin use cases', () => {
 
   it('creates a role', async () => {
     const roles: Role[] = [];
-    const useCase = new CreateRoleUseCase(buildRoleRepo(roles), {
+    const useCase = new CreateRoleUseCase(buildRoleRepo(roles), allowAccess(), {
       generate: () => 'role-new',
     });
     const result = await useCase.execute({
+      actorUserId,
       name: 'Auditor',
       slug: 'auditor',
       permissionIds: ['work-order:read'],
@@ -357,11 +432,11 @@ describe('Users admin use cases', () => {
         permissionIds: ['work-order:read'],
       }),
     ];
-    const useCase = new CreateRoleUseCase(buildRoleRepo(roles), {
+    const useCase = new CreateRoleUseCase(buildRoleRepo(roles), allowAccess(), {
       generate: () => 'role-2',
     });
     await expect(
-      useCase.execute({ name: 'Outro', slug: 'tecnico' }),
+      useCase.execute({ actorUserId, name: 'Outro', slug: 'tecnico' }),
     ).rejects.toMatchObject({
       code: ApplicationErrorCodes.Conflict,
     } satisfies Partial<ApplicationError>);
@@ -376,8 +451,12 @@ describe('Users admin use cases', () => {
         permissionIds: ['work-order:read'],
       }),
     ];
-    const useCase = new ReplaceRolePermissionsUseCase(buildRoleRepo(roles));
+    const useCase = new ReplaceRolePermissionsUseCase(
+      buildRoleRepo(roles),
+      allowAccess(),
+    );
     const result = await useCase.execute({
+      actorUserId,
       roleId: 'role-1',
       permissionIds: ['work-order:read', 'work-order:execute'],
     });
@@ -400,9 +479,13 @@ describe('Users admin use cases', () => {
         permissionIds: ['work-order:read'],
       }),
     ];
-    const useCase = new ReplaceRolePermissionsUseCase(buildRoleRepo(roles));
+    const useCase = new ReplaceRolePermissionsUseCase(
+      buildRoleRepo(roles),
+      allowAccess(),
+    );
     await expect(
       useCase.execute({
+        actorUserId,
         roleId: 'role-1',
         permissionIds: ['not-a-real:permission'],
       }),
@@ -435,12 +518,14 @@ describe('Users admin use cases', () => {
       userRepo,
       roleRepo,
       grantRepo,
+      allowAccess(),
       null,
       bucket,
       { generate: () => `grant-${grants.length + 1}` },
     );
 
     const assigned = await useCase.execute({
+      actorUserId,
       userId: 'usr-1',
       roleIds: ['role-tec', 'role-fin'],
       grantedByUserId: 'admin-1',
@@ -449,6 +534,7 @@ describe('Users admin use cases', () => {
     expect(users[0]!.authorizationVersion).toBe(1);
 
     const replaced = await useCase.execute({
+      actorUserId,
       userId: 'usr-1',
       roleIds: ['role-tec'],
       grantedByUserId: 'admin-1',
@@ -482,11 +568,12 @@ describe('Users admin use cases', () => {
       { now: () => now },
       deps.roles,
       deps.grants,
+      deps.access,
       deps.storage,
       bucket,
     );
 
-    const result = await useCase.execute({ userId: 'usr-1' });
+    const result = await useCase.execute({ actorUserId, userId: 'usr-1' });
     expect(result.user.status).toBe('blocked');
     expect(erp.setCollaboratorActive).not.toHaveBeenCalled();
     expect(revokeAllForUser).toHaveBeenCalledWith(users[0]!.id, now);
@@ -528,11 +615,12 @@ describe('Users admin use cases', () => {
       { now: () => now },
       deps.roles,
       deps.grants,
+      deps.access,
       deps.storage,
       bucket,
     );
 
-    const result = await useCase.execute({ userId: 'usr-erp' });
+    const result = await useCase.execute({ actorUserId, userId: 'usr-erp' });
     expect(result.user.status).toBe('blocked');
     expect(erp.setCollaboratorActive).toHaveBeenCalledWith('99', false);
     expect(callOrder).toEqual(['erp', 'save', 'revoke']);
@@ -565,11 +653,14 @@ describe('Users admin use cases', () => {
       { now: () => now },
       deps.roles,
       deps.grants,
+      deps.access,
       deps.storage,
       bucket,
     );
 
-    await expect(useCase.execute({ userId: 'usr-erp' })).rejects.toMatchObject({
+    await expect(
+      useCase.execute({ actorUserId, userId: 'usr-erp' }),
+    ).rejects.toMatchObject({
       code: ApplicationErrorCodes.ErpUnavailable,
     });
     expect(deps.users.save).not.toHaveBeenCalled();
@@ -600,11 +691,12 @@ describe('Users admin use cases', () => {
       { now: () => now },
       deps.roles,
       deps.grants,
+      deps.access,
       deps.storage,
       bucket,
     );
 
-    const result = await useCase.execute({ userId: 'usr-1' });
+    const result = await useCase.execute({ actorUserId, userId: 'usr-1' });
     expect(result.user.status).toBe('blocked');
     expect(erp.setCollaboratorActive).not.toHaveBeenCalled();
     expect(deps.users.save).not.toHaveBeenCalled();
@@ -629,11 +721,14 @@ describe('Users admin use cases', () => {
       { now: () => now },
       deps.roles,
       deps.grants,
+      deps.access,
       deps.storage,
       bucket,
     );
 
-    await expect(useCase.execute({ userId: 'usr-erp' })).rejects.toMatchObject({
+    await expect(
+      useCase.execute({ actorUserId, userId: 'usr-erp' }),
+    ).rejects.toMatchObject({
       code: ApplicationErrorCodes.ErpUnavailable,
     });
   });

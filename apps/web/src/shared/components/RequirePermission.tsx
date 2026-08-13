@@ -24,5 +24,5 @@ export const RequirePermission: React.FC<RequirePermissionProps> = ({
     return <Navigate to={fallbackTo} replace />;
   }
 
-  return <>{children}</>;
+  return children;
 };
