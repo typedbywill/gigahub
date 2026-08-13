@@ -8,6 +8,7 @@ import {
   Table,
 } from '@heroui/react';
 import { useFitPageSize } from '../../hooks/use-fit-page-size';
+import { useFocusSearchOnType } from '../../hooks/use-focus-search-on-type';
 
 export interface DataTableColumn<T> {
   id: string;
@@ -94,10 +95,17 @@ export function DataTable<T extends object>({
   className,
 }: DataTableProps<T>) {
   const bodyViewportRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const fitPageSize = useFitPageSize(bodyViewportRef, {
     rowHeight: estimatedRowHeight,
     min: 5,
     max: 100,
+  });
+
+  useFocusSearchOnType(searchInputRef, {
+    enabled: onSearchChange !== undefined,
+    value: searchValue ?? '',
+    onChange: onSearchChange,
   });
 
   const prevFitRef = useRef(0);
@@ -159,7 +167,10 @@ export function DataTable<T extends object>({
               >
                 <SearchField.Group>
                   <SearchField.SearchIcon />
-                  <SearchField.Input placeholder={searchPlaceholder} />
+                  <SearchField.Input
+                    ref={searchInputRef}
+                    placeholder={searchPlaceholder}
+                  />
                   <SearchField.ClearButton />
                 </SearchField.Group>
               </SearchField>
@@ -170,7 +181,12 @@ export function DataTable<T extends object>({
                   <Button
                     key={preset.id}
                     size="sm"
-                    variant={preset.active ? 'primary' : 'secondary'}
+                    variant={preset.active ? 'secondary' : 'ghost'}
+                    className={
+                      preset.active
+                        ? 'bg-foreground text-background hover:bg-foreground/90'
+                        : 'text-muted hover:text-foreground'
+                    }
                     onPress={preset.onPress}
                   >
                     {preset.label}

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { AlertDialog, Button, Chip } from '@heroui/react';
+import { Link, useNavigate } from 'react-router-dom';
+import { AlertDialog, Button, Chip, Dropdown, Label } from '@heroui/react';
+import { LuEllipsisVertical, LuEye, LuUserX } from 'react-icons/lu';
 import type { UserListItemDto } from '@gigahub/shared/contracts';
 import {
   DataTable,
@@ -21,6 +22,7 @@ function statusLabel(status: UserListItemDto['status']): string {
 }
 
 export const UsersListPage: React.FC = () => {
+  const navigate = useNavigate();
   const accessToken = useAuthStore((s) => s.accessToken);
 
   const [items, setItems] = useState<UserListItemDto[]>([]);
@@ -170,19 +172,47 @@ export const UsersListPage: React.FC = () => {
     },
     {
       id: 'actions',
-      header: 'Ações',
-      cell: (row) =>
-        row.status === 'active' ? (
+      header: '',
+      cell: (row) => (
+        <Dropdown>
           <Button
+            isIconOnly
             size="sm"
-            variant="danger"
-            onPress={() => setPendingInactivate(row)}
+            variant="ghost"
+            aria-label={`Ações de ${row.name}`}
           >
-            Inativar
+            <LuEllipsisVertical className="size-4" />
           </Button>
-        ) : (
-          <span className="text-sm text-muted">—</span>
-        ),
+          <Dropdown.Popover placement="bottom end">
+            <Dropdown.Menu
+              onAction={(key) => {
+                if (key === 'view') {
+                  navigate(`/usuarios/${row.id}`);
+                  return;
+                }
+                if (key === 'inactivate') {
+                  setPendingInactivate(row);
+                }
+              }}
+            >
+              <Dropdown.Item id="view" textValue="Ver detalhes">
+                <LuEye className="size-4 shrink-0 text-muted" />
+                <Label>Ver detalhes</Label>
+              </Dropdown.Item>
+              {row.status === 'active' ? (
+                <Dropdown.Item
+                  id="inactivate"
+                  textValue="Inativar"
+                  variant="danger"
+                >
+                  <LuUserX className="size-4 shrink-0 text-danger" />
+                  <Label>Inativar</Label>
+                </Dropdown.Item>
+              ) : null}
+            </Dropdown.Menu>
+          </Dropdown.Popover>
+        </Dropdown>
+      ),
     },
   ];
 
