@@ -63,3 +63,42 @@ export const nearbyFiberCablesResponseDtoSchema = z.object({
 export type NearbyFiberCablesResponseDto = z.infer<
   typeof nearbyFiberCablesResponseDtoSchema
 >;
+
+/**
+ * Global typeahead over project network elements (not limited to map viewport).
+ * `kind` defaults to all; `limit` is capped by domain policy (max 40).
+ */
+export const searchProjectNetworkQueryDtoSchema = z.object({
+  q: z.string().trim().min(1),
+  kind: z.enum(['all', 'fat', 'cable']).default('all'),
+  limit: z.coerce.number().int().min(1).max(40).optional(),
+});
+
+export type SearchProjectNetworkQueryDto = z.infer<
+  typeof searchProjectNetworkQueryDtoSchema
+>;
+
+export const searchProjectNetworkHitDtoSchema = z.object({
+  kind: z.enum(['fat', 'cable']),
+  id: z.string().min(1),
+  idErp: z.string().min(1),
+  name: z.string().min(1),
+  /** Point used to fly the map (FAT location or a cable vertex). */
+  location: geoPointDtoSchema,
+  cableTypeName: z.string().min(1).optional(),
+});
+
+export type SearchProjectNetworkHitDto = z.infer<
+  typeof searchProjectNetworkHitDtoSchema
+>;
+
+export const searchProjectNetworkResponseDtoSchema = z.object({
+  items: z.array(searchProjectNetworkHitDtoSchema),
+  q: z.string().min(1),
+  kind: z.enum(['all', 'fat', 'cable']),
+  limit: z.number().int().positive(),
+});
+
+export type SearchProjectNetworkResponseDto = z.infer<
+  typeof searchProjectNetworkResponseDtoSchema
+>;

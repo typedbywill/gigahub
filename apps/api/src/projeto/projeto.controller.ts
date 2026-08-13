@@ -10,22 +10,26 @@ import {
   ApplicationErrorCodes,
   ListNearbyFiberAccessTerminalsUseCase,
   ListNearbyFiberCablesUseCase,
+  SearchProjectNetworkUseCase,
 } from '@gigahub/application-network';
 import {
   nearbyProjectQueryDtoSchema,
+  searchProjectNetworkQueryDtoSchema,
   type NearbyFiberAccessTerminalsResponseDto,
   type NearbyFiberCablesResponseDto,
+  type SearchProjectNetworkResponseDto,
 } from '@gigahub/shared/contracts';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 
 /**
- * Project FTTH map layers (nearby by lat/lng).
+ * Project FTTH map layers (nearby by lat/lng) and global search.
  *
  * Implemented:
  * - GET /projeto/fat
  * - GET /projeto/cabos
+ * - GET /projeto/busca
  *
- * Planned (same query shape):
+ * Planned (same nearby query shape):
  * - GET /projeto/ceo
  * - GET /projeto/postes
  */
@@ -35,6 +39,7 @@ export class ProjetoController {
   constructor(
     private readonly listNearbyFats: ListNearbyFiberAccessTerminalsUseCase,
     private readonly listNearbyCables: ListNearbyFiberCablesUseCase,
+    private readonly searchProjectNetwork: SearchProjectNetworkUseCase,
   ) {}
 
   @Get('fat')
@@ -63,7 +68,7 @@ export class ProjetoController {
         })),
       };
     } catch (error) {
-      this.rethrowNearbyError(error);
+      this.rethrowProjectError(error);
     }
   }
 
@@ -98,7 +103,39 @@ export class ProjetoController {
         })),
       };
     } catch (error) {
-      this.rethrowNearbyError(error);
+      this.rethrowProjectError(error);
+    }
+  }
+
+  @Get('busca')
+  async search(
+    @Query() query: unknown,
+  ): Promise<SearchProjectNetworkResponseDto> {
+    const parsed = this.parseSearchQuery(query);
+    try {
+      const result = await this.searchProjectNetwork.execute({
+        q: parsed.q,
+        kind: parsed.kind,
+        limit: parsed.limit,
+      });
+      return {
+        q: result.q,
+        kind: result.kind,
+        limit: result.limit,
+        items: result.items.map((item) => ({
+          kind: item.kind,
+          id: item.id,
+          idErp: item.idErp,
+          name: item.name,
+          location: {
+            latitude: item.location.latitude,
+            longitude: item.location.longitude,
+          },
+          cableTypeName: item.cableTypeName,
+        })),
+      };
+    } catch (error) {
+      this.rethrowProjectError(error);
     }
   }
 
@@ -114,9 +151,24 @@ export class ProjetoController {
     return parsed.data;
   }
 
-  private rethrowNearbyError(error: unknown): never {
+  private parseSearchQuery(query: unknown) {
+    const parsed = searchProjectNetworkQueryDtoSchema.safeParse(query);
+    if (!parsed.success) {
+      throw new BadRequestException({
+        error: 'VALIDATION_ERROR',
+        message: 'Invalid project network search query',
+        details: parsed.error.flatten(),
+      });
+    }
+    return parsed.data;
+  }
+
+  private rethrowProjectError(error: unknown): never {
     if (error instanceof ApplicationError) {
-      if (error.code === ApplicationErrorCodes.InvalidNearbyQuery) {
+      if (
+        error.code === ApplicationErrorCodes.InvalidNearbyQuery ||
+        error.code === ApplicationErrorCodes.InvalidSearchQuery
+      ) {
         throw new BadRequestException({
           error: error.code,
           message: error.message,

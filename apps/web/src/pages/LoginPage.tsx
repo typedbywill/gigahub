@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import {
   Button,
   Checkbox,
@@ -16,6 +16,7 @@ import {
 } from 'react-icons/lu';
 import { useAuthStore } from '../shared/stores/auth.store';
 import { ApiClientError } from '../shared/api/auth.api';
+import { safeReturnPath } from '../shared/lib/safe-return-path';
 import { LoginBrandPanel } from './login/LoginBrandPanel';
 import {
   clearRememberedEmail,
@@ -28,8 +29,12 @@ const fieldClassName =
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const login = useAuthStore((s) => s.login);
+  const returnTo = safeReturnPath(
+    (location.state as { from?: string } | null)?.from,
+  );
 
   const [email, setEmail] = useState(() => readRememberedEmail() ?? '');
   const [password, setPassword] = useState('');
@@ -41,7 +46,7 @@ export const LoginPage: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
 
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={returnTo} replace />;
   }
 
   const onSubmit = async (event: React.FormEvent) => {
@@ -56,7 +61,7 @@ export const LoginPage: React.FC = () => {
       } else {
         clearRememberedEmail();
       }
-      navigate('/', { replace: true });
+      navigate(returnTo, { replace: true });
     } catch (err) {
       if (err instanceof ApiClientError) {
         setError(

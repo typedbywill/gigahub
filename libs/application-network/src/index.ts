@@ -3,8 +3,10 @@ export {
   ApplicationErrorCodes,
   type NearbyFiberAccessTerminalReadModel,
   type NearbyFiberCableReadModel,
+  type ProjectNetworkSearchHitReadModel,
   type FiberAccessTerminalNearbyQuery,
   type FiberCableNearbyQuery,
+  type ProjectNetworkSearchQuery,
 } from './lib/ports';
 export {
   ListNearbyFiberAccessTerminalsUseCase,
@@ -16,3 +18,8 @@ export {
   type ListNearbyFiberCablesQuery,
   type ListNearbyFiberCablesResult,
 } from './lib/list-nearby-fiber-cables.use-case';
+export {
+  SearchProjectNetworkUseCase,
+  type SearchProjectNetworkQuery as SearchProjectNetworkUseCaseQuery,
+  type SearchProjectNetworkResult,
+} from './lib/search-project-network.use-case';

@@ -54,9 +54,18 @@ function AuthBootstrap({ children }: { children: React.ReactNode }) {
 }
 
 function ProtectedShell() {
+  const location = useLocation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   if (!isAuthenticated) {
-    return <Navigate to={routes.login} replace />;
+    return (
+      <Navigate
+        to={routes.login}
+        replace
+        state={{
+          from: `${location.pathname}${location.search}${location.hash}`,
+        }}
+      />
+    );
   }
   return (
     <Layout>

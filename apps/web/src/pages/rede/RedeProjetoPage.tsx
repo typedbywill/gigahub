@@ -1,10 +1,12 @@
 import React, {
+  startTransition,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import type { MapRef } from 'react-map-gl/mapbox';
 import type {
   NearbyFiberAccessTerminalDto,
@@ -23,6 +25,13 @@ import {
   type MapLayerVisibility,
   type MapSearchHit,
 } from './MapControlsPanel';
+import {
+  mapUrlStatesEqual,
+  parseMapSearchParams,
+  toMapSearchParams,
+  type MapSelectedRef,
+  type MapUrlState,
+} from './map-search-params';
 import { ProjectMap } from './ProjectMap';
 import {
   DEFAULT_NEARBY_RADIUS_METERS,
@@ -51,32 +60,68 @@ function cableFlyTarget(cable: NearbyFiberCableDto): {
   return { latitude: point.latitude, longitude: point.longitude };
 }
 
+function layersFromUrl(url: MapUrlState): MapLayerVisibility {
+  return {
+    fat: url.layers.fat,
+    cables: url.layers.cables,
+    ceo: false,
+  };
+}
+
 export const RedeProjetoPage: React.FC = () => {
   const accessToken = useAuthStore((s) => s.accessToken);
   const theme = useThemeStore((s) => s.theme);
   const isDark = theme === 'dark';
   const mapboxToken = resolveMapboxToken();
   const isMobile = useMediaQuery('(max-width: 767px)');
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const urlState = useMemo(
+    () => parseMapSearchParams(searchParams),
+    [searchParams],
+  );
 
   const mapRef = useRef<MapRef | null>(null);
   const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const didInitialFetchRef = useRef(false);
+  const didFlyToSelectionRef = useRef(false);
+  const urlStateRef = useRef(urlState);
+  urlStateRef.current = urlState;
 
-  const [initialView, setInitialView] = useState<InitialView | null>(null);
-  const [layers, setLayers] = useState<MapLayerVisibility>({
-    fat: true,
-    cables: true,
-    ceo: false,
+  const [initialView, setInitialView] = useState<InitialView | null>(() => {
+    if (urlState.lat != null && urlState.lng != null) {
+      return {
+        latitude: urlState.lat,
+        longitude: urlState.lng,
+        zoom: urlState.zoom ?? 14,
+      };
+    }
+    return null;
   });
-  const [search, setSearch] = useState('');
   const [fats, setFats] = useState<NearbyFiberAccessTerminalDto[]>([]);
   const [cables, setCables] = useState<NearbyFiberCableDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const search = urlState.q;
+  const layers = useMemo(() => layersFromUrl(urlState), [urlState]);
+  const selectedId = urlState.selected?.id ?? null;
+  const collapsed = urlState.panelCollapsed;
+
+  const patchUrlState = useCallback(
+    (patch: Partial<MapUrlState>) => {
+      const next: MapUrlState = { ...urlStateRef.current, ...patch };
+      if (mapUrlStatesEqual(urlStateRef.current, next)) {
+        return;
+      }
+      startTransition(() => {
+        setSearchParams(toMapSearchParams(next), { replace: true });
+      });
+    },
+    [setSearchParams],
+  );
 
   useEffect(() => {
     if (!isMobile) {
@@ -85,12 +130,22 @@ export const RedeProjetoPage: React.FC = () => {
   }, [isMobile]);
 
   useEffect(() => {
+    if (initialView) {
+      return;
+    }
+
     let cancelled = false;
 
     const apply = (view: InitialView) => {
-      if (!cancelled) {
-        setInitialView(view);
+      if (cancelled) {
+        return;
       }
+      setInitialView(view);
+      patchUrlState({
+        lat: view.latitude,
+        lng: view.longitude,
+        zoom: view.zoom,
+      });
     };
 
     if (!navigator.geolocation) {
@@ -123,7 +178,7 @@ export const RedeProjetoPage: React.FC = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [initialView, patchUrlState]);
 
   const fetchNearby = useCallback(
     async (lat: number, lng: number, radius: number) => {
@@ -183,13 +238,19 @@ export const RedeProjetoPage: React.FC = () => {
         return;
       }
       const center = map.getCenter();
+      const zoom = map.getZoom();
       const bounds = map.getBounds();
       const radius = bounds
         ? radiusFromBoundsMeters(bounds)
         : DEFAULT_NEARBY_RADIUS_METERS;
+      patchUrlState({
+        lat: center.lat,
+        lng: center.lng,
+        zoom,
+      });
       void fetchNearby(center.lat, center.lng, radius);
     }, FETCH_DEBOUNCE_MS);
-  }, [fetchNearby]);
+  }, [fetchNearby, patchUrlState]);
 
   useEffect(() => {
     return () => {
@@ -211,6 +272,56 @@ export const RedeProjetoPage: React.FC = () => {
       DEFAULT_NEARBY_RADIUS_METERS,
     );
   }, [accessToken, fetchNearby, initialView]);
+
+  const flyToSelection = useCallback(
+    (selected: MapSelectedRef) => {
+      const map = mapRef.current;
+      if (!map) {
+        return;
+      }
+      if (selected.kind === 'fat') {
+        const fat = fats.find((f) => f.id === selected.id);
+        if (!fat) {
+          return;
+        }
+        map.flyTo({
+          center: [fat.location.longitude, fat.location.latitude],
+          zoom: Math.max(map.getZoom(), 16),
+          essential: true,
+        });
+        return;
+      }
+      const cable = cables.find((c) => c.id === selected.id);
+      if (!cable || cable.path.length === 0) {
+        return;
+      }
+      const target = cableFlyTarget(cable);
+      map.flyTo({
+        center: [target.longitude, target.latitude],
+        zoom: Math.max(map.getZoom(), 15),
+        essential: true,
+      });
+    },
+    [cables, fats],
+  );
+
+  useEffect(() => {
+    if (!urlState.selected || didFlyToSelectionRef.current) {
+      return;
+    }
+    if (fats.length === 0 && cables.length === 0) {
+      return;
+    }
+    const exists =
+      urlState.selected.kind === 'fat'
+        ? fats.some((f) => f.id === urlState.selected!.id)
+        : cables.some((c) => c.id === urlState.selected!.id);
+    if (!exists) {
+      return;
+    }
+    didFlyToSelectionRef.current = true;
+    flyToSelection(urlState.selected);
+  }, [cables, fats, flyToSelection, urlState.selected]);
 
   const hits = useMemo<MapSearchHit[]>(() => {
     const q = search.trim().toLowerCase();
@@ -245,14 +356,26 @@ export const RedeProjetoPage: React.FC = () => {
     return [...fatHits, ...cableHits].slice(0, 40);
   }, [cables, fats, search]);
 
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      patchUrlState({ q: value });
+    },
+    [patchUrlState],
+  );
+
   const handleLayerChange = useCallback(
     (layer: keyof MapLayerVisibility, value: boolean) => {
       if (layer === 'ceo') {
         return;
       }
-      setLayers((prev) => ({ ...prev, [layer]: value }));
+      patchUrlState({
+        layers: {
+          fat: layer === 'fat' ? value : layers.fat,
+          cables: layer === 'cables' ? value : layers.cables,
+        },
+      });
     },
-    [],
+    [layers.cables, layers.fat, patchUrlState],
   );
 
   const handleToggleCollapse = useCallback(() => {
@@ -260,43 +383,20 @@ export const RedeProjetoPage: React.FC = () => {
       setMobileOpen((open) => !open);
       return;
     }
-    setCollapsed((value) => !value);
-  }, [isMobile]);
+    patchUrlState({ panelCollapsed: !collapsed });
+  }, [collapsed, isMobile, patchUrlState]);
 
   const handleSelectHit = useCallback(
     (hit: MapSearchHit) => {
-      setSelectedId(hit.id);
+      const selected: MapSelectedRef = { kind: hit.kind, id: hit.id };
+      didFlyToSelectionRef.current = true;
+      patchUrlState({ selected });
       if (isMobile) {
         setMobileOpen(false);
       }
-      const map = mapRef.current;
-      if (!map) {
-        return;
-      }
-      if (hit.kind === 'fat') {
-        const fat = fats.find((f) => f.id === hit.id);
-        if (!fat) {
-          return;
-        }
-        map.flyTo({
-          center: [fat.location.longitude, fat.location.latitude],
-          zoom: Math.max(map.getZoom(), 16),
-          essential: true,
-        });
-        return;
-      }
-      const cable = cables.find((c) => c.id === hit.id);
-      if (!cable || cable.path.length === 0) {
-        return;
-      }
-      const target = cableFlyTarget(cable);
-      map.flyTo({
-        center: [target.longitude, target.latitude],
-        zoom: Math.max(map.getZoom(), 15),
-        essential: true,
-      });
+      flyToSelection(selected);
     },
-    [cables, fats, isMobile],
+    [flyToSelection, isMobile, patchUrlState],
   );
 
   if (!mapboxToken) {
@@ -355,7 +455,7 @@ export const RedeProjetoPage: React.FC = () => {
       <div className="pointer-events-none absolute inset-0 z-20">
         <MapControlsPanel
           search={search}
-          onSearchChange={setSearch}
+          onSearchChange={handleSearchChange}
           layers={layers}
           onLayerChange={handleLayerChange}
           hits={hits}

@@ -1,4 +1,5 @@
 import type { GeoPoint } from '@gigahub/shared/kernel';
+import type { ProjectNetworkSearchKind } from '@gigahub/domain/fiber-access-terminal';
 
 export interface NearbyFiberAccessTerminalReadModel {
   id: string;
@@ -25,6 +26,15 @@ export interface NearbyFiberCableReadModel {
   cableTypeName?: string;
 }
 
+export interface ProjectNetworkSearchHitReadModel {
+  kind: 'fat' | 'cable';
+  id: string;
+  idErp: string;
+  name: string;
+  location: GeoPoint;
+  cableTypeName?: string;
+}
+
 export interface FiberAccessTerminalNearbyQuery {
   findNearby(
     center: GeoPoint,
@@ -37,6 +47,14 @@ export interface FiberCableNearbyQuery {
     center: GeoPoint,
     radiusMeters: number,
   ): Promise<NearbyFiberCableReadModel[]>;
+}
+
+export interface ProjectNetworkSearchQuery {
+  search(input: {
+    q: string;
+    kind: ProjectNetworkSearchKind;
+    limit: number;
+  }): Promise<ProjectNetworkSearchHitReadModel[]>;
 }
 
 export class ApplicationError extends Error {
@@ -52,5 +70,6 @@ export class ApplicationError extends Error {
 
 export const ApplicationErrorCodes = {
   InvalidNearbyQuery: 'INVALID_NEARBY_QUERY',
+  InvalidSearchQuery: 'INVALID_SEARCH_QUERY',
   Unauthorized: 'UNAUTHORIZED',
 } as const;

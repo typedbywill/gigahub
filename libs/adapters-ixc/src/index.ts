@@ -11,3 +11,4 @@ export {
   MysqlFiberCableNearbyQuery,
   IXC_FIBER_CABLE_ELEMENT_TIPO,
 } from './lib/mysql-fiber-cable-nearby-query';
+export { MysqlProjectNetworkSearchQuery } from './lib/mysql-project-network-search-query';

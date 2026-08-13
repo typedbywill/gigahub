@@ -5,13 +5,16 @@ import {
   createIxcPool,
   MysqlFiberAccessTerminalNearbyQuery,
   MysqlFiberCableNearbyQuery,
+  MysqlProjectNetworkSearchQuery,
   type IxcDbConfig,
 } from '@gigahub/adapters-ixc';
 import {
   ListNearbyFiberAccessTerminalsUseCase,
   ListNearbyFiberCablesUseCase,
+  SearchProjectNetworkUseCase,
   type FiberAccessTerminalNearbyQuery,
   type FiberCableNearbyQuery,
+  type ProjectNetworkSearchQuery,
 } from '@gigahub/application-network';
 import type { EnvConfig } from '@gigahub/shared/config';
 import { AuthModule } from '../auth/auth.module';
@@ -21,6 +24,7 @@ export const IXC_MYSQL_POOL = 'IXC_MYSQL_POOL';
 export const FIBER_ACCESS_TERMINAL_NEARBY_QUERY =
   'FIBER_ACCESS_TERMINAL_NEARBY_QUERY';
 export const FIBER_CABLE_NEARBY_QUERY = 'FIBER_CABLE_NEARBY_QUERY';
+export const PROJECT_NETWORK_SEARCH_QUERY = 'PROJECT_NETWORK_SEARCH_QUERY';
 
 function readIxcDbConfig(
   config: ConfigService<EnvConfig, true>,
@@ -86,6 +90,22 @@ function readIxcDbConfig(
       inject: [IXC_MYSQL_POOL],
     },
     {
+      provide: PROJECT_NETWORK_SEARCH_QUERY,
+      useFactory: (pool: Pool | null): ProjectNetworkSearchQuery => {
+        if (!pool) {
+          return {
+            async search() {
+              throw new Error(
+                'IXC database is not configured (set IXC_DB_USER / IXC_DB_HOST)',
+              );
+            },
+          };
+        }
+        return new MysqlProjectNetworkSearchQuery(pool);
+      },
+      inject: [IXC_MYSQL_POOL],
+    },
+    {
       provide: ListNearbyFiberAccessTerminalsUseCase,
       useFactory: (query: FiberAccessTerminalNearbyQuery) =>
         new ListNearbyFiberAccessTerminalsUseCase(query),
@@ -96,6 +116,12 @@ function readIxcDbConfig(
       useFactory: (query: FiberCableNearbyQuery) =>
         new ListNearbyFiberCablesUseCase(query),
       inject: [FIBER_CABLE_NEARBY_QUERY],
+    },
+    {
+      provide: SearchProjectNetworkUseCase,
+      useFactory: (query: ProjectNetworkSearchQuery) =>
+        new SearchProjectNetworkUseCase(query),
+      inject: [PROJECT_NETWORK_SEARCH_QUERY],
     },
   ],
 })
