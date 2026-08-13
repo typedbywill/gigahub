@@ -2,10 +2,12 @@
 
 ## Decisão principal
 
-O GigaHub começa como **monólito modular** em um monorepo Nx. Módulos têm limites,
-contratos e ownership claros, mas podem compartilhar um processo e uma entrega no
-início. Workers e componentes com perfil operacional diferente podem ser separados
-antes dos serviços de domínio.
+O GigaHub começa como **monólito modular orientado a eventos** em um monorepo Nx.
+Módulos têm limites, contratos e ownership claros, mas podem compartilhar um
+processo e uma entrega no início. Comandos da UI/API executam casos de uso
+síncronos; efeitos entre módulos e processos viajam como eventos de domínio
+publicados por outbox. Workers e componentes com perfil operacional diferente
+podem ser separados antes dos serviços de domínio.
 
 Microserviços são uma consequência de necessidades comprovadas de escala, isolamento,
 segurança ou ciclo de entrega — não um objetivo isolado.
@@ -18,10 +20,13 @@ flowchart LR
   InternalUser[EquipeInterna] --> Web
   Web --> Hub[GigaHub]
   Hub --> IXC[IXC]
-  Hub --> CRM[CRM]
+  Hub -.-> CRMExterno[CRMExterno]
   Hub --> OPA[OPA]
   Hub --> NetworkSystems[SistemasDeRede]
 ```
+
+O GigaHub é o núcleo de HelpDesk, políticas e atendimento. O CRM externo aparece
+apenas como integração opcional/legado durante a migração.
 
 ## Containers lógicos
 
@@ -47,10 +52,11 @@ Containers iniciais:
 - `libs/shared/kernel`: IDs, ponto geográfico e erros de domínio, sem framework.
 - `libs/domain/customer`: entidade Cliente (Customer Care).
 - `libs/domain/work-order`: entidade Ordem de Serviço, assuntos e políticas de campo.
-- `libs/domain/care-inbox`: caixa de atendimento e tickets (OPA/CRM).
+- `libs/domain/care-inbox`: caixa de atendimento e tickets (HelpDesk).
+- `libs/domain/fiber-access-terminal`: CTO / terminal de acesso óptico (Network).
 - `libs/shared/contracts`: DTOs HTTP e eventos versionados, sem lógica de domínio.
 - `libs/application-*`: casos de uso, portas e eventos (a introduzir por módulo).
-- `libs/adapters-*`: IXC, bancos, Redis, CRM, demais integrações.
+- `libs/adapters-*`: IXC, bancos, Redis, CRM externo (legado), demais integrações.
 - `libs/observability`: logging, métricas e tracing padronizados.
 - `deploy`: artefatos de implantação por ambiente.
 
@@ -102,7 +108,8 @@ Fechamento, transferência, recebimento, vistoria e depreciação operacional.
 
 ### Customer Care
 
-Consulta de cliente, conectividade, suporte, OPA e tickets CRM.
+Inbox, tickets e políticas de suporte no GigaHub. Adapter de CRM externo existe
+somente como ponte legada enquanto a migração não concluir.
 
 ### Messaging
 
@@ -125,6 +132,21 @@ alterar o resultado do caso de uso que originou o evento.
 
 ## Comunicação
 
+### Fluxo típico
+
+```mermaid
+flowchart LR
+  UI[UI_API] -->|comando| UC[CasoDeUso]
+  UC --> Domain[Entidade_Politicas]
+  UC --> Outbox[Outbox]
+  Outbox --> Workers[Workers]
+  Workers -->|evento| OtherModules[OutrosModulos]
+```
+
+Consistência obrigatória (invariantes, transição de status, gravação do agregado)
+permanece no mesmo caso de uso. Efeitos secundários — notificação, gamificação,
+projeções, handoff de atendimento — viajam como eventos via outbox.
+
 ### Dentro do processo
 
 Casos de uso são chamados diretamente por interfaces TypeScript. Eventos internos
@@ -132,13 +154,13 @@ podem desacoplar efeitos secundários, mas não devem esconder consistência obr
 
 ### Entre processos
 
-- HTTP/OpenAPI para operações síncronas.
-- Eventos versionados para fatos assíncronos.
+- HTTP/OpenAPI para operações síncronas (comandos e consultas).
+- Eventos versionados para fatos assíncronos entre módulos e workers.
 - Socket.IO apenas entre backend e clientes que precisam de atualização em tempo real.
 - Outbox transacional para publicar eventos que não podem ser perdidos.
 
 O broker ainda não está decidido. O contrato do evento deve ser independente de
-RabbitMQ, NATS ou Kafka.
+RabbitMQ, NATS ou Kafka. Ver [ADR-0007](./adr/0007-arquitetura-orientada-a-eventos.md).
 
 ### Idempotência
 
@@ -151,7 +173,7 @@ provisionamento ou pontos.
 
 - IXC permanece fonte operacional para responsabilidades do ERP.
 - O GigaHub mantém seus próprios dados de identidade, configuração, auditoria,
-  gamificação e projeções.
+  atendimento, gamificação e projeções.
 - Cada módulo é dono lógico do seu schema/coleções, mesmo em uma instância compartilhada.
 - Redis contém somente dados efêmeros ou reconstruíveis.
 - Arquivos são acessados por uma porta de storage, permitindo migrar de volume

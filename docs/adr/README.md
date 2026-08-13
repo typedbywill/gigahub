@@ -21,6 +21,7 @@ permitidas; mudança material cria novo ADR e referencia o anterior.
 - [ADR-0004 — Usar JWT curto com refresh token rotativo](./0004-jwt-e-sessoes.md)
 - [ADR-0005 — Gamificação orientada a eventos e ledger](./0005-gamificacao-eventos-ledger.md)
 - [ADR-0006 — Adotar MongoDB com Mongoose como banco de dados principal](./0006-mongodb-mongoose.md)
+- [ADR-0007 — Arquitetura orientada a eventos](./0007-arquitetura-orientada-a-eventos.md)
 
 ## Template
 

@@ -2,12 +2,15 @@
 
 ## Propósito
 
-O GigaHub será o ponto único de trabalho operacional da Giganet. A plataforma deve
-reduzir a fragmentação entre aplicações de campo, back-office e integrações,
-sem perder os fluxos já consolidados no GigaCenter.
+O GigaHub é o HelpDesk operacional da Giganet: o ponto único de atendimento e
+trabalho para campo e back-office. A plataforma aplica políticas de vários
+domínios — ordens de serviço, rede, estoque, suporte, financeiro operacional —
+com a experiência de um CRM operacional integrado, reduzindo a fragmentação entre
+aplicações e integrações do GigaCenter.
 
 O produto não substitui o IXC como ERP. Ele organiza a experiência dos colaboradores,
-aplica políticas operacionais e integra os sistemas necessários para executar o trabalho.
+centraliza políticas operacionais no domínio e integra os sistemas necessários para
+executar o trabalho.
 
 ## Públicos
 
@@ -36,17 +39,19 @@ responsividade, navegação, contexto e autorização — não aplicações inde
 ## Objetivos
 
 1. Unificar os canais em torno dos mesmos casos de uso.
-2. Preservar e tornar explícitas as regras críticas do GigaCenter.
-3. Permitir crescimento horizontal sem depender de memória local.
-4. Isolar jobs e integrações pesadas do tráfego interativo.
-5. Padronizar autenticação, autorização, auditoria e observabilidade.
-6. Registrar gamificação de forma explicável antes de expor saldos ou rankings.
-7. Viabilizar implantação repetível em Kubernetes.
+2. Preservar e tornar explícitas as regras críticas do GigaCenter no domínio.
+3. Centralizar políticas operacionais (campo, atendimento, rede, estoque) no GigaHub.
+4. Desacoplar efeitos entre módulos com eventos de domínio e outbox.
+5. Permitir crescimento horizontal sem depender de memória local.
+6. Isolar jobs e integrações pesadas do tráfego interativo.
+7. Padronizar autenticação, autorização, auditoria e observabilidade.
+8. Registrar gamificação de forma explicável antes de expor saldos ou rankings.
+9. Viabilizar implantação repetível em Kubernetes.
 
 ## Escopo da primeira versão
 
 - Monorepo Nx com frontend React e backend NestJS.
-- Monólito modular com limites por domínio.
+- Monólito modular orientado a eventos, com limites por domínio.
 - JWT com access token curto e refresh token rotativo.
 - Socket.IO para recursos realmente interativos.
 - Redis para coordenação, cache efêmero, rate limit e escala do Socket.IO.
@@ -70,7 +75,8 @@ responsividade, navegação, contexto e autorização — não aplicações inde
 - **Network**: CTO, fibra, sinal e provisionamento de ONU.
 - **Inventory**: estoque, requisições, transferências e materiais da OS.
 - **Finance Ops**: caixas e fluxos financeiros operacionais.
-- **Customer Care**: consulta de clientes, suporte e CRM.
+- **Customer Care**: atendimento, tickets e políticas de suporte no GigaHub;
+  CRM externo apenas enquanto a migração exigir.
 - **Messaging**: WhatsApp e notificações.
 - **Telemetry**: localização, presença e rastreamento.
 - **Automation**: sincronizações, agendamentos e processos assíncronos.
@@ -81,7 +87,9 @@ responsividade, navegação, contexto e autorização — não aplicações inde
 
 A migração deve preservar, até que uma decisão de produto os altere:
 
-- fluxo de OS `AG → DS → EX`, com finalização coordenada pelo CRM;
+- fluxo de OS `AG → DS → EX`;
+- finalização coordenada por CRM externo como **legado em migração**, a ser
+  substituída por políticas e tickets do GigaHub;
 - assuntos de OS como motor de fotos, perguntas, validações e revisão;
 - geofence de 300 m e exigência de localização recente;
 - cadeia de fechamento, transferência, recebimento e vistoria de caixa;
@@ -98,7 +106,8 @@ A migração deve preservar, até que uma decisão de produto os altere:
 - jobs duplicados ou perdidos;
 - cobertura de auditoria de ações sensíveis;
 - adoção do frontend unificado por equipe;
-- qualidade das regras de pontos antes de qualquer exposição.
+- qualidade das regras de pontos antes de qualquer exposição;
+- migração de políticas de atendimento do CRM externo para o GigaHub.
 
 Gamificação não deve ser considerada bem-sucedida apenas porque aumenta quantidade.
 Ela deve ser avaliada pela melhora de qualidade, conformidade e redução de retrabalho.

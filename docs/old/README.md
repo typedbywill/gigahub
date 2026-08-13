@@ -1,6 +1,10 @@
 # Documentação — GigaCenter → GigaHub
 
-Documentação do estado **atual** do monorepo **GigaCenter** (pacote npm `giganet`), escrita para servir de base ao futuro **GigaHub**: plataforma unificada, modular e operada em Kubernetes.
+Documentação do estado **atual** do monorepo **GigaCenter** (pacote npm `giganet`), escrita para servir de base ao futuro **GigaHub**.
+
+A visão-alvo do produto (HelpDesk operacional + políticas, CRM operacional integrado)
+e a arquitetura orientada a eventos estão em [`../01-visao-produto.md`](../01-visao-produto.md)
+e [`../02-arquitetura.md`](../02-arquitetura.md). Esta pasta permanece inventário do legado.
 
 ## Índice
 

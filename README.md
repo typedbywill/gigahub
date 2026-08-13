@@ -1,6 +1,9 @@
 # GigaHub Monorepo
 
-GigaHub is a unified modular application built with NestJS, Vite + React, TypeScript, MongoDB (Mongoose), Redis, and MinIO S3 object storage.
+GigaHub is Giganet’s operational HelpDesk: a modular, event-oriented application that
+applies domain policies across field work and back-office (CRM-like care), without
+replacing IXC as the ERP. Built with NestJS, Vite + React, TypeScript, MongoDB
+(Mongoose), Redis, and MinIO S3 object storage.
 
 ## Workspace Layout
 
@@ -11,9 +14,10 @@ gigahub/
 │   └── web/             # Vite + React frontend (Tailwind CSS v4 + HeroUI)
 ├── libs/
 │   ├── domain/
-│   │   ├── customer/    # Cliente (assinante IXC)
-│   │   ├── work-order/  # Ordem de serviço + assuntos
-│   │   └── care-inbox/  # Caixa de atendimento e tickets
+│   │   ├── customer/              # Cliente (assinante IXC)
+│   │   ├── work-order/            # Ordem de serviço + assuntos
+│   │   ├── care-inbox/            # Caixa de atendimento e tickets
+│   │   └── fiber-access-terminal/ # CTO / terminal de acesso óptico
 │   └── shared/
 │       ├── kernel/      # IDs, GeoPoint e erros de domínio
 │       ├── config/      # Shared Zod environment schema & validator
@@ -99,3 +103,4 @@ Decision records are available under [`docs/adr/`](./docs/adr/README.md):
 - **ADR-0004**: Short-Lived JWT & Rotating Refresh Tokens
 - **ADR-0005**: Event-Driven Gamification Ledger
 - **ADR-0006**: MongoDB + Mongoose Primary Database
+- **ADR-0007**: Event-Oriented Architecture

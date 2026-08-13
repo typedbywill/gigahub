@@ -37,7 +37,8 @@ prematura.
 - padronizar erros, validação, idempotency key e `traceId`;
 - OpenAPI e testes de contrato;
 - logs estruturados e health endpoints;
-- introduzir outbox para efeitos que não podem ser perdidos.
+- introduzir outbox como base da orientação a eventos entre módulos;
+- começar a migrar políticas de atendimento (Care) do CRM externo para o GigaHub.
 
 Priorizar Identity & Access e uma fatia vertical de baixo risco antes de mover OS
 inteira.
@@ -47,7 +48,8 @@ inteira.
 - boundaries verificadas;
 - caso de uso atravessa frontend/API/domínio/adapter;
 - campo e operações usam os mesmos casos de uso via UI;
-- outbox recupera falha sem duplicar;
+- outbox recupera falha sem duplicar e alimenta consumidores de eventos;
+- pelo menos uma política de Care executada no domínio do GigaHub;
 - deploy atual continua operacional.
 
 ## Fase 2 — Identidade e frontend unificado
