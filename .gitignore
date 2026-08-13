@@ -29,6 +29,9 @@ node_modules
 .env.local
 .env.*.local
 
+# k8s secrets (use secret-api.yaml.example)
+deploy/k8s/secret-api.yaml
+
 # misc
 /.sass-cache
 /connect.lock

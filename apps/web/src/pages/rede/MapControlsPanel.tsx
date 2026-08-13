@@ -1,18 +1,18 @@
-import React, { useState } from 'react';
-import { Button, SearchField, Spinner, Switch, Tabs } from '@heroui/react';
+import React from 'react';
+import { Button, Drawer, SearchField, Spinner, Switch } from '@heroui/react';
 import {
   LuCable,
   LuChevronRight,
+  LuMap,
   LuMapPin,
-  LuPalette,
   LuPanelLeftClose,
   LuRadioTower,
   LuSearch,
-  LuSettings,
   LuShapes,
   LuTag,
   LuX,
 } from 'react-icons/lu';
+import type { MapPanelTab } from './map-preferences-storage';
 import { MAP_BASE_STYLES, type MapBaseStyleId } from './map-styles';
 
 export type MapLayerVisibility = {
@@ -30,32 +30,23 @@ export type MapSearchHit = {
   longitude: number;
 };
 
-export type MapPanelTab =
-  | 'buscar'
-  | 'elementos'
-  | 'aparencia'
-  | 'configuracoes';
+export type { MapPanelTab };
 
 const PANEL_TABS: {
   id: MapPanelTab;
   label: string;
   icon: React.ReactNode;
 }[] = [
-  { id: 'buscar', label: 'Buscar', icon: <LuSearch className="size-3.5" /> },
+  { id: 'buscar', label: 'Buscar', icon: <LuSearch className="size-4" /> },
   {
     id: 'elementos',
     label: 'Elementos',
-    icon: <LuShapes className="size-3.5" />,
+    icon: <LuShapes className="size-4" />,
   },
   {
-    id: 'aparencia',
-    label: 'Aparência',
-    icon: <LuPalette className="size-3.5" />,
-  },
-  {
-    id: 'configuracoes',
-    label: 'Config',
-    icon: <LuSettings className="size-3.5" />,
+    id: 'mapa',
+    label: 'Mapa',
+    icon: <LuMap className="size-4" />,
   },
 ];
 
@@ -81,7 +72,342 @@ export type MapControlsPanelProps = {
   isMobile: boolean;
   mobileOpen: boolean;
   onCloseMobile: () => void;
+  activeTab: MapPanelTab;
+  onActiveTabChange: (tab: MapPanelTab) => void;
 };
+
+type SectionProps = Pick<
+  MapControlsPanelProps,
+  | 'search'
+  | 'onSearchChange'
+  | 'layers'
+  | 'onLayerChange'
+  | 'mapStyle'
+  | 'onMapStyleChange'
+  | 'showFatLabels'
+  | 'onShowFatLabelsChange'
+  | 'hits'
+  | 'onSelectHit'
+  | 'selectedId'
+  | 'searching'
+  | 'error'
+  | 'fatCount'
+  | 'cableCount'
+>;
+
+function SearchSection({
+  search,
+  onSearchChange,
+  hits,
+  onSelectHit,
+  selectedId,
+  searching = false,
+  error,
+}: SectionProps) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="shrink-0 space-y-3 border-b border-border p-3">
+        <SearchField
+          aria-label="Pesquisar elementos no mapa"
+          value={search}
+          onChange={onSearchChange}
+          onClear={() => onSearchChange('')}
+          className="w-full"
+        >
+          <SearchField.Group>
+            <SearchField.SearchIcon />
+            <SearchField.Input placeholder="Buscar CTO, cabo…" />
+            <SearchField.ClearButton />
+          </SearchField.Group>
+        </SearchField>
+
+        {searching ? (
+          <p className="flex items-center gap-2 text-xs text-muted">
+            <Spinner size="sm" aria-label="Buscando elementos" />
+            Buscando…
+          </p>
+        ) : null}
+
+        {error ? (
+          <p role="alert" className="text-xs text-danger">
+            {error}
+          </p>
+        ) : null}
+      </div>
+
+      <div
+        className="min-h-0 flex-1 overflow-y-auto p-2"
+        role="listbox"
+        aria-label="Resultados da busca"
+      >
+        {!search.trim() ? (
+          <p className="px-2 py-3 text-xs text-muted">
+            Digite ao menos 2 caracteres para buscar CTOs e cabos em todo o
+            projeto.
+          </p>
+        ) : search.trim().length < 2 ? (
+          <p className="px-2 py-3 text-xs text-muted">
+            Digite ao menos 2 caracteres para buscar.
+          </p>
+        ) : searching && hits.length === 0 ? (
+          <p className="px-2 py-3 text-xs text-muted">Buscando…</p>
+        ) : hits.length === 0 ? (
+          <p className="flex items-center gap-2 px-2 py-3 text-xs text-muted">
+            <LuSearch aria-hidden className="size-3.5 shrink-0" />
+            Nenhum elemento encontrado.
+          </p>
+        ) : (
+          <ul className="space-y-0.5">
+            {hits.map((hit) => {
+              const active = hit.id === selectedId;
+              return (
+                <li key={`${hit.kind}-${hit.id}`}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={active}
+                    onClick={() => onSelectHit(hit)}
+                    className={`flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                      active
+                        ? 'bg-accent/15 text-foreground'
+                        : 'text-foreground hover:bg-default/50'
+                    }`}
+                  >
+                    {hit.kind === 'fat' ? (
+                      <LuRadioTower
+                        aria-hidden
+                        className="mt-0.5 size-3.5 shrink-0 text-accent"
+                      />
+                    ) : (
+                      <LuCable
+                        aria-hidden
+                        className="mt-0.5 size-3.5 shrink-0 text-accent"
+                      />
+                    )}
+                    <span className="min-w-0">
+                      <span className="block truncate font-medium">
+                        {hit.name}
+                      </span>
+                      <span className="block text-xs text-muted">
+                        {hit.kind === 'fat' ? 'CTO (FAT)' : 'Cabo'}
+                        {hit.subtitle ? ` · ${hit.subtitle}` : ''}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LayersSection({
+  layers,
+  onLayerChange,
+  fatCount,
+  cableCount,
+}: SectionProps) {
+  return (
+    <div className="space-y-1 p-2">
+      <p className="px-2 pb-1 text-[11px] font-medium tracking-wide text-muted uppercase">
+        Camadas visíveis
+      </p>
+      <Switch
+        isSelected={layers.fat}
+        onChange={(value) => onLayerChange('fat', value)}
+        className="w-full rounded-lg px-2 py-2 hover:bg-default/40"
+      >
+        <Switch.Content className="w-full justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+            <LuRadioTower
+              aria-hidden
+              className="size-4 shrink-0 text-accent"
+            />
+            <span className="min-w-0">
+              <span className="block font-medium">CTO (FAT)</span>
+              <span className="block text-xs text-muted">
+                {fatCount} carregadas
+              </span>
+            </span>
+          </span>
+          <Switch.Control className="shrink-0">
+            <Switch.Thumb />
+          </Switch.Control>
+        </Switch.Content>
+      </Switch>
+
+      <Switch
+        isSelected={layers.cables}
+        onChange={(value) => onLayerChange('cables', value)}
+        className="w-full rounded-lg px-2 py-2 hover:bg-default/40"
+      >
+        <Switch.Content className="w-full justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+            <LuCable aria-hidden className="size-4 shrink-0 text-accent" />
+            <span className="min-w-0">
+              <span className="block font-medium">Cabos</span>
+              <span className="block text-xs text-muted">
+                {cableCount} carregados
+              </span>
+            </span>
+          </span>
+          <Switch.Control className="shrink-0">
+            <Switch.Thumb />
+          </Switch.Control>
+        </Switch.Content>
+      </Switch>
+
+      <Switch
+        isSelected={false}
+        isDisabled
+        className="w-full rounded-lg px-2 py-2 opacity-70"
+      >
+        <Switch.Content className="w-full justify-between gap-3">
+          <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+            <LuMapPin aria-hidden className="size-4 shrink-0 text-muted" />
+            <span className="min-w-0">
+              <span className="block font-medium">CEO</span>
+              <span className="block text-xs text-muted">Em breve</span>
+            </span>
+          </span>
+          <Switch.Control className="shrink-0">
+            <Switch.Thumb />
+          </Switch.Control>
+        </Switch.Content>
+      </Switch>
+    </div>
+  );
+}
+
+function MapSection({
+  mapStyle,
+  onMapStyleChange,
+  showFatLabels,
+  onShowFatLabelsChange,
+}: SectionProps) {
+  return (
+    <div className="space-y-4 p-2">
+      <div className="space-y-1" role="radiogroup" aria-label="Estilo do mapa">
+        <p className="px-2 pb-1 text-[11px] font-medium tracking-wide text-muted uppercase">
+          Estilo do mapa
+        </p>
+        {MAP_BASE_STYLES.map((style) => {
+          const selected = mapStyle === style.id;
+          return (
+            <button
+              key={style.id}
+              type="button"
+              role="radio"
+              aria-checked={selected}
+              onClick={() => onMapStyleChange(style.id)}
+              className={`flex w-full flex-col items-start rounded-lg px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                selected
+                  ? 'bg-accent/15 text-foreground'
+                  : 'text-foreground hover:bg-default/50'
+              }`}
+            >
+              <span className="text-sm font-medium">{style.label}</span>
+              <span className="text-xs text-muted">{style.description}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="space-y-1">
+        <p className="px-2 pb-1 text-[11px] font-medium tracking-wide text-muted uppercase">
+          Exibição
+        </p>
+        <Switch
+          isSelected={showFatLabels}
+          onChange={onShowFatLabelsChange}
+          className="w-full rounded-lg px-2 py-2 hover:bg-default/40"
+        >
+          <Switch.Content className="w-full justify-between gap-3">
+            <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+              <LuTag aria-hidden className="size-4 shrink-0 text-accent" />
+              <span className="min-w-0">
+                <span className="block font-medium">Nomes das CTOs</span>
+                <span className="block text-xs text-muted">
+                  Mostrar rótulos no mapa
+                </span>
+              </span>
+            </span>
+            <Switch.Control className="shrink-0">
+              <Switch.Thumb />
+            </Switch.Control>
+          </Switch.Content>
+        </Switch>
+      </div>
+    </div>
+  );
+}
+
+function PanelBody(props: SectionProps & { activeTab: MapPanelTab }) {
+  const { activeTab, ...sectionProps } = props;
+  if (activeTab === 'buscar') {
+    return <SearchSection {...sectionProps} />;
+  }
+  return (
+    <div className="min-h-0 flex-1 overflow-y-auto">
+      {activeTab === 'elementos' ? (
+        <LayersSection {...sectionProps} />
+      ) : (
+        <MapSection {...sectionProps} />
+      )}
+    </div>
+  );
+}
+
+function activeTabLabel(tab: MapPanelTab): string {
+  return PANEL_TABS.find((item) => item.id === tab)?.label ?? 'Buscar';
+}
+
+function TabIconList({
+  activeTab,
+  onSelect,
+  orientation = 'horizontal',
+}: {
+  activeTab: MapPanelTab;
+  onSelect: (tab: MapPanelTab) => void;
+  orientation?: 'horizontal' | 'vertical';
+}) {
+  return (
+    <div
+      role="tablist"
+      aria-label="Seções do painel do projeto"
+      aria-orientation={orientation}
+      className={
+        orientation === 'vertical'
+          ? 'flex flex-col items-center gap-2'
+          : 'flex w-full items-center justify-around gap-1'
+      }
+    >
+      {PANEL_TABS.map((item) => {
+        const selected = activeTab === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-label={item.label}
+            aria-selected={selected}
+            onClick={() => onSelect(item.id)}
+            className={`inline-flex size-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+              selected
+                ? 'bg-default text-foreground'
+                : 'text-muted hover:bg-default/50 hover:text-foreground'
+            }`}
+          >
+            <span aria-hidden>{item.icon}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
 export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
   search,
@@ -105,36 +431,102 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
   isMobile,
   mobileOpen,
   onCloseMobile,
+  activeTab,
+  onActiveTabChange,
 }) => {
-  const [tab, setTab] = useState<MapPanelTab>('buscar');
+  const sectionProps: SectionProps = {
+    search,
+    onSearchChange,
+    layers,
+    onLayerChange,
+    mapStyle,
+    onMapStyleChange,
+    showFatLabels,
+    onShowFatLabelsChange,
+    hits,
+    onSelectHit,
+    selectedId,
+    searching,
+    error,
+    fatCount,
+    cableCount,
+  };
 
   const openTab = (next: MapPanelTab) => {
-    setTab(next);
+    onActiveTabChange(next);
     if (!isMobile && collapsed) {
       onToggleCollapse();
     }
   };
 
-  if (isMobile && !mobileOpen) {
+  if (isMobile) {
     return (
-      <Button
-        isIconOnly
-        size="md"
-        variant="secondary"
-        aria-label="Abrir painel do mapa"
-        className="pointer-events-auto absolute top-3 left-3 z-20 shadow-lg"
-        onPress={onToggleCollapse}
-      >
-        <LuSearch className="size-4" />
-      </Button>
+      <>
+        {!mobileOpen ? (
+          <Button
+            isIconOnly
+            size="md"
+            variant="secondary"
+            aria-label="Abrir painel do mapa"
+            className="pointer-events-auto absolute top-3 left-3 z-20 shadow-lg"
+            onPress={onToggleCollapse}
+          >
+            <LuSearch className="size-4" />
+          </Button>
+        ) : null}
+
+        <Drawer.Backdrop
+          isOpen={mobileOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              onCloseMobile();
+            }
+          }}
+          variant="opaque"
+          className="pointer-events-auto"
+        >
+          <Drawer.Content placement="bottom">
+            <Drawer.Dialog
+              aria-label="Controles do mapa"
+              className="max-h-[min(70dvh,36rem)] border-t border-border bg-surface"
+            >
+              <Drawer.Handle />
+              <Drawer.Header className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
+                <div className="flex min-w-0 items-center gap-2">
+                  <Drawer.Heading className="font-display text-base font-bold text-foreground">
+                    {activeTabLabel(activeTab)}
+                  </Drawer.Heading>
+                  {loading ? (
+                    <Spinner
+                      size="sm"
+                      aria-label="Carregando elementos da rede"
+                    />
+                  ) : null}
+                </div>
+                <Button
+                  isIconOnly
+                  size="sm"
+                  variant="ghost"
+                  aria-label="Fechar painel do mapa"
+                  onPress={onCloseMobile}
+                >
+                  <LuX className="size-4" />
+                </Button>
+              </Drawer.Header>
+              <div className="shrink-0 border-b border-border px-2 py-2">
+                <TabIconList activeTab={activeTab} onSelect={openTab} />
+              </div>
+              <Drawer.Body className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
+                <PanelBody {...sectionProps} activeTab={activeTab} />
+              </Drawer.Body>
+            </Drawer.Dialog>
+          </Drawer.Content>
+        </Drawer.Backdrop>
+      </>
     );
   }
 
-  const widthClass = isMobile
-    ? 'w-[min(100%,20rem)]'
-    : collapsed
-      ? 'w-14'
-      : 'w-80';
+  const widthClass = collapsed ? 'w-14' : 'w-80';
 
   return (
     <aside
@@ -143,10 +535,10 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
     >
       <div
         className={`flex shrink-0 items-center gap-1 border-b border-border p-2 ${
-          collapsed && !isMobile ? 'flex-col' : 'justify-between'
+          collapsed ? 'flex-col' : 'justify-between'
         }`}
       >
-        {!(collapsed && !isMobile) ? (
+        {!collapsed ? (
           <div className="flex min-w-0 items-center gap-2 px-1">
             <h1 className="font-display truncate text-base font-bold text-foreground">
               Projeto
@@ -159,332 +551,46 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
           <span className="sr-only">Projeto</span>
         )}
 
-        <div
-          className={`flex items-center gap-1 ${collapsed && !isMobile ? 'flex-col' : ''}`}
+        <Button
+          isIconOnly
+          size="sm"
+          variant="ghost"
+          aria-label={collapsed ? 'Expandir painel' : 'Recolher painel'}
+          onPress={onToggleCollapse}
         >
-          {isMobile ? (
-            <Button
-              isIconOnly
-              size="sm"
-              variant="ghost"
-              aria-label="Fechar painel do mapa"
-              onPress={onCloseMobile}
-            >
-              <LuX className="size-4" />
-            </Button>
+          {collapsed ? (
+            <LuChevronRight className="size-4" />
           ) : (
-            <Button
-              isIconOnly
-              size="sm"
-              variant="ghost"
-              aria-label={collapsed ? 'Expandir painel' : 'Recolher painel'}
-              onPress={onToggleCollapse}
-            >
-              {collapsed ? (
-                <LuChevronRight className="size-4" />
-              ) : (
-                <LuPanelLeftClose className="size-4" />
-              )}
-            </Button>
+            <LuPanelLeftClose className="size-4" />
           )}
-        </div>
+        </Button>
       </div>
 
-      {collapsed && !isMobile ? (
+      {collapsed ? (
         <div className="flex flex-1 flex-col items-center gap-2 overflow-y-auto p-2">
-          {PANEL_TABS.map((item) => (
-            <Button
-              key={item.id}
-              isIconOnly
-              size="sm"
-              variant={tab === item.id ? 'secondary' : 'ghost'}
-              aria-label={item.label}
-              onPress={() => openTab(item.id)}
-            >
-              {item.icon}
-            </Button>
-          ))}
+          <TabIconList
+            activeTab={activeTab}
+            onSelect={openTab}
+            orientation="vertical"
+          />
           {loading ? (
             <Spinner size="sm" aria-label="Carregando elementos da rede" />
           ) : null}
         </div>
       ) : (
-        <Tabs
-          variant="secondary"
-          selectedKey={tab}
-          onSelectionChange={(key) => setTab(String(key) as MapPanelTab)}
-          className="flex min-h-0 flex-1 flex-col"
-        >
-          <Tabs.ListContainer className="shrink-0 border-b border-border px-1">
-            <Tabs.List
-              aria-label="Seções do painel do projeto"
-              className="w-full gap-0"
-            >
-              {PANEL_TABS.map((item) => (
-                <Tabs.Tab
-                  key={item.id}
-                  id={item.id}
-                  className="min-w-0 flex-1 px-1 text-[11px]"
-                >
-                  <span className="flex flex-col items-center gap-0.5 py-0.5">
-                    <span aria-hidden>{item.icon}</span>
-                    <span className="truncate">{item.label}</span>
-                  </span>
-                  <Tabs.Indicator />
-                </Tabs.Tab>
-              ))}
-            </Tabs.List>
-          </Tabs.ListContainer>
-
-          <Tabs.Panel
-            id="buscar"
-            className="flex min-h-0 flex-1 flex-col outline-none"
-          >
-            <div className="shrink-0 space-y-3 border-b border-border p-3">
-              <SearchField
-                aria-label="Pesquisar elementos no mapa"
-                value={search}
-                onChange={onSearchChange}
-                onClear={() => onSearchChange('')}
-                className="w-full"
-              >
-                <SearchField.Group>
-                  <SearchField.SearchIcon />
-                  <SearchField.Input placeholder="Buscar CTO, cabo…" />
-                  <SearchField.ClearButton />
-                </SearchField.Group>
-              </SearchField>
-
-              {searching ? (
-                <p className="flex items-center gap-2 text-xs text-muted">
-                  <Spinner size="sm" aria-label="Buscando elementos" />
-                  Buscando…
-                </p>
-              ) : null}
-
-              {error ? (
-                <p role="alert" className="text-xs text-danger">
-                  {error}
-                </p>
-              ) : null}
-            </div>
-
-            <div
-              className="min-h-0 flex-1 overflow-y-auto p-2"
-              role="listbox"
-              aria-label="Resultados da busca"
-            >
-              {!search.trim() ? (
-                <p className="px-2 py-3 text-xs text-muted">
-                  Digite ao menos 2 caracteres para buscar CTOs e cabos em todo
-                  o projeto.
-                </p>
-              ) : search.trim().length < 2 ? (
-                <p className="px-2 py-3 text-xs text-muted">
-                  Digite ao menos 2 caracteres para buscar.
-                </p>
-              ) : searching && hits.length === 0 ? (
-                <p className="px-2 py-3 text-xs text-muted">Buscando…</p>
-              ) : hits.length === 0 ? (
-                <p className="flex items-center gap-2 px-2 py-3 text-xs text-muted">
-                  <LuSearch aria-hidden className="size-3.5 shrink-0" />
-                  Nenhum elemento encontrado.
-                </p>
-              ) : (
-                <ul className="space-y-0.5">
-                  {hits.map((hit) => {
-                    const active = hit.id === selectedId;
-                    return (
-                      <li key={`${hit.kind}-${hit.id}`}>
-                        <button
-                          type="button"
-                          role="option"
-                          aria-selected={active}
-                          onClick={() => onSelectHit(hit)}
-                          className={`flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-                            active
-                              ? 'bg-accent/15 text-foreground'
-                              : 'text-foreground hover:bg-default/50'
-                          }`}
-                        >
-                          {hit.kind === 'fat' ? (
-                            <LuRadioTower
-                              aria-hidden
-                              className="mt-0.5 size-3.5 shrink-0 text-accent"
-                            />
-                          ) : (
-                            <LuCable
-                              aria-hidden
-                              className="mt-0.5 size-3.5 shrink-0 text-accent"
-                            />
-                          )}
-                          <span className="min-w-0">
-                            <span className="block truncate font-medium">
-                              {hit.name}
-                            </span>
-                            <span className="block text-xs text-muted">
-                              {hit.kind === 'fat' ? 'CTO (FAT)' : 'Cabo'}
-                              {hit.subtitle ? ` · ${hit.subtitle}` : ''}
-                            </span>
-                          </span>
-                        </button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
-            </div>
-          </Tabs.Panel>
-
-          <Tabs.Panel
-            id="elementos"
-            className="min-h-0 flex-1 overflow-y-auto outline-none"
-          >
-            <div className="space-y-1 p-2">
-              <p className="px-2 pb-1 text-[11px] font-medium tracking-wide text-muted uppercase">
-                Camadas visíveis
-              </p>
-              <Switch
-                isSelected={layers.fat}
-                onChange={(value) => onLayerChange('fat', value)}
-                className="w-full rounded-lg px-2 py-2 hover:bg-default/40"
-              >
-                <Switch.Content className="w-full justify-between gap-3">
-                  <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
-                    <LuRadioTower
-                      aria-hidden
-                      className="size-4 shrink-0 text-accent"
-                    />
-                    <span className="min-w-0">
-                      <span className="block font-medium">CTO (FAT)</span>
-                      <span className="block text-xs text-muted">
-                        {fatCount} carregadas
-                      </span>
-                    </span>
-                  </span>
-                  <Switch.Control className="shrink-0">
-                    <Switch.Thumb />
-                  </Switch.Control>
-                </Switch.Content>
-              </Switch>
-
-              <Switch
-                isSelected={layers.cables}
-                onChange={(value) => onLayerChange('cables', value)}
-                className="w-full rounded-lg px-2 py-2 hover:bg-default/40"
-              >
-                <Switch.Content className="w-full justify-between gap-3">
-                  <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
-                    <LuCable
-                      aria-hidden
-                      className="size-4 shrink-0 text-accent"
-                    />
-                    <span className="min-w-0">
-                      <span className="block font-medium">Cabos</span>
-                      <span className="block text-xs text-muted">
-                        {cableCount} carregados
-                      </span>
-                    </span>
-                  </span>
-                  <Switch.Control className="shrink-0">
-                    <Switch.Thumb />
-                  </Switch.Control>
-                </Switch.Content>
-              </Switch>
-
-              <Switch
-                isSelected={false}
-                isDisabled
-                className="w-full rounded-lg px-2 py-2 opacity-70"
-              >
-                <Switch.Content className="w-full justify-between gap-3">
-                  <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
-                    <LuMapPin
-                      aria-hidden
-                      className="size-4 shrink-0 text-muted"
-                    />
-                    <span className="min-w-0">
-                      <span className="block font-medium">CEO</span>
-                      <span className="block text-xs text-muted">Em breve</span>
-                    </span>
-                  </span>
-                  <Switch.Control className="shrink-0">
-                    <Switch.Thumb />
-                  </Switch.Control>
-                </Switch.Content>
-              </Switch>
-            </div>
-          </Tabs.Panel>
-
-          <Tabs.Panel
-            id="aparencia"
-            className="min-h-0 flex-1 overflow-y-auto outline-none"
-          >
-            <div className="space-y-1 p-2" role="radiogroup" aria-label="Estilo do mapa">
-              <p className="px-2 pb-1 text-[11px] font-medium tracking-wide text-muted uppercase">
-                Estilo do mapa
-              </p>
-              {MAP_BASE_STYLES.map((style) => {
-                const selected = mapStyle === style.id;
-                return (
-                  <button
-                    key={style.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={selected}
-                    onClick={() => onMapStyleChange(style.id)}
-                    className={`flex w-full flex-col items-start rounded-lg px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-                      selected
-                        ? 'bg-accent/15 text-foreground'
-                        : 'text-foreground hover:bg-default/50'
-                    }`}
-                  >
-                    <span className="text-sm font-medium">{style.label}</span>
-                    <span className="text-xs text-muted">
-                      {style.description}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </Tabs.Panel>
-
-          <Tabs.Panel
-            id="configuracoes"
-            className="min-h-0 flex-1 overflow-y-auto outline-none"
-          >
-            <div className="space-y-1 p-2">
-              <p className="px-2 pb-1 text-[11px] font-medium tracking-wide text-muted uppercase">
-                Exibição
-              </p>
-              <Switch
-                isSelected={showFatLabels}
-                onChange={onShowFatLabelsChange}
-                className="w-full rounded-lg px-2 py-2 hover:bg-default/40"
-              >
-                <Switch.Content className="w-full justify-between gap-3">
-                  <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
-                    <LuTag
-                      aria-hidden
-                      className="size-4 shrink-0 text-accent"
-                    />
-                    <span className="min-w-0">
-                      <span className="block font-medium">
-                        Nomes das CTOs
-                      </span>
-                      <span className="block text-xs text-muted">
-                        Mostrar rótulos no mapa
-                      </span>
-                    </span>
-                  </span>
-                  <Switch.Control className="shrink-0">
-                    <Switch.Thumb />
-                  </Switch.Control>
-                </Switch.Content>
-              </Switch>
-            </div>
-          </Tabs.Panel>
-        </Tabs>
+        <div className="flex min-h-0 flex-1 flex-col">
+          <div className="shrink-0 border-b border-border px-2 py-2">
+            <TabIconList activeTab={activeTab} onSelect={openTab} />
+          </div>
+          <div className="shrink-0 border-b border-border px-3 py-2">
+            <h2 className="text-sm font-medium text-foreground">
+              {activeTabLabel(activeTab)}
+            </h2>
+          </div>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <PanelBody {...sectionProps} activeTab={activeTab} />
+          </div>
+        </div>
       )}
     </aside>
   );

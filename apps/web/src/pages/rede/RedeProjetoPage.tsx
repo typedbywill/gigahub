@@ -27,8 +27,13 @@ import {
   type MapSearchHit,
 } from './MapControlsPanel';
 import {
+  mergeUrlWithStorage,
+  preferencesFromUrlState,
+  writeMapPreferences,
+  type MapPanelTab,
+} from './map-preferences-storage';
+import {
   mapUrlStatesEqual,
-  parseMapSearchParams,
   toMapSearchParams,
   type MapSelectedRef,
   type MapUrlState,
@@ -72,6 +77,10 @@ function layersFromUrl(url: MapUrlState): MapLayerVisibility {
   };
 }
 
+function persistPreferences(state: MapUrlState, activeTab: MapPanelTab): void {
+  writeMapPreferences(preferencesFromUrlState(state, activeTab));
+}
+
 export const RedeProjetoPage: React.FC = () => {
   const accessToken = useAuthStore((s) => s.accessToken);
   const theme = useThemeStore((s) => s.theme);
@@ -80,9 +89,11 @@ export const RedeProjetoPage: React.FC = () => {
   const isMobile = useMediaQuery('(max-width: 767px)');
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const urlState = useMemo(
-    () => parseMapSearchParams(searchParams),
-    [searchParams],
+  const [urlState, setUrlState] = useState<MapUrlState>(
+    () => mergeUrlWithStorage(searchParams).urlState,
+  );
+  const [activeTab, setActiveTab] = useState<MapPanelTab>(
+    () => mergeUrlWithStorage(searchParams).activeTab,
   );
 
   const mapRef = useRef<MapRef | null>(null);
@@ -92,8 +103,11 @@ export const RedeProjetoPage: React.FC = () => {
   const searchAbortRef = useRef<AbortController | null>(null);
   const didInitialFetchRef = useRef(false);
   const didFlyToSelectionRef = useRef(false);
+  const didSyncUrlRef = useRef(false);
   const urlStateRef = useRef(urlState);
   urlStateRef.current = urlState;
+  const activeTabRef = useRef(activeTab);
+  activeTabRef.current = activeTab;
 
   const [initialView, setInitialView] = useState<InitialView | null>(() => {
     if (urlState.lat != null && urlState.lng != null) {
@@ -127,12 +141,47 @@ export const RedeProjetoPage: React.FC = () => {
       if (mapUrlStatesEqual(urlStateRef.current, next)) {
         return;
       }
+      urlStateRef.current = next;
+      setUrlState(next);
+      persistPreferences(next, activeTabRef.current);
       startTransition(() => {
         setSearchParams(toMapSearchParams(next), { replace: true });
       });
     },
     [setSearchParams],
   );
+
+  // Sync URL once after bootstrap so restored storage prefs appear in the address bar.
+  useEffect(() => {
+    if (didSyncUrlRef.current) {
+      return;
+    }
+    didSyncUrlRef.current = true;
+    const nextParams = toMapSearchParams(urlState);
+    if (nextParams.toString() !== searchParams.toString()) {
+      setSearchParams(nextParams, { replace: true });
+    }
+    persistPreferences(urlState, activeTab);
+  }, [activeTab, searchParams, setSearchParams, urlState]);
+
+  // Keep local state in sync when the user navigates with browser back/forward.
+  useEffect(() => {
+    if (!didSyncUrlRef.current) {
+      return;
+    }
+    const merged = mergeUrlWithStorage(searchParams);
+    if (!mapUrlStatesEqual(urlStateRef.current, merged.urlState)) {
+      urlStateRef.current = merged.urlState;
+      setUrlState(merged.urlState);
+      persistPreferences(merged.urlState, activeTabRef.current);
+    }
+  }, [searchParams]);
+
+  const handleActiveTabChange = useCallback((tab: MapPanelTab) => {
+    setActiveTab(tab);
+    activeTabRef.current = tab;
+    persistPreferences(urlStateRef.current, tab);
+  }, []);
 
   useEffect(() => {
     if (!isMobile) {
@@ -528,15 +577,6 @@ export const RedeProjetoPage: React.FC = () => {
         />
       </div>
 
-      {isMobile && mobileOpen ? (
-        <button
-          type="button"
-          aria-label="Fechar painel do mapa"
-          className="pointer-events-auto absolute inset-0 z-10 bg-black/40"
-          onClick={() => setMobileOpen(false)}
-        />
-      ) : null}
-
       <div className="pointer-events-none absolute inset-0 z-20">
         <MapControlsPanel
           search={search}
@@ -560,6 +600,8 @@ export const RedeProjetoPage: React.FC = () => {
           isMobile={isMobile}
           mobileOpen={mobileOpen}
           onCloseMobile={() => setMobileOpen(false)}
+          activeTab={activeTab}
+          onActiveTabChange={handleActiveTabChange}
         />
       </div>
     </div>

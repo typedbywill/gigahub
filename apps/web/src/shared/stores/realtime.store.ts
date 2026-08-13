@@ -16,7 +16,8 @@ export const useRealtimeStore = create<RealtimeState>((set, get) => ({
   connect: () => {
     if (get().socket) return;
 
-    const socket = io('http://localhost:3000/realtime', {
+    const socket = io(`${window.location.origin}/realtime`, {
+      path: '/socket.io',
       autoConnect: true,
       transports: ['websocket'],
     });

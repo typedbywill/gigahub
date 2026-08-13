@@ -1,0 +1,26 @@
+# Host-based routing via shared ingress-nginx + cloudflared tunnel.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gigahub
+  namespace: gigahub
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    nginx.ingress.kubernetes.io/websocket-services: nginx
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: hub.giganet.dev.br
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: nginx
+                port:
+                  number: 80

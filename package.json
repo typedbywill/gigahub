@@ -10,6 +10,10 @@
     "build:web": "nx build web",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
+    "k8s:build": "bash scripts/k8s-build.sh",
+    "k8s:push": "PUSH=1 bash scripts/k8s-build.sh",
+    "k8s:apply": "kubectl apply -k deploy/k8s/",
+    "k8s:restart": "kubectl -n gigahub rollout restart deploy/api deploy/web deploy/nginx",
     "lint": "nx run-many --target=lint",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
   },

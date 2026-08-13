@@ -24,7 +24,12 @@ gigahub/
 │       ├── contracts/   # DTOs HTTP, eventos versionados e error envelopes
 │       └── tsconfig/    # Shared TypeScript configuration rules
 ├── docs/                # Architecture documentation and ADRs
-├── docker-compose.yml   # Infrastructure setup (MongoDB rs0, Redis, MinIO)
+├── deploy/k8s/          # Kubernetes manifests (api, web, nginx, ingress)
+├── docker/              # Container configs (web nginx)
+├── scripts/             # Build/push helpers (k8s-build.sh)
+├── Dockerfile           # API image → ghcr.io/typedbywill/gigahub-api
+├── Dockerfile.web       # Web image → ghcr.io/typedbywill/gigahub-web
+├── docker-compose.yml   # Local infra (MongoDB rs0, Redis, MinIO)
 └── package.json         # Workspace root package.json
 ```
 
@@ -92,6 +97,31 @@ pnpm build:web
 pnpm lint
 pnpm format
 ```
+
+### 7. Kubernetes (GHCR)
+
+Build local images:
+
+```bash
+pnpm k8s:build
+```
+
+Build and push to GHCR (`ghcr.io/typedbywill/gigahub-api:latest`, `gigahub-web:latest`):
+
+```bash
+pnpm k8s:push
+```
+
+Apply manifests and restart after a push:
+
+```bash
+cp deploy/k8s/secret-api.yaml.example deploy/k8s/secret-api.yaml
+# edit secrets, then:
+pnpm k8s:apply
+pnpm k8s:restart
+```
+
+Details: [`deploy/k8s/README.md`](./deploy/k8s/README.md).
 
 ## Architecture & ADRs
 
