@@ -158,11 +158,8 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
     },
     {
       provide: SyncUsersScheduler,
-      useFactory: (
-        config: ConfigService<EnvConfig, true>,
-        sync: SyncUsersFromErpUseCase | null,
-      ) => new SyncUsersScheduler(config, sync),
-      inject: [ConfigService, SyncUsersFromErpUseCase],
+      useFactory: (sync: SyncUsersFromErpUseCase | null) => new SyncUsersScheduler(sync),
+      inject: [SyncUsersFromErpUseCase],
     },
   ],
   exports: [AccessTokenGuard],

@@ -1,18 +1,13 @@
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Cron } from '@nestjs/schedule';
 import { SyncUsersFromErpUseCase } from '@gigahub/application-identity';
-import type { EnvConfig } from '@gigahub/shared/config';
 
 @Injectable()
 export class SyncUsersScheduler implements OnModuleInit {
   private readonly logger = new Logger(SyncUsersScheduler.name);
   private running = false;
 
-  constructor(
-    private readonly config: ConfigService<EnvConfig, true>,
-    private readonly syncUsers: SyncUsersFromErpUseCase | null,
-  ) {}
+  constructor(private readonly syncUsers: SyncUsersFromErpUseCase | null) {}
 
   onModuleInit(): void {
     void this.run('boot');
@@ -24,9 +19,6 @@ export class SyncUsersScheduler implements OnModuleInit {
   }
 
   private async run(trigger: 'boot' | 'cron'): Promise<void> {
-    if (!this.config.get('IXC_USER_SYNC_ENABLED', { infer: true })) {
-      return;
-    }
     if (!this.syncUsers) {
       this.logger.warn(`IXC sync skipped (${trigger}): directory not configured`);
       return;

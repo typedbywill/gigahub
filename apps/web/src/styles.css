@@ -43,3 +43,45 @@ body {
 .font-display {
   font-family: var(--font-display);
 }
+
+@keyframes login-orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes login-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.login-orbit-spin {
+  animation: login-orbit-spin 28s linear infinite;
+}
+
+.login-orbit-spin-slow {
+  animation: login-orbit-spin 48s linear infinite;
+}
+
+.login-orbit-spin-reverse {
+  animation: login-orbit-spin 36s linear infinite reverse;
+}
+
+.login-float {
+  animation: login-float 4.2s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-orbit-spin,
+  .login-orbit-spin-slow,
+  .login-orbit-spin-reverse,
+  .login-float {
+    animation: none;
+  }
+}

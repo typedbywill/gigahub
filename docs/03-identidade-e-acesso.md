@@ -178,10 +178,10 @@ Antes dessa evolução, devem ser respondidas:
 
 ## Integração com IXC
 
-- O sync do IXC (boot + cron ~5 min, `IXC_USER_SYNC_ENABLED`) atualiza atributos
-  profissionais (`name`, `jobTitle`, caixa, almoxarifado, planejamento) e o
-  espelhamento de ativo/inativo via `applyErpActive`; não substitui a identidade
-  interna (`UserId`) e **não** persiste senha.
+- O sync do IXC (boot + cron ~5 min, quando `IXC_DB_USER` está configurado)
+  atualiza atributos profissionais (`name`, `jobTitle`, caixa, almoxarifado,
+  planejamento) e o espelhamento de ativo/inativo via `applyErpActive`; não
+  substitui a identidade interna (`UserId`) e **não** persiste senha.
 - Login e troca de senha de colaboradores vinculados usam o MySQL do IXC
   (`usuarios.senha` em SHA-256 hex). `POST /auth/change-password` atualiza a
   senha no ERP e revoga sessões do GigaHub.
