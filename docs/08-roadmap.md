@@ -115,7 +115,6 @@ Pode começar em paralelo após outbox e identidades estáveis.
 
 ### Entregas
 
-- separar WAHA, sincronizações, ONU e PDF conforme perfil;
 - jobs idempotentes com retry, dead letter e alertas;
 - imagens não-root, probes, recursos e shutdown gracioso;
 - ambientes dev/staging/prod;
@@ -138,10 +137,8 @@ Pode começar em paralelo após outbox e identidades estáveis.
 
 1. PDF renderer;
 2. Telemetry;
-3. Messaging/WAHA;
-4. Finance Ops, se o limite estiver estável;
-5. demais domínios conforme evidência;
-6. Field Work/OS por último.
+3. Finance Ops, se o limite estiver estável;
+4. demais domínios conforme evidência;
 
 ### Saída por serviço
 

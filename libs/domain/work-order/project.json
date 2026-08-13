@@ -1,0 +1,9 @@
+{
+  "name": "domain-work-order",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/work-order/src",
+  "projectType": "library",
+  "tags": ["type:domain", "scope:field-work"],
+  "// targets": "to see all targets run: nx show project domain-work-order --web",
+  "targets": {}
+}

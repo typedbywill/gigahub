@@ -10,9 +10,14 @@ gigahub/
 │   ├── api/             # NestJS backend application (Global prefix /api/v1)
 │   └── web/             # Vite + React frontend (Tailwind CSS v4 + HeroUI)
 ├── libs/
+│   ├── domain/
+│   │   ├── customer/    # Cliente (assinante IXC)
+│   │   ├── work-order/  # Ordem de serviço + assuntos
+│   │   └── care-inbox/  # Caixa de atendimento e tickets
 │   └── shared/
+│       ├── kernel/      # IDs, GeoPoint e erros de domínio
 │       ├── config/      # Shared Zod environment schema & validator
-│       ├── contracts/   # Shared TypeScript DTOs, interfaces & error envelopes
+│       ├── contracts/   # DTOs HTTP, eventos versionados e error envelopes
 │       └── tsconfig/    # Shared TypeScript configuration rules
 ├── docs/                # Architecture documentation and ADRs
 ├── docker-compose.yml   # Infrastructure setup (MongoDB rs0, Redis, MinIO)
@@ -87,6 +92,7 @@ pnpm format
 ## Architecture & ADRs
 
 Decision records are available under [`docs/adr/`](./docs/adr/README.md):
+
 - **ADR-0001**: Modular Monolith Strategy
 - **ADR-0002**: Unified React Frontend
 - **ADR-0003**: Ephemeral Redis Infrastructure

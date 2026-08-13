@@ -1,27 +1,34 @@
-export interface HealthServiceStatus {
-  status: 'up' | 'down';
-  details?: Record<string, unknown> | string;
-}
-
-export interface HealthCheckResponse {
-  status: 'ok' | 'error';
-  timestamp: string;
-  services: {
-    mongodb: HealthServiceStatus;
-    redis: HealthServiceStatus;
-    minio: HealthServiceStatus;
-  };
-}
-
-export interface ApiErrorEnvelope {
-  code: string;
-  message: string;
-  details?: unknown;
-  traceId?: string;
-}
-
-export interface UserStub {
-  id: string;
-  email: string;
-  name: string;
-}
+export type { HealthServiceStatus, HealthCheckResponse } from './lib/health';
+export type { ApiErrorEnvelope } from './lib/errors';
+export type { UserStub } from './lib/identity';
+export {
+  geoPointDtoSchema,
+  customerStatusSchema,
+  customerAddressDtoSchema,
+  customerDtoSchema,
+  type GeoPointDto,
+  type CustomerDto,
+} from './lib/customer';
+export {
+  workOrderStatusSchema,
+  workOrderDtoSchema,
+  subjectDtoSchema,
+  type WorkOrderDto,
+  type SubjectDto,
+} from './lib/work-order';
+export {
+  careChannelSchema,
+  careTicketStatusSchema,
+  careInboxDtoSchema,
+  careTicketDtoSchema,
+  type CareInboxDto,
+  type CareTicketDto,
+} from './lib/care-inbox';
+export {
+  DomainEventTypes,
+  type DomainEventActor,
+  type DomainEventEnvelope,
+  type DomainEventType,
+  type WorkOrderEventPayload,
+  type CareTicketEventPayload,
+} from './lib/events';

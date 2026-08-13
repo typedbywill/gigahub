@@ -20,7 +20,6 @@ flowchart LR
   Hub --> IXC[IXC]
   Hub --> CRM[CRM]
   Hub --> OPA[OPA]
-  Hub --> WAHA[WAHA]
   Hub --> NetworkSystems[SistemasDeRede]
 ```
 
@@ -45,15 +44,20 @@ Containers iniciais:
 - `apps/web`: frontend React unificado.
 - `apps/api`: HTTP, BFF, autenticação e composição dos módulos.
 - `apps/worker`: consumidores e tarefas assíncronas de longa duração.
-- `libs/domain-*`: entidades, políticas e regras sem dependência de framework.
-- `libs/application-*`: casos de uso, portas e eventos.
+- `libs/shared/kernel`: IDs, ponto geográfico e erros de domínio, sem framework.
+- `libs/domain/customer`: entidade Cliente (Customer Care).
+- `libs/domain/work-order`: entidade Ordem de Serviço, assuntos e políticas de campo.
+- `libs/domain/care-inbox`: caixa de atendimento e tickets (OPA/CRM).
+- `libs/shared/contracts`: DTOs HTTP e eventos versionados, sem lógica de domínio.
+- `libs/application-*`: casos de uso, portas e eventos (a introduzir por módulo).
 - `libs/adapters-*`: IXC, bancos, Redis, CRM, demais integrações.
-- `libs/contracts`: DTOs e contratos publicados, sem lógica de domínio.
 - `libs/observability`: logging, métricas e tracing padronizados.
 - `deploy`: artefatos de implantação por ambiente.
 
-Esta é uma convenção-alvo. A migração pode ocorrer gradualmente sem mover todo o
-código de uma vez.
+Domínio não depende de NestJS, Mongoose ou HTTP. Frontend e API compartilham
+contratos; a API também usa as entidades de domínio. Novos módulos seguem o
+mesmo recorte. A migração pode ocorrer gradualmente sem mover todo o código
+de uma vez.
 
 ## Dependências permitidas
 
@@ -185,7 +189,7 @@ Extrair somente quando um ou mais sinais forem comprovados:
 - fronteira estável, observável e coberta por testes;
 - benefício superior ao custo de rede, deploy e consistência distribuída.
 
-Primeiros candidatos: Telemetry, Messaging/WAHA, renderização de PDF e workers. Field
+Primeiros candidatos: Telemetry, workers.
 Work/OS permanece no núcleo até seus contratos estarem estabilizados.
 
 ## Observabilidade

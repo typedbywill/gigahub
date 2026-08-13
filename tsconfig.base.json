@@ -21,7 +21,15 @@
       "@gigahub/shared/config": ["./libs/shared/config/src/index.ts"],
       "@shared/config": ["./libs/shared/config/src/index.ts"],
       "@gigahub/shared/tsconfig": ["./libs/shared/tsconfig/src/index.ts"],
-      "@shared/tsconfig": ["./libs/shared/tsconfig/src/index.ts"]
+      "@shared/tsconfig": ["./libs/shared/tsconfig/src/index.ts"],
+      "@gigahub/shared/kernel": ["./libs/shared/kernel/src/index.ts"],
+      "@shared/kernel": ["./libs/shared/kernel/src/index.ts"],
+      "@gigahub/domain/customer": ["./libs/domain/customer/src/index.ts"],
+      "@shared/domain/customer": ["./libs/domain/customer/src/index.ts"],
+      "@gigahub/domain/work-order": ["./libs/domain/work-order/src/index.ts"],
+      "@shared/domain/work-order": ["./libs/domain/work-order/src/index.ts"],
+      "@gigahub/domain/care-inbox": ["./libs/domain/care-inbox/src/index.ts"],
+      "@shared/domain/care-inbox": ["./libs/domain/care-inbox/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
