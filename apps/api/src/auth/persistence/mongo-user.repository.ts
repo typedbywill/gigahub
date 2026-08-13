@@ -30,6 +30,7 @@ export class MongoUserRepository implements UserRepository {
             email: snap.email,
             name: snap.name,
             status: snap.status,
+            authorizationVersion: snap.authorizationVersion,
             idErp: snap.idErp ?? null,
             idErpEmployee: snap.idErpEmployee ?? null,
             jobTitle: snap.jobTitle ?? null,
@@ -53,6 +54,7 @@ export class MongoUserRepository implements UserRepository {
     email: string;
     name: string;
     status: 'active' | 'blocked';
+    authorizationVersion?: number;
     idErp?: string | null;
     idErpEmployee?: string | null;
     jobTitle?: string | null;
@@ -67,6 +69,7 @@ export class MongoUserRepository implements UserRepository {
       email: doc.email,
       name: doc.name,
       status: doc.status,
+      authorizationVersion: doc.authorizationVersion ?? 0,
       idErp: doc.idErp ?? undefined,
       idErpEmployee: doc.idErpEmployee ?? undefined,
       jobTitle: doc.jobTitle ?? undefined,

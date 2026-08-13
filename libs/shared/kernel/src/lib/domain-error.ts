@@ -21,6 +21,11 @@ export const DomainErrorCodes = {
   WeakPassword: 'WEAK_PASSWORD',
   SessionNotUsable: 'SESSION_NOT_USABLE',
   RefreshTokenReuse: 'REFRESH_TOKEN_REUSE',
+  UnknownPermission: 'UNKNOWN_PERMISSION',
+  RoleNotAssignable: 'ROLE_NOT_ASSIGNABLE',
+  GrantNotActive: 'GRANT_NOT_ACTIVE',
+  GrantReasonRequired: 'GRANT_REASON_REQUIRED',
+  PermissionDenied: 'PERMISSION_DENIED',
 } as const;
 
 export type DomainErrorCode =

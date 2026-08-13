@@ -25,6 +25,8 @@ export type FiberAccessTerminalId = Brand<string, 'FiberAccessTerminalId'>;
 export type UserId = Brand<string, 'UserId'>;
 export type CredentialId = Brand<string, 'CredentialId'>;
 export type SessionId = Brand<string, 'SessionId'>;
+export type RoleId = Brand<string, 'RoleId'>;
+export type GrantId = Brand<string, 'GrantId'>;
 
 export const customerId = (value: string): CustomerId =>
   brandedId(value, 'CustomerId');
@@ -46,3 +48,5 @@ export const credentialId = (value: string): CredentialId =>
   brandedId(value, 'CredentialId');
 export const sessionId = (value: string): SessionId =>
   brandedId(value, 'SessionId');
+export const roleId = (value: string): RoleId => brandedId(value, 'RoleId');
+export const grantId = (value: string): GrantId => brandedId(value, 'GrantId');

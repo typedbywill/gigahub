@@ -3,3 +3,6 @@ export const MIN_PASSWORD_LENGTH = 8;
 
 /** Absolute session lifetime from creation (30 days). */
 export const SESSION_ABSOLUTE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** Minimum justification length for direct permission grants. */
+export const MIN_GRANT_REASON_LENGTH = 8;

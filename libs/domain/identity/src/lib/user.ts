@@ -15,6 +15,7 @@ export interface UserSnapshot {
   email: string;
   name: string;
   status: UserStatus;
+  authorizationVersion: number;
   idErp?: string;
   idErpEmployee?: string;
   jobTitle?: string;
@@ -25,8 +26,12 @@ export interface UserSnapshot {
   updatedAt: Date;
 }
 
-export type CreateUserInput = Omit<UserSnapshot, 'id' | 'createdAt' | 'updatedAt'> & {
+export type CreateUserInput = Omit<
+  UserSnapshot,
+  'id' | 'createdAt' | 'updatedAt' | 'authorizationVersion'
+> & {
   id: string;
+  authorizationVersion?: number;
   createdAt?: Date;
   updatedAt?: Date;
 };
@@ -74,6 +79,7 @@ export class User {
       email: normalizeEmail(input.email),
       name: assertNonEmpty(input.name, 'name'),
       status: input.status,
+      authorizationVersion: input.authorizationVersion ?? 0,
       idErp,
       idErpEmployee,
       jobTitle: optionalNonEmpty(input.jobTitle, 'jobTitle'),
@@ -90,6 +96,16 @@ export class User {
       throw new DomainError(
         DomainErrorCodes.InvariantViolation,
         `Unknown user status: ${String(snapshot.status)}`,
+      );
+    }
+    if (
+      !Number.isInteger(snapshot.authorizationVersion) ||
+      snapshot.authorizationVersion < 0
+    ) {
+      throw new DomainError(
+        DomainErrorCodes.InvariantViolation,
+        'authorizationVersion must be a non-negative integer',
+        { authorizationVersion: snapshot.authorizationVersion },
       );
     }
     const hasIdErp = Boolean(snapshot.idErp);
@@ -117,6 +133,10 @@ export class User {
 
   get status(): UserStatus {
     return this.props.status;
+  }
+
+  get authorizationVersion(): number {
+    return this.props.authorizationVersion;
   }
 
   get idErp(): string | undefined {
@@ -213,6 +233,11 @@ export class User {
     } else {
       this.block();
     }
+  }
+
+  bumpAuthorizationVersion(): void {
+    this.props.authorizationVersion += 1;
+    this.touch();
   }
 
   toSnapshot(): UserSnapshot {

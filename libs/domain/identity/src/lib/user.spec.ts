@@ -100,4 +100,22 @@ describe('User', () => {
     user.applyErpActive(true);
     expect(user.status).toBe('active');
   });
+
+  it('defaults authorizationVersion to 0 and bumps on change', () => {
+    const user = active();
+    expect(user.authorizationVersion).toBe(0);
+    user.bumpAuthorizationVersion();
+    expect(user.authorizationVersion).toBe(1);
+    user.bumpAuthorizationVersion();
+    expect(user.authorizationVersion).toBe(2);
+  });
+
+  it('rejects negative authorizationVersion on rehydrate', () => {
+    expect(() =>
+      User.fromSnapshot({
+        ...active().toSnapshot(),
+        authorizationVersion: -1,
+      }),
+    ).toThrow(DomainError);
+  });
 });

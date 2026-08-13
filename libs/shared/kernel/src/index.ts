@@ -15,6 +15,8 @@ export {
   type UserId,
   type CredentialId,
   type SessionId,
+  type RoleId,
+  type GrantId,
   customerId,
   contractId,
   workOrderId,
@@ -25,6 +27,8 @@ export {
   userId,
   credentialId,
   sessionId,
+  roleId,
+  grantId,
 } from './lib/ids';
 export {
   type GeoPoint,

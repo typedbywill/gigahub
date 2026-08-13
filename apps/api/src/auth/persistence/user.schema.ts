@@ -17,6 +17,9 @@ export class UserModel {
   @Prop({ required: true, enum: ['active', 'blocked'] })
   status!: 'active' | 'blocked';
 
+  @Prop({ required: true, default: 0 })
+  authorizationVersion!: number;
+
   @Prop()
   idErp?: string;
 
