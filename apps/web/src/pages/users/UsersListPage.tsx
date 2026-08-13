@@ -1,5 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, {
+  startTransition,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AlertDialog, Button, Chip, Dropdown, Label } from '@heroui/react';
 import { LuEllipsisVertical, LuEye, LuUserX } from 'react-icons/lu';
 import type { UserListItemDto } from '@gigahub/shared/contracts';
@@ -14,207 +20,291 @@ import {
   inactivateUserRequest,
   listUsersRequest,
 } from '../../shared/api/users.api';
-
-type StatusFilter = 'all' | 'active' | 'blocked';
+import {
+  parseUsersListSearch,
+  toUsersListSearchParams,
+  usersListHref,
+  type UsersListSearchState,
+  type UsersListStatusFilter,
+} from './users-list-search';
 
 function statusLabel(status: UserListItemDto['status']): string {
   return status === 'active' ? 'Ativo' : 'Inativo';
 }
 
-export const UsersListPage: React.FC = () => {
+const UserActionsCell = React.memo(function UserActionsCell({
+  user,
+  listHref,
+  onInactivate,
+}: {
+  user: UserListItemDto;
+  listHref: string;
+  onInactivate: (user: UserListItemDto) => void;
+}) {
   const navigate = useNavigate();
+
+  return (
+    <Dropdown>
+      <Button
+        isIconOnly
+        size="sm"
+        variant="ghost"
+        aria-label={`Ações de ${user.name}`}
+      >
+        <LuEllipsisVertical className="size-4" />
+      </Button>
+      <Dropdown.Popover placement="bottom end">
+        <Dropdown.Menu
+          onAction={(key) => {
+            if (key === 'view') {
+              navigate(`/usuarios/${user.id}`, { state: { from: listHref } });
+              return;
+            }
+            if (key === 'inactivate') {
+              onInactivate(user);
+            }
+          }}
+        >
+          <Dropdown.Item id="view" textValue="Ver detalhes">
+            <LuEye className="size-4 shrink-0 text-muted" />
+            <Label>Ver detalhes</Label>
+          </Dropdown.Item>
+          {user.status === 'active' ? (
+            <Dropdown.Item
+              id="inactivate"
+              textValue="Inativar"
+              variant="danger"
+            >
+              <LuUserX className="size-4 shrink-0 text-danger" />
+              <Label>Inativar</Label>
+            </Dropdown.Item>
+          ) : null}
+        </Dropdown.Menu>
+      </Dropdown.Popover>
+    </Dropdown>
+  );
+});
+
+export const UsersListPage: React.FC = () => {
   const accessToken = useAuthStore((s) => s.accessToken);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const listState = useMemo(
+    () => parseUsersListSearch(searchParams),
+    [searchParams],
+  );
+  const { q: search, status, erpLinked, page } = listState;
+  const listHref = useMemo(() => usersListHref(listState), [listState]);
 
   const [items, setItems] = useState<UserListItemDto[]>([]);
   const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
   /** 0 until DataTable measures available height. */
   const [pageSize, setPageSize] = useState(0);
-  const [status, setStatus] = useState<StatusFilter>('all');
-  const [erpLinked, setErpLinked] = useState<boolean | undefined>(undefined);
-  const [searchInput, setSearchInput] = useState('');
-  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingInactivate, setPendingInactivate] =
     useState<UserListItemDto | null>(null);
   const [inactivating, setInactivating] = useState(false);
 
-  const load = useCallback(async () => {
+  const patchListState = useCallback(
+    (patch: Partial<UsersListSearchState>) => {
+      const next: UsersListSearchState = { ...listState, ...patch };
+      startTransition(() => {
+        setSearchParams(toUsersListSearchParams(next), { replace: true });
+      });
+    },
+    [listState, setSearchParams],
+  );
+
+  useEffect(() => {
     if (!accessToken || pageSize < 1) {
       return;
     }
+
+    const controller = new AbortController();
     setLoading(true);
     setError(null);
-    try {
-      const result = await listUsersRequest(accessToken, {
+
+    void listUsersRequest(
+      accessToken,
+      {
         q: search || undefined,
         status,
         erpLinked,
         page,
         pageSize,
+      },
+      controller.signal,
+    )
+      .then((result) => {
+        startTransition(() => {
+          setItems(result.items);
+          setTotal(result.total);
+          setLoading(false);
+        });
+      })
+      .catch((err: unknown) => {
+        if (
+          controller.signal.aborted ||
+          (err instanceof DOMException && err.name === 'AbortError')
+        ) {
+          return;
+        }
+        setLoading(false);
+        setError(
+          err instanceof ApiClientError
+            ? err.message
+            : 'Não foi possível carregar os usuários.',
+        );
       });
-      setItems(result.items);
-      setTotal(result.total);
-    } catch (err) {
-      setError(
-        err instanceof ApiClientError
-          ? err.message
-          : 'Não foi possível carregar os usuários.',
-      );
-    } finally {
-      setLoading(false);
-    }
+
+    return () => controller.abort();
   }, [accessToken, erpLinked, page, pageSize, search, status]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (pageSize < 1 || total === 0) {
+      return;
+    }
+    const maxPage = Math.max(1, Math.ceil(total / pageSize));
+    if (page > maxPage) {
+      patchListState({ page: maxPage });
+    }
+  }, [page, pageSize, patchListState, total]);
 
-  const applySearch = (value: string) => {
-    setPage(1);
-    setSearch(value.trim());
-  };
+  const applySearch = useCallback(
+    (value: string) => {
+      patchListState({ q: value.trim(), page: 1 });
+    },
+    [patchListState],
+  );
 
   const handlePageSizeChange = useCallback((next: number) => {
-    setPageSize((prev) => {
-      if (prev === next) {
-        return prev;
-      }
-      setPage(1);
-      return next;
-    });
+    setPageSize((prev) => (prev === next ? prev : next));
   }, []);
 
-  const presets: DataTablePreset[] = [
-    {
-      id: 'all',
-      label: 'Todos',
-      active: status === 'all' && erpLinked === undefined,
-      onPress: () => {
-        setStatus('all');
-        setErpLinked(undefined);
-        setPage(1);
-      },
+  const handlePageChange = useCallback(
+    (next: number) => {
+      patchListState({ page: next });
     },
-    {
-      id: 'active',
-      label: 'Ativos',
-      active: status === 'active' && erpLinked === undefined,
-      onPress: () => {
-        setStatus('active');
-        setErpLinked(undefined);
-        setPage(1);
-      },
-    },
-    {
-      id: 'blocked',
-      label: 'Inativos',
-      active: status === 'blocked' && erpLinked === undefined,
-      onPress: () => {
-        setStatus('blocked');
-        setErpLinked(undefined);
-        setPage(1);
-      },
-    },
-    {
-      id: 'erp',
-      label: 'Com ERP',
-      active: erpLinked === true,
-      onPress: () => {
-        setErpLinked(true);
-        setPage(1);
-      },
-    },
-  ];
+    [patchListState],
+  );
 
-  const columns: DataTableColumn<UserListItemDto>[] = [
-    {
-      id: 'name',
-      header: 'Nome',
-      isRowHeader: true,
-      cell: (row) => (
-        <Link
-          to={`/usuarios/${row.id}`}
-          className="font-medium text-foreground underline-offset-2 hover:underline"
-        >
-          {row.name}
-        </Link>
-      ),
+  const handleInactivate = useCallback((user: UserListItemDto) => {
+    setPendingInactivate(user);
+  }, []);
+
+  const setStatusFilter = useCallback(
+    (next: UsersListStatusFilter, nextErp?: boolean) => {
+      patchListState({
+        status: next,
+        erpLinked: nextErp,
+        page: 1,
+      });
     },
-    {
-      id: 'email',
-      header: 'E-mail',
-      cell: (row) => row.email,
-    },
-    {
-      id: 'status',
-      header: 'Status',
-      cell: (row) => (
-        <Chip
-          size="sm"
-          color={row.status === 'active' ? 'success' : 'danger'}
-          variant="soft"
-        >
-          {statusLabel(row.status)}
-        </Chip>
-      ),
-    },
-    {
-      id: 'jobTitle',
-      header: 'Cargo',
-      cell: (row) => row.jobTitle ?? '—',
-    },
-    {
-      id: 'erp',
-      header: 'ERP',
-      cell: (row) => (row.idErp ? `IXC #${row.idErp}` : 'Local'),
-    },
-    {
-      id: 'actions',
-      header: '',
-      cell: (row) => (
-        <Dropdown>
-          <Button
-            isIconOnly
-            size="sm"
-            variant="ghost"
-            aria-label={`Ações de ${row.name}`}
+    [patchListState],
+  );
+
+  const presets: DataTablePreset[] = useMemo(
+    () => [
+      {
+        id: 'all',
+        label: 'Todos',
+        active: status === 'all' && erpLinked === undefined,
+        onPress: () => setStatusFilter('all', undefined),
+      },
+      {
+        id: 'active',
+        label: 'Ativos',
+        active: status === 'active' && erpLinked === undefined,
+        onPress: () => setStatusFilter('active', undefined),
+      },
+      {
+        id: 'blocked',
+        label: 'Inativos',
+        active: status === 'blocked' && erpLinked === undefined,
+        onPress: () => setStatusFilter('blocked', undefined),
+      },
+      {
+        id: 'erp',
+        label: 'Com ERP',
+        active: erpLinked === true,
+        onPress: () =>
+          patchListState({ erpLinked: true, page: 1 }),
+      },
+    ],
+    [erpLinked, patchListState, setStatusFilter, status],
+  );
+
+  const columns: DataTableColumn<UserListItemDto>[] = useMemo(
+    () => [
+      {
+        id: 'name',
+        header: 'Nome',
+        isRowHeader: true,
+        cell: (row) => (
+          <Link
+            to={`/usuarios/${row.id}`}
+            state={{ from: listHref }}
+            className="font-medium text-foreground underline-offset-2 hover:underline"
           >
-            <LuEllipsisVertical className="size-4" />
-          </Button>
-          <Dropdown.Popover placement="bottom end">
-            <Dropdown.Menu
-              onAction={(key) => {
-                if (key === 'view') {
-                  navigate(`/usuarios/${row.id}`);
-                  return;
-                }
-                if (key === 'inactivate') {
-                  setPendingInactivate(row);
-                }
-              }}
-            >
-              <Dropdown.Item id="view" textValue="Ver detalhes">
-                <LuEye className="size-4 shrink-0 text-muted" />
-                <Label>Ver detalhes</Label>
-              </Dropdown.Item>
-              {row.status === 'active' ? (
-                <Dropdown.Item
-                  id="inactivate"
-                  textValue="Inativar"
-                  variant="danger"
-                >
-                  <LuUserX className="size-4 shrink-0 text-danger" />
-                  <Label>Inativar</Label>
-                </Dropdown.Item>
-              ) : null}
-            </Dropdown.Menu>
-          </Dropdown.Popover>
-        </Dropdown>
-      ),
-    },
-  ];
+            {row.name}
+          </Link>
+        ),
+      },
+      {
+        id: 'email',
+        header: 'E-mail',
+        cell: (row) => row.email,
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        cell: (row) => (
+          <Chip
+            size="sm"
+            color={row.status === 'active' ? 'success' : 'danger'}
+            variant="soft"
+          >
+            {statusLabel(row.status)}
+          </Chip>
+        ),
+      },
+      {
+        id: 'jobTitle',
+        header: 'Cargo',
+        cell: (row) => row.jobTitle ?? '—',
+      },
+      {
+        id: 'erp',
+        header: 'ERP',
+        cell: (row) => (row.idErp ? `IXC #${row.idErp}` : 'Local'),
+      },
+      {
+        id: 'actions',
+        header: '',
+        cell: (row) => (
+          <UserActionsCell
+            user={row}
+            listHref={listHref}
+            onInactivate={handleInactivate}
+          />
+        ),
+      },
+    ],
+    [handleInactivate, listHref],
+  );
+
+  const getRowId = useCallback((row: UserListItemDto) => row.id, []);
+
+  const pagination = useMemo(
+    () => ({
+      page,
+      pageSize: pageSize || 1,
+      total,
+      onPageChange: handlePageChange,
+    }),
+    [handlePageChange, page, pageSize, total],
+  );
 
   const confirmInactivate = async () => {
     if (!accessToken || !pendingInactivate) {
@@ -225,7 +315,13 @@ export const UsersListPage: React.FC = () => {
     try {
       await inactivateUserRequest(accessToken, pendingInactivate.id);
       setPendingInactivate(null);
-      await load();
+      setItems((prev) =>
+        prev.map((user) =>
+          user.id === pendingInactivate.id
+            ? { ...user, status: 'blocked' as const }
+            : user,
+        ),
+      );
     } catch (err) {
       setError(
         err instanceof ApiClientError
@@ -258,24 +354,15 @@ export const UsersListPage: React.FC = () => {
         }
         columns={columns}
         items={items}
-        getRowId={(row) => row.id}
+        getRowId={getRowId}
         isLoading={loading}
         emptyMessage="Nenhum usuário encontrado com esses filtros."
-        searchValue={searchInput}
-        onSearchChange={setSearchInput}
+        searchValue={search}
         onSearchSubmit={applySearch}
-        onSearchClear={() => {
-          setSearchInput('');
-          applySearch('');
-        }}
+        onSearchClear={() => applySearch('')}
         searchPlaceholder="Buscar por nome ou e-mail…"
         presets={presets}
-        pagination={{
-          page,
-          pageSize: pageSize || 1,
-          total,
-          onPageChange: setPage,
-        }}
+        pagination={pagination}
       />
 
       <AlertDialog>

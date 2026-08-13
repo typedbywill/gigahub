@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { AlertDialog, Button, Chip, Spinner } from '@heroui/react';
 import { LuArrowLeft } from 'react-icons/lu';
 import type { UserDetailDto } from '@gigahub/shared/contracts';
@@ -21,10 +21,17 @@ function formatDate(value: string): string {
   }
 }
 
+type DetailLocationState = {
+  from?: string;
+};
+
 export const UserDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const backTo =
+    (location.state as DetailLocationState | null)?.from ?? '/usuarios';
 
   const [user, setUser] = useState<UserDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,7 +99,7 @@ export const UserDetailPage: React.FC = () => {
         <p className="text-sm text-danger" role="alert">
           {error ?? 'Usuário não encontrado.'}
         </p>
-        <Button variant="secondary" onPress={() => navigate('/usuarios')}>
+        <Button variant="secondary" onPress={() => navigate(backTo)}>
           Voltar para a lista
         </Button>
       </div>
@@ -116,7 +123,7 @@ export const UserDetailPage: React.FC = () => {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="flex flex-col gap-3">
           <Link
-            to="/usuarios"
+            to={backTo}
             className="inline-flex w-fit items-center gap-1.5 text-sm text-muted hover:text-foreground"
           >
             <LuArrowLeft className="size-4" />
@@ -141,7 +148,7 @@ export const UserDetailPage: React.FC = () => {
             <Button variant="danger">Inativar usuário</Button>
             <AlertDialog.Backdrop>
               <AlertDialog.Container>
-                <AlertDialog.Dialog className="sm:max-w-[420px]">
+                <AlertDialog.Dialog className="sm:max-w-105">
                   <AlertDialog.CloseTrigger />
                   <AlertDialog.Header>
                     <AlertDialog.Icon status="danger" />

@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Button,
   EmptyState,
@@ -40,6 +40,10 @@ export interface DataTableProps<T extends object> {
   emptyMessage?: string;
   /** Left side of the toolbar (e.g. page title). Sits on the same row as search. */
   leading?: React.ReactNode;
+  /**
+   * Controlled search value. Prefer leaving this unset so typing stays local
+   * to the toolbar and does not re-render the table body on every keystroke.
+   */
   searchValue?: string;
   onSearchChange?: (value: string) => void;
   onSearchSubmit?: (value: string) => void;
@@ -72,6 +76,168 @@ function pageNumbers(current: number, totalPages: number): number[] {
   return [...pages].sort((a, b) => a - b);
 }
 
+interface DataTableGridProps<T extends object> {
+  ariaLabel: string;
+  columns: DataTableColumn<T>[];
+  items: T[];
+  getRowId: (row: T) => string;
+  isLoading: boolean;
+  emptyMessage: string;
+  pagination?: DataTablePagination;
+  onRowAction?: (key: string) => void;
+  fillHeight: boolean;
+  bodyViewportRef: React.RefObject<HTMLDivElement | null>;
+}
+
+function DataTableGridInner<T extends object>({
+  ariaLabel,
+  columns,
+  items,
+  getRowId,
+  isLoading,
+  emptyMessage,
+  pagination,
+  onRowAction,
+  fillHeight,
+  bodyViewportRef,
+}: DataTableGridProps<T>) {
+  const totalPages = pagination
+    ? Math.max(1, Math.ceil(pagination.total / pagination.pageSize))
+    : 1;
+  const pages = pagination ? pageNumbers(pagination.page, totalPages) : [];
+  const rangeStart = pagination
+    ? pagination.total === 0
+      ? 0
+      : (pagination.page - 1) * pagination.pageSize + 1
+    : 0;
+  const rangeEnd = pagination
+    ? Math.min(pagination.page * pagination.pageSize, pagination.total)
+    : 0;
+
+  return (
+    <Table
+      className={
+        fillHeight
+          ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
+          : undefined
+      }
+    >
+      <Table.ScrollContainer
+        ref={bodyViewportRef}
+        className={fillHeight ? 'min-h-0 flex-1 overflow-auto' : undefined}
+      >
+        <Table.Content
+          aria-label={ariaLabel}
+          className="min-w-160"
+          {...(onRowAction
+            ? {
+                onRowAction: (key: React.Key) => {
+                  onRowAction(String(key));
+                },
+              }
+            : {})}
+        >
+          <Table.Header>
+            {columns.map((column) => (
+              <Table.Column
+                key={column.id}
+                isRowHeader={column.isRowHeader}
+                id={column.id}
+              >
+                {column.header}
+              </Table.Column>
+            ))}
+          </Table.Header>
+          <Table.Body
+            items={items}
+            renderEmptyState={() => (
+              <EmptyState className="flex h-40 w-full flex-col items-center justify-center gap-3 text-center">
+                {isLoading && items.length === 0 ? (
+                  <Spinner size="sm" />
+                ) : (
+                  <span className="text-sm text-muted">{emptyMessage}</span>
+                )}
+              </EmptyState>
+            )}
+          >
+            {(row) => (
+              <Table.Row
+                id={getRowId(row)}
+                className={onRowAction ? 'cursor-pointer' : undefined}
+              >
+                {columns.map((column) => (
+                  <Table.Cell key={column.id}>{column.cell(row)}</Table.Cell>
+                ))}
+              </Table.Row>
+            )}
+          </Table.Body>
+        </Table.Content>
+      </Table.ScrollContainer>
+      {pagination ? (
+        <Table.Footer className="flex shrink-0 flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+          <Pagination size="sm" className="w-full sm:w-auto">
+            <Pagination.Summary>
+              {pagination.total === 0
+                ? '0 resultados'
+                : `${rangeStart}–${rangeEnd} de ${pagination.total}`}
+              {isLoading && items.length > 0 ? ' · atualizando…' : ''}
+            </Pagination.Summary>
+            <Pagination.Content>
+              <Pagination.Item>
+                <Pagination.Previous
+                  isDisabled={pagination.page <= 1 || isLoading}
+                  onPress={() =>
+                    pagination.onPageChange(Math.max(1, pagination.page - 1))
+                  }
+                >
+                  <Pagination.PreviousIcon />
+                  Anterior
+                </Pagination.Previous>
+              </Pagination.Item>
+              {pages.map((pageNum, index) => {
+                const prev = pages[index - 1];
+                const showEllipsis = prev !== undefined && pageNum - prev > 1;
+                return (
+                  <React.Fragment key={pageNum}>
+                    {showEllipsis ? (
+                      <Pagination.Item>
+                        <span className="px-1 text-muted">…</span>
+                      </Pagination.Item>
+                    ) : null}
+                    <Pagination.Item>
+                      <Pagination.Link
+                        isActive={pageNum === pagination.page}
+                        onPress={() => pagination.onPageChange(pageNum)}
+                      >
+                        {pageNum}
+                      </Pagination.Link>
+                    </Pagination.Item>
+                  </React.Fragment>
+                );
+              })}
+              <Pagination.Item>
+                <Pagination.Next
+                  isDisabled={pagination.page >= totalPages || isLoading}
+                  onPress={() =>
+                    pagination.onPageChange(
+                      Math.min(totalPages, pagination.page + 1),
+                    )
+                  }
+                >
+                  Próxima
+                  <Pagination.NextIcon />
+                </Pagination.Next>
+              </Pagination.Item>
+            </Pagination.Content>
+          </Pagination>
+        </Table.Footer>
+      ) : null}
+    </Table>
+  );
+}
+
+const DataTableGrid = React.memo(DataTableGridInner) as typeof DataTableGridInner;
+
 export function DataTable<T extends object>({
   ariaLabel,
   columns,
@@ -96,21 +262,37 @@ export function DataTable<T extends object>({
 }: DataTableProps<T>) {
   const bodyViewportRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const controlledSearch = onSearchChange !== undefined;
+  const [draftSearch, setDraftSearch] = useState(searchValue ?? '');
+
+  useEffect(() => {
+    if (searchValue === undefined) {
+      return;
+    }
+    setDraftSearch(searchValue);
+  }, [searchValue]);
+
+  const searchFieldValue = controlledSearch ? (searchValue ?? '') : draftSearch;
+  const handleSearchChange = controlledSearch
+    ? onSearchChange
+    : setDraftSearch;
+
   const fitPageSize = useFitPageSize(bodyViewportRef, {
     rowHeight: estimatedRowHeight,
     min: 5,
     max: 100,
+    debounceMs: 180,
   });
 
   useFocusSearchOnType(searchInputRef, {
-    enabled: onSearchChange !== undefined,
-    value: searchValue ?? '',
-    onChange: onSearchChange,
+    enabled: true,
+    value: searchFieldValue,
+    onChange: handleSearchChange,
   });
 
   const prevFitRef = useRef(0);
-  React.useEffect(() => {
-    if (!fillHeight || !onPageSizeChange) {
+  useEffect(() => {
+    if (!fillHeight || !onPageSizeChange || fitPageSize < 1) {
       return;
     }
     if (prevFitRef.current === fitPageSize) {
@@ -120,25 +302,30 @@ export function DataTable<T extends object>({
     onPageSizeChange(fitPageSize);
   }, [fillHeight, fitPageSize, onPageSizeChange]);
 
-  const showSearch = onSearchChange !== undefined;
+  const showSearch = onSearchSubmit !== undefined || onSearchChange !== undefined;
   const showToolbar =
     leading !== undefined ||
     showSearch ||
     (presets !== undefined && presets.length > 0) ||
     toolbarEnd;
 
-  const totalPages = pagination
-    ? Math.max(1, Math.ceil(pagination.total / pagination.pageSize))
-    : 1;
-  const pages = pagination ? pageNumbers(pagination.page, totalPages) : [];
-  const rangeStart = pagination
-    ? pagination.total === 0
-      ? 0
-      : (pagination.page - 1) * pagination.pageSize + 1
-    : 0;
-  const rangeEnd = pagination
-    ? Math.min(pagination.page * pagination.pageSize, pagination.total)
-    : 0;
+  const submitSearch = (value: string) => {
+    const next = value.trim();
+    if (!controlledSearch) {
+      setDraftSearch(value);
+    }
+    onSearchSubmit?.(next);
+  };
+
+  const clearSearch = () => {
+    if (controlledSearch) {
+      onSearchChange?.('');
+    } else {
+      setDraftSearch('');
+    }
+    onSearchClear?.();
+    onSearchSubmit?.('');
+  };
 
   return (
     <div
@@ -159,10 +346,10 @@ export function DataTable<T extends object>({
             {showSearch ? (
               <SearchField
                 aria-label={searchPlaceholder}
-                value={searchValue ?? ''}
-                onChange={onSearchChange}
-                onSubmit={onSearchSubmit}
-                onClear={onSearchClear}
+                value={searchFieldValue}
+                onChange={handleSearchChange}
+                onSubmit={submitSearch}
+                onClear={clearSearch}
                 className="w-full min-w-48 max-w-xs sm:w-64"
               >
                 <SearchField.Group>
@@ -201,126 +388,18 @@ export function DataTable<T extends object>({
         </div>
       ) : null}
 
-      <Table
-        className={
-          fillHeight
-            ? 'flex min-h-0 flex-1 flex-col overflow-hidden'
-            : undefined
-        }
-      >
-        <Table.ScrollContainer
-          ref={bodyViewportRef}
-          className={
-            fillHeight ? 'min-h-0 flex-1 overflow-auto' : undefined
-          }
-        >
-          <Table.Content
-            aria-label={ariaLabel}
-            className="min-w-160"
-            {...(onRowAction
-              ? {
-                  onRowAction: (key: React.Key) => {
-                    onRowAction(String(key));
-                  },
-                }
-              : {})}
-          >
-            <Table.Header>
-              {columns.map((column) => (
-                <Table.Column
-                  key={column.id}
-                  isRowHeader={column.isRowHeader}
-                  id={column.id}
-                >
-                  {column.header}
-                </Table.Column>
-              ))}
-            </Table.Header>
-            <Table.Body
-              items={items}
-              renderEmptyState={() => (
-                <EmptyState className="flex h-40 w-full flex-col items-center justify-center gap-3 text-center">
-                  {isLoading ? (
-                    <Spinner size="sm" />
-                  ) : (
-                    <span className="text-sm text-muted">{emptyMessage}</span>
-                  )}
-                </EmptyState>
-              )}
-            >
-              {(row) => (
-                <Table.Row
-                  id={getRowId(row)}
-                  className={onRowAction ? 'cursor-pointer' : undefined}
-                >
-                  {columns.map((column) => (
-                    <Table.Cell key={column.id}>{column.cell(row)}</Table.Cell>
-                  ))}
-                </Table.Row>
-              )}
-            </Table.Body>
-          </Table.Content>
-        </Table.ScrollContainer>
-        {pagination ? (
-          <Table.Footer className="flex shrink-0 flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
-            <Pagination size="sm" className="w-full sm:w-auto">
-              <Pagination.Summary>
-                {pagination.total === 0
-                  ? '0 resultados'
-                  : `${rangeStart}–${rangeEnd} de ${pagination.total}`}
-              </Pagination.Summary>
-              <Pagination.Content>
-                <Pagination.Item>
-                  <Pagination.Previous
-                    isDisabled={pagination.page <= 1 || isLoading}
-                    onPress={() =>
-                      pagination.onPageChange(Math.max(1, pagination.page - 1))
-                    }
-                  >
-                    <Pagination.PreviousIcon />
-                    Anterior
-                  </Pagination.Previous>
-                </Pagination.Item>
-                {pages.map((pageNum, index) => {
-                  const prev = pages[index - 1];
-                  const showEllipsis =
-                    prev !== undefined && pageNum - prev > 1;
-                  return (
-                    <React.Fragment key={pageNum}>
-                      {showEllipsis ? (
-                        <Pagination.Item>
-                          <span className="px-1 text-muted">…</span>
-                        </Pagination.Item>
-                      ) : null}
-                      <Pagination.Item>
-                        <Pagination.Link
-                          isActive={pageNum === pagination.page}
-                          onPress={() => pagination.onPageChange(pageNum)}
-                        >
-                          {pageNum}
-                        </Pagination.Link>
-                      </Pagination.Item>
-                    </React.Fragment>
-                  );
-                })}
-                <Pagination.Item>
-                  <Pagination.Next
-                    isDisabled={pagination.page >= totalPages || isLoading}
-                    onPress={() =>
-                      pagination.onPageChange(
-                        Math.min(totalPages, pagination.page + 1),
-                      )
-                    }
-                  >
-                    Próxima
-                    <Pagination.NextIcon />
-                  </Pagination.Next>
-                </Pagination.Item>
-              </Pagination.Content>
-            </Pagination>
-          </Table.Footer>
-        ) : null}
-      </Table>
+      <DataTableGrid
+        ariaLabel={ariaLabel}
+        columns={columns}
+        items={items}
+        getRowId={getRowId}
+        isLoading={isLoading}
+        emptyMessage={emptyMessage}
+        pagination={pagination}
+        onRowAction={onRowAction}
+        fillHeight={fillHeight}
+        bodyViewportRef={bodyViewportRef}
+      />
     </div>
   );
 }
