@@ -16,6 +16,7 @@ import { useMediaQuery } from '../hooks/use-media-query';
 import { routes } from '../routes';
 import { Permissions } from '../permissions';
 import { useAuthStore } from '../stores/auth.store';
+import { useSidebarStore } from '../stores/sidebar.store';
 import { useThemeStore } from '../stores/theme.store';
 import { Sidebar, type SidebarNavItem } from './Sidebar';
 
@@ -40,10 +41,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const logout = useAuthStore((s) => s.logout);
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
+  const collapsed = useSidebarStore((s) => s.collapsed);
+  const toggleCollapsed = useSidebarStore((s) => s.toggleCollapsed);
   const isDark = theme === 'dark';
   const isMobile = useMediaQuery('(max-width: 767px)');
 
-  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -196,7 +198,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         bottomItems={bottomItems}
         footer={footer}
         collapsed={sidebarCollapsed}
-        onToggleCollapse={() => setCollapsed((value) => !value)}
+        onToggleCollapse={toggleCollapsed}
         onNavigate={isMobile ? closeMobile : undefined}
         onCloseMobile={closeMobile}
         showMobileClose={isMobile}

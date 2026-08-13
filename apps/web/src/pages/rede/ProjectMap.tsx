@@ -11,17 +11,22 @@ import type {
   NearbyFiberCableDto,
 } from '@gigahub/shared/contracts';
 import type { MapLayerVisibility } from './MapControlsPanel';
+import {
+  mapStyleUsesDarkChrome,
+  resolveMapStyleUrl,
+  type MapBaseStyleId,
+} from './map-styles';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-const LIGHT_STYLE = 'mapbox://styles/mapbox/streets-v12';
-const DARK_STYLE = 'mapbox://styles/mapbox/dark-v11';
 const FALLBACK_FAT_COLOR = '#000000';
 const FALLBACK_CABLE_COLOR = '#0284c7';
 
 export type ProjectMapProps = {
   mapRef: React.RefObject<MapRef | null>;
   mapboxToken: string;
-  isDark: boolean;
+  isAppDark: boolean;
+  mapStyle: MapBaseStyleId;
+  showFatLabels: boolean;
   initialViewState: {
     longitude: number;
     latitude: number;
@@ -91,7 +96,9 @@ function idEqualsFilter(
 export const ProjectMap: React.FC<ProjectMapProps> = ({
   mapRef,
   mapboxToken,
-  isDark,
+  isAppDark,
+  mapStyle,
+  showFatLabels,
   initialViewState,
   fats,
   cables,
@@ -105,13 +112,21 @@ export const ProjectMap: React.FC<ProjectMapProps> = ({
     () => idEqualsFilter(selectedId),
     [selectedId],
   );
+  const styleUrl = useMemo(
+    () => resolveMapStyleUrl(mapStyle, isAppDark),
+    [isAppDark, mapStyle],
+  );
+  const darkChrome = useMemo(
+    () => mapStyleUsesDarkChrome(mapStyle, isAppDark),
+    [isAppDark, mapStyle],
+  );
 
   return (
     <Map
       ref={mapRef}
       mapboxAccessToken={mapboxToken}
       initialViewState={initialViewState}
-      mapStyle={isDark ? DARK_STYLE : LIGHT_STYLE}
+      mapStyle={styleUrl}
       style={{ width: '100%', height: '100%' }}
       onMoveEnd={onMoveEnd}
       attributionControl={false}
@@ -191,7 +206,7 @@ export const ProjectMap: React.FC<ProjectMapProps> = ({
               FALLBACK_FAT_COLOR,
             ],
             'circle-stroke-width': 2,
-            'circle-stroke-color': isDark ? '#0f172a' : '#ffffff',
+            'circle-stroke-color': darkChrome ? '#0f172a' : '#ffffff',
           }}
         />
         <Layer
@@ -212,7 +227,7 @@ export const ProjectMap: React.FC<ProjectMapProps> = ({
           id="project-fats-label"
           type="symbol"
           layout={{
-            visibility: layers.fat ? 'visible' : 'none',
+            visibility: layers.fat && showFatLabels ? 'visible' : 'none',
             'text-field': ['get', 'name'],
             'text-size': 11,
             'text-offset': [0, 1.2],
@@ -220,8 +235,8 @@ export const ProjectMap: React.FC<ProjectMapProps> = ({
             'text-optional': true,
           }}
           paint={{
-            'text-color': isDark ? '#e2e8f0' : '#1e293b',
-            'text-halo-color': isDark ? '#0f172a' : '#ffffff',
+            'text-color': darkChrome ? '#e2e8f0' : '#1e293b',
+            'text-halo-color': darkChrome ? '#0f172a' : '#ffffff',
             'text-halo-width': 1.5,
           }}
         />

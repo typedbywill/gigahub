@@ -16,6 +16,7 @@ import { ApiClientError } from '../../shared/api/auth.api';
 import {
   listNearbyCablesRequest,
   listNearbyFatsRequest,
+  searchProjectNetworkRequest,
 } from '../../shared/api/projeto.api';
 import { useMediaQuery } from '../../shared/hooks/use-media-query';
 import { useAuthStore } from '../../shared/stores/auth.store';
@@ -32,6 +33,7 @@ import {
   type MapSelectedRef,
   type MapUrlState,
 } from './map-search-params';
+import type { MapBaseStyleId } from './map-styles';
 import { ProjectMap } from './ProjectMap';
 import {
   DEFAULT_NEARBY_RADIUS_METERS,
@@ -40,6 +42,8 @@ import {
 } from './map-utils';
 
 const FETCH_DEBOUNCE_MS = 400;
+const SEARCH_DEBOUNCE_MS = 300;
+const SEARCH_MIN_LENGTH = 2;
 
 type InitialView = {
   longitude: number;
@@ -83,7 +87,9 @@ export const RedeProjetoPage: React.FC = () => {
 
   const mapRef = useRef<MapRef | null>(null);
   const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
   const didInitialFetchRef = useRef(false);
   const didFlyToSelectionRef = useRef(false);
   const urlStateRef = useRef(urlState);
@@ -103,12 +109,17 @@ export const RedeProjetoPage: React.FC = () => {
   const [cables, setCables] = useState<NearbyFiberCableDto[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hits, setHits] = useState<MapSearchHit[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const search = urlState.q;
   const layers = useMemo(() => layersFromUrl(urlState), [urlState]);
   const selectedId = urlState.selected?.id ?? null;
   const collapsed = urlState.panelCollapsed;
+  const mapStyle = urlState.mapStyle;
+  const showFatLabels = urlState.showFatLabels;
 
   const patchUrlState = useCallback(
     (patch: Partial<MapUrlState>) => {
@@ -257,7 +268,11 @@ export const RedeProjetoPage: React.FC = () => {
       if (fetchTimerRef.current) {
         clearTimeout(fetchTimerRef.current);
       }
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
       abortRef.current?.abort();
+      searchAbortRef.current?.abort();
     };
   }, []);
 
@@ -273,22 +288,100 @@ export const RedeProjetoPage: React.FC = () => {
     );
   }, [accessToken, fetchNearby, initialView]);
 
-  const flyToSelection = useCallback(
-    (selected: MapSelectedRef) => {
+  useEffect(() => {
+    const q = search.trim();
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
+    }
+    searchAbortRef.current?.abort();
+
+    if (q.length < SEARCH_MIN_LENGTH) {
+      setHits([]);
+      setSearching(false);
+      setSearchError(null);
+      return;
+    }
+
+    if (!accessToken) {
+      return;
+    }
+
+    setSearching(true);
+    searchTimerRef.current = setTimeout(() => {
+      const controller = new AbortController();
+      searchAbortRef.current = controller;
+      void searchProjectNetworkRequest(
+        accessToken,
+        { q, kind: 'all', limit: 40 },
+        controller.signal,
+      )
+        .then((res) => {
+          if (controller.signal.aborted) {
+            return;
+          }
+          setHits(
+            res.items.map((item) => ({
+              id: item.id,
+              kind: item.kind,
+              name: item.name,
+              subtitle:
+                item.kind === 'fat'
+                  ? item.idErp
+                  : (item.cableTypeName ?? item.idErp),
+              latitude: item.location.latitude,
+              longitude: item.location.longitude,
+            })),
+          );
+          setSearchError(null);
+        })
+        .catch((err) => {
+          if (controller.signal.aborted) {
+            return;
+          }
+          setHits([]);
+          if (err instanceof ApiClientError) {
+            setSearchError(err.message || 'Falha ao buscar elementos.');
+          } else {
+            setSearchError('Falha ao buscar elementos.');
+          }
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) {
+            setSearching(false);
+          }
+        });
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
+  }, [accessToken, search]);
+
+  const flyToPoint = useCallback(
+    (latitude: number, longitude: number, zoom: number) => {
       const map = mapRef.current;
       if (!map) {
         return;
       }
+      map.flyTo({
+        center: [longitude, latitude],
+        zoom: Math.max(map.getZoom(), zoom),
+        essential: true,
+      });
+    },
+    [],
+  );
+
+  const flyToSelection = useCallback(
+    (selected: MapSelectedRef) => {
       if (selected.kind === 'fat') {
         const fat = fats.find((f) => f.id === selected.id);
         if (!fat) {
           return;
         }
-        map.flyTo({
-          center: [fat.location.longitude, fat.location.latitude],
-          zoom: Math.max(map.getZoom(), 16),
-          essential: true,
-        });
+        flyToPoint(fat.location.latitude, fat.location.longitude, 16);
         return;
       }
       const cable = cables.find((c) => c.id === selected.id);
@@ -296,13 +389,9 @@ export const RedeProjetoPage: React.FC = () => {
         return;
       }
       const target = cableFlyTarget(cable);
-      map.flyTo({
-        center: [target.longitude, target.latitude],
-        zoom: Math.max(map.getZoom(), 15),
-        essential: true,
-      });
+      flyToPoint(target.latitude, target.longitude, 15);
     },
-    [cables, fats],
+    [cables, fats, flyToPoint],
   );
 
   useEffect(() => {
@@ -322,39 +411,6 @@ export const RedeProjetoPage: React.FC = () => {
     didFlyToSelectionRef.current = true;
     flyToSelection(urlState.selected);
   }, [cables, fats, flyToSelection, urlState.selected]);
-
-  const hits = useMemo<MapSearchHit[]>(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) {
-      return [];
-    }
-    const fatHits: MapSearchHit[] = fats
-      .filter(
-        (f) =>
-          f.name.toLowerCase().includes(q) ||
-          f.idErp.toLowerCase().includes(q),
-      )
-      .map((f) => ({
-        id: f.id,
-        kind: 'fat' as const,
-        name: f.name,
-        subtitle: f.idErp,
-      }));
-    const cableHits: MapSearchHit[] = cables
-      .filter(
-        (c) =>
-          c.name.toLowerCase().includes(q) ||
-          c.idErp.toLowerCase().includes(q) ||
-          (c.cableTypeName?.toLowerCase().includes(q) ?? false),
-      )
-      .map((c) => ({
-        id: c.id,
-        kind: 'cable' as const,
-        name: c.name,
-        subtitle: c.cableTypeName ?? c.idErp,
-      }));
-    return [...fatHits, ...cableHits].slice(0, 40);
-  }, [cables, fats, search]);
 
   const handleSearchChange = useCallback(
     (value: string) => {
@@ -378,6 +434,20 @@ export const RedeProjetoPage: React.FC = () => {
     [layers.cables, layers.fat, patchUrlState],
   );
 
+  const handleMapStyleChange = useCallback(
+    (style: MapBaseStyleId) => {
+      patchUrlState({ mapStyle: style });
+    },
+    [patchUrlState],
+  );
+
+  const handleShowFatLabelsChange = useCallback(
+    (value: boolean) => {
+      patchUrlState({ showFatLabels: value });
+    },
+    [patchUrlState],
+  );
+
   const handleToggleCollapse = useCallback(() => {
     if (isMobile) {
       setMobileOpen((open) => !open);
@@ -390,13 +460,26 @@ export const RedeProjetoPage: React.FC = () => {
     (hit: MapSearchHit) => {
       const selected: MapSelectedRef = { kind: hit.kind, id: hit.id };
       didFlyToSelectionRef.current = true;
-      patchUrlState({ selected });
+      patchUrlState({
+        selected,
+        lat: hit.latitude,
+        lng: hit.longitude,
+      });
       if (isMobile) {
         setMobileOpen(false);
       }
-      flyToSelection(selected);
+      flyToPoint(
+        hit.latitude,
+        hit.longitude,
+        hit.kind === 'fat' ? 16 : 15,
+      );
+      void fetchNearby(
+        hit.latitude,
+        hit.longitude,
+        DEFAULT_NEARBY_RADIUS_METERS,
+      );
     },
-    [flyToSelection, isMobile, patchUrlState],
+    [fetchNearby, flyToPoint, isMobile, patchUrlState],
   );
 
   if (!mapboxToken) {
@@ -433,7 +516,9 @@ export const RedeProjetoPage: React.FC = () => {
         <ProjectMap
           mapRef={mapRef}
           mapboxToken={mapboxToken}
-          isDark={isDark}
+          isAppDark={isDark}
+          mapStyle={mapStyle}
+          showFatLabels={showFatLabels}
           initialViewState={initialView}
           fats={fats}
           cables={cables}
@@ -458,11 +543,16 @@ export const RedeProjetoPage: React.FC = () => {
           onSearchChange={handleSearchChange}
           layers={layers}
           onLayerChange={handleLayerChange}
+          mapStyle={mapStyle}
+          onMapStyleChange={handleMapStyleChange}
+          showFatLabels={showFatLabels}
+          onShowFatLabelsChange={handleShowFatLabelsChange}
           hits={hits}
           onSelectHit={handleSelectHit}
           selectedId={selectedId}
           loading={loading}
-          error={error}
+          searching={searching}
+          error={searchError ?? error}
           fatCount={fats.length}
           cableCount={cables.length}
           collapsed={collapsed}

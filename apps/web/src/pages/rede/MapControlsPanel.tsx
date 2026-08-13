@@ -10,8 +10,10 @@ import {
   LuSearch,
   LuSettings,
   LuShapes,
+  LuTag,
   LuX,
 } from 'react-icons/lu';
+import { MAP_BASE_STYLES, type MapBaseStyleId } from './map-styles';
 
 export type MapLayerVisibility = {
   fat: boolean;
@@ -28,15 +30,28 @@ export type MapSearchHit = {
   longitude: number;
 };
 
-export type MapPanelTab = 'elementos' | 'aparencia' | 'configuracoes';
+export type MapPanelTab =
+  | 'buscar'
+  | 'elementos'
+  | 'aparencia'
+  | 'configuracoes';
 
 const PANEL_TABS: {
   id: MapPanelTab;
   label: string;
   icon: React.ReactNode;
 }[] = [
-  { id: 'elementos', label: 'Elementos', icon: <LuShapes className="size-3.5" /> },
-  { id: 'aparencia', label: 'Aparência', icon: <LuPalette className="size-3.5" /> },
+  { id: 'buscar', label: 'Buscar', icon: <LuSearch className="size-3.5" /> },
+  {
+    id: 'elementos',
+    label: 'Elementos',
+    icon: <LuShapes className="size-3.5" />,
+  },
+  {
+    id: 'aparencia',
+    label: 'Aparência',
+    icon: <LuPalette className="size-3.5" />,
+  },
   {
     id: 'configuracoes',
     label: 'Config',
@@ -49,10 +64,15 @@ export type MapControlsPanelProps = {
   onSearchChange: (value: string) => void;
   layers: MapLayerVisibility;
   onLayerChange: (layer: keyof MapLayerVisibility, value: boolean) => void;
+  mapStyle: MapBaseStyleId;
+  onMapStyleChange: (style: MapBaseStyleId) => void;
+  showFatLabels: boolean;
+  onShowFatLabelsChange: (value: boolean) => void;
   hits: MapSearchHit[];
   onSelectHit: (hit: MapSearchHit) => void;
   selectedId: string | null;
   loading: boolean;
+  searching?: boolean;
   error: string | null;
   fatCount: number;
   cableCount: number;
@@ -68,10 +88,15 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
   onSearchChange,
   layers,
   onLayerChange,
+  mapStyle,
+  onMapStyleChange,
+  showFatLabels,
+  onShowFatLabelsChange,
   hits,
   onSelectHit,
   selectedId,
   loading,
+  searching = false,
   error,
   fatCount,
   cableCount,
@@ -81,7 +106,7 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
   mobileOpen,
   onCloseMobile,
 }) => {
-  const [tab, setTab] = useState<MapPanelTab>('elementos');
+  const [tab, setTab] = useState<MapPanelTab>('buscar');
 
   const openTab = (next: MapPanelTab) => {
     setTab(next);
@@ -190,7 +215,7 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
           onSelectionChange={(key) => setTab(String(key) as MapPanelTab)}
           className="flex min-h-0 flex-1 flex-col"
         >
-          <Tabs.ListContainer className="shrink-0 border-b border-border px-2">
+          <Tabs.ListContainer className="shrink-0 border-b border-border px-1">
             <Tabs.List
               aria-label="Seções do painel do projeto"
               className="w-full gap-0"
@@ -199,9 +224,9 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
                 <Tabs.Tab
                   key={item.id}
                   id={item.id}
-                  className="flex-1 px-1.5 text-xs"
+                  className="min-w-0 flex-1 px-1 text-[11px]"
                 >
-                  <span className="flex items-center justify-center gap-1">
+                  <span className="flex flex-col items-center gap-0.5 py-0.5">
                     <span aria-hidden>{item.icon}</span>
                     <span className="truncate">{item.label}</span>
                   </span>
@@ -212,7 +237,7 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
           </Tabs.ListContainer>
 
           <Tabs.Panel
-            id="elementos"
+            id="buscar"
             className="flex min-h-0 flex-1 flex-col outline-none"
           >
             <div className="shrink-0 space-y-3 border-b border-border p-3">
@@ -229,6 +254,13 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
                   <SearchField.ClearButton />
                 </SearchField.Group>
               </SearchField>
+
+              {searching ? (
+                <p className="flex items-center gap-2 text-xs text-muted">
+                  <Spinner size="sm" aria-label="Buscando elementos" />
+                  Buscando…
+                </p>
+              ) : null}
 
               {error ? (
                 <p role="alert" className="text-xs text-danger">
@@ -251,6 +283,8 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
                 <p className="px-2 py-3 text-xs text-muted">
                   Digite ao menos 2 caracteres para buscar.
                 </p>
+              ) : searching && hits.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted">Buscando…</p>
               ) : hits.length === 0 ? (
                 <p className="flex items-center gap-2 px-2 py-3 text-xs text-muted">
                   <LuSearch aria-hidden className="size-3.5 shrink-0" />
@@ -303,12 +337,12 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
           </Tabs.Panel>
 
           <Tabs.Panel
-            id="aparencia"
+            id="elementos"
             className="min-h-0 flex-1 overflow-y-auto outline-none"
           >
             <div className="space-y-1 p-2">
               <p className="px-2 pb-1 text-[11px] font-medium tracking-wide text-muted uppercase">
-                Camadas
+                Camadas visíveis
               </p>
               <Switch
                 isSelected={layers.fat}
@@ -383,16 +417,71 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
           </Tabs.Panel>
 
           <Tabs.Panel
+            id="aparencia"
+            className="min-h-0 flex-1 overflow-y-auto outline-none"
+          >
+            <div className="space-y-1 p-2" role="radiogroup" aria-label="Estilo do mapa">
+              <p className="px-2 pb-1 text-[11px] font-medium tracking-wide text-muted uppercase">
+                Estilo do mapa
+              </p>
+              {MAP_BASE_STYLES.map((style) => {
+                const selected = mapStyle === style.id;
+                return (
+                  <button
+                    key={style.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => onMapStyleChange(style.id)}
+                    className={`flex w-full flex-col items-start rounded-lg px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                      selected
+                        ? 'bg-accent/15 text-foreground'
+                        : 'text-foreground hover:bg-default/50'
+                    }`}
+                  >
+                    <span className="text-sm font-medium">{style.label}</span>
+                    <span className="text-xs text-muted">
+                      {style.description}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </Tabs.Panel>
+
+          <Tabs.Panel
             id="configuracoes"
             className="min-h-0 flex-1 overflow-y-auto outline-none"
           >
-            <div className="space-y-2 p-4">
-              <p className="text-sm font-medium text-foreground">
-                Configurações
+            <div className="space-y-1 p-2">
+              <p className="px-2 pb-1 text-[11px] font-medium tracking-wide text-muted uppercase">
+                Exibição
               </p>
-              <p className="text-xs text-muted">
-                Opções do projeto e do mapa ficarão disponíveis aqui em breve.
-              </p>
+              <Switch
+                isSelected={showFatLabels}
+                onChange={onShowFatLabelsChange}
+                className="w-full rounded-lg px-2 py-2 hover:bg-default/40"
+              >
+                <Switch.Content className="w-full justify-between gap-3">
+                  <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
+                    <LuTag
+                      aria-hidden
+                      className="size-4 shrink-0 text-accent"
+                    />
+                    <span className="min-w-0">
+                      <span className="block font-medium">
+                        Nomes das CTOs
+                      </span>
+                      <span className="block text-xs text-muted">
+                        Mostrar rótulos no mapa
+                      </span>
+                    </span>
+                  </span>
+                  <Switch.Control className="shrink-0">
+                    <Switch.Thumb />
+                  </Switch.Control>
+                </Switch.Content>
+              </Switch>
             </div>
           </Tabs.Panel>
         </Tabs>

@@ -1,4 +1,9 @@
 import { routes } from '../../shared/routes';
+import {
+  DEFAULT_MAP_BASE_STYLE,
+  parseMapBaseStyleId,
+  type MapBaseStyleId,
+} from './map-styles';
 
 export type MapSelectedRef = {
   kind: 'fat' | 'cable';
@@ -16,6 +21,8 @@ export type MapUrlState = {
     cables: boolean;
   };
   panelCollapsed: boolean;
+  mapStyle: MapBaseStyleId;
+  showFatLabels: boolean;
 };
 
 export const DEFAULT_MAP_LAYERS = {
@@ -77,6 +84,8 @@ export function parseMapSearchParams(params: URLSearchParams): MapUrlState {
     selected: parseSelected(params.get('sel')),
     layers: parseLayers(params.get('layers')),
     panelCollapsed: params.get('panel') === 'collapsed',
+    mapStyle: parseMapBaseStyleId(params.get('style')),
+    showFatLabels: params.get('labels') !== '0',
   };
 }
 
@@ -113,6 +122,14 @@ export function toMapSearchParams(state: MapUrlState): URLSearchParams {
 
   if (state.panelCollapsed) {
     params.set('panel', 'collapsed');
+  }
+
+  if (state.mapStyle !== DEFAULT_MAP_BASE_STYLE) {
+    params.set('style', state.mapStyle);
+  }
+
+  if (!state.showFatLabels) {
+    params.set('labels', '0');
   }
 
   return params;
