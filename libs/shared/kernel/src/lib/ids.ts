@@ -22,6 +22,7 @@ export type WorkOrderId = Brand<string, 'WorkOrderId'>;
 export type SubjectId = Brand<string, 'SubjectId'>;
 export type CareInboxId = Brand<string, 'CareInboxId'>;
 export type CareTicketId = Brand<string, 'CareTicketId'>;
+export type FiberAccessTerminalId = Brand<string, 'FiberAccessTerminalId'>;
 
 export const customerId = (value: string): CustomerId =>
   brandedId(value, 'CustomerId');
@@ -37,3 +38,6 @@ export const careInboxId = (value: string): CareInboxId =>
   brandedId(value, 'CareInboxId');
 export const careTicketId = (value: string): CareTicketId =>
   brandedId(value, 'CareTicketId');
+export const fiberAccessTerminalId = (
+  value: string,
+): FiberAccessTerminalId => brandedId(value, 'FiberAccessTerminalId');

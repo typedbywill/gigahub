@@ -12,6 +12,7 @@ export {
   type SubjectId,
   type CareInboxId,
   type CareTicketId,
+  type FiberAccessTerminalId,
   customerId,
   contractId,
   employeeId,
@@ -19,6 +20,7 @@ export {
   subjectId,
   careInboxId,
   careTicketId,
+  fiberAccessTerminalId,
 } from './lib/ids';
 export {
   type GeoPoint,

@@ -1,0 +1,9 @@
+{
+  "name": "fiber-access-terminal",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/fiber-access-terminal/src",
+  "projectType": "library",
+  "tags": ["type:domain", "scope:field-work"],
+  "// targets": "to see all targets run: nx show project fiber-access-terminal --web",
+  "targets": {}
+}

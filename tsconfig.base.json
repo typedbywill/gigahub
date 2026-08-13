@@ -29,7 +29,13 @@
       "@gigahub/domain/work-order": ["./libs/domain/work-order/src/index.ts"],
       "@shared/domain/work-order": ["./libs/domain/work-order/src/index.ts"],
       "@gigahub/domain/care-inbox": ["./libs/domain/care-inbox/src/index.ts"],
-      "@shared/domain/care-inbox": ["./libs/domain/care-inbox/src/index.ts"]
+      "@shared/domain/care-inbox": ["./libs/domain/care-inbox/src/index.ts"],
+      "@gigahub/domain/fiber-access-terminal": [
+        "./libs/domain/fiber-access-terminal/src/index.ts"
+      ],
+      "@shared/domain/fiber-access-terminal": [
+        "./libs/domain/fiber-access-terminal/src/index.ts"
+      ]
     }
   },
   "exclude": ["node_modules", "tmp"]
