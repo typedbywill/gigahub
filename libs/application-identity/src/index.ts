@@ -4,6 +4,9 @@ export {
   type UserRepository,
   type UserListQuery,
   type UserListResult,
+  type RoleRepository,
+  type GrantRepository,
+  type ObjectStoragePort,
   type CredentialRepository,
   type SessionRepository,
   type ErpCollaborator,
@@ -19,7 +22,10 @@ export {
   toPublicUserDto,
   toUserListItemDto,
   toUserDetailDto,
+  toRoleSummaryDto,
+  resolveAvatarUrl,
 } from './lib/mappers';
+export { buildUserDetailDto } from './lib/build-user-detail';
 export { LoginUseCase, type LoginCommand } from './lib/login.use-case';
 export {
   RenewTokenUseCase,
@@ -42,3 +48,22 @@ export {
   InactivateUserUseCase,
   type InactivateUserCommand,
 } from './lib/inactivate-user.use-case';
+export {
+  UpdateUserProfileUseCase,
+  type UpdateUserProfileCommand,
+} from './lib/update-user-profile.use-case';
+export {
+  SetUserAvatarUseCase,
+  ClearUserAvatarUseCase,
+  type SetUserAvatarCommand,
+  type ClearUserAvatarCommand,
+} from './lib/set-user-avatar.use-case';
+export {
+  SeedDefaultRolesUseCase,
+  type SeedDefaultRolesResult,
+} from './lib/seed-default-roles.use-case';
+export { ListRolesUseCase } from './lib/list-roles.use-case';
+export {
+  ReplaceUserRolesUseCase,
+  type ReplaceUserRolesCommand,
+} from './lib/replace-user-roles.use-case';

@@ -1,14 +1,17 @@
 import type { InactivateUserResponseDto } from '@gigahub/shared/contracts';
 import { userId } from '@gigahub/shared/kernel';
+import { buildUserDetailDto } from './build-user-detail';
 import {
   ApplicationError,
   ApplicationErrorCodes,
   type Clock,
   type ErpUserDirectory,
+  type GrantRepository,
+  type ObjectStoragePort,
+  type RoleRepository,
   type SessionRepository,
   type UserRepository,
 } from './ports';
-import { toUserDetailDto } from './mappers';
 
 export interface InactivateUserCommand {
   userId: string;
@@ -24,6 +27,10 @@ export class InactivateUserUseCase {
     private readonly sessions: SessionRepository,
     private readonly erp: ErpUserDirectory | null,
     private readonly clock: Clock,
+    private readonly roles: RoleRepository,
+    private readonly grants: GrantRepository,
+    private readonly storage: ObjectStoragePort | null,
+    private readonly avatarBucket: string,
   ) {}
 
   async execute(
@@ -38,8 +45,15 @@ export class InactivateUserUseCase {
       );
     }
 
+    const detailDeps = {
+      roles: this.roles,
+      grants: this.grants,
+      storage: this.storage,
+      avatarBucket: this.avatarBucket,
+    };
+
     if (!user.isActive()) {
-      return { user: toUserDetailDto(user) };
+      return { user: await buildUserDetailDto(user, detailDeps) };
     }
 
     if (user.hasErpLink()) {
@@ -64,6 +78,6 @@ export class InactivateUserUseCase {
     await this.users.save(user);
     await this.sessions.revokeAllForUser(user.id, this.clock.now());
 
-    return { user: toUserDetailDto(user) };
+    return { user: await buildUserDetailDto(user, detailDeps) };
   }
 }

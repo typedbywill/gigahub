@@ -1,9 +1,12 @@
 import type {
   Credential,
+  GrantPermission,
+  GrantRole,
+  Role,
   Session,
   User,
 } from '@gigahub/domain/identity';
-import type { SessionId, UserId } from '@gigahub/shared/kernel';
+import type { RoleId, SessionId, UserId } from '@gigahub/shared/kernel';
 import type { PublicUserDto } from '@gigahub/shared/contracts';
 
 export interface UserListQuery {
@@ -26,6 +29,31 @@ export interface UserRepository {
   findAllWithErpLink(): Promise<User[]>;
   list(query: UserListQuery): Promise<UserListResult>;
   save(user: User): Promise<void>;
+}
+
+export interface RoleRepository {
+  findById(id: RoleId): Promise<Role | null>;
+  findBySlug(slug: string): Promise<Role | null>;
+  listActive(): Promise<Role[]>;
+  save(role: Role): Promise<void>;
+}
+
+export interface GrantRepository {
+  listRoleGrantsByUserId(userId: UserId): Promise<GrantRole[]>;
+  listPermissionGrantsByUserId(userId: UserId): Promise<GrantPermission[]>;
+  saveRoleGrant(grant: GrantRole): Promise<void>;
+  savePermissionGrant(grant: GrantPermission): Promise<void>;
+}
+
+export interface ObjectStoragePort {
+  uploadFile(
+    bucket: string,
+    key: string,
+    file: Buffer,
+    contentType?: string,
+  ): Promise<string>;
+  getFileUrl(bucket: string, key: string): Promise<string>;
+  deleteFile(bucket: string, key: string): Promise<void>;
 }
 
 export interface CredentialRepository {
@@ -112,4 +140,6 @@ export const ApplicationErrorCodes = {
   Unauthorized: 'UNAUTHORIZED',
   ErpUnavailable: 'ERP_UNAVAILABLE',
   NotFound: 'NOT_FOUND',
+  Conflict: 'CONFLICT',
+  ValidationError: 'VALIDATION_ERROR',
 } as const;

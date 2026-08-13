@@ -97,6 +97,7 @@ export class MongoUserRepository implements UserRepository {
             cashboxId: snap.cashboxId ?? null,
             warehouseId: snap.warehouseId ?? null,
             planningId: snap.planningId ?? null,
+            avatarObjectKey: snap.avatarObjectKey ?? null,
             updatedAt: snap.updatedAt,
           },
           $setOnInsert: {
@@ -121,6 +122,7 @@ export class MongoUserRepository implements UserRepository {
     cashboxId?: string | null;
     warehouseId?: string | null;
     planningId?: string | null;
+    avatarObjectKey?: string | null;
     createdAt: Date;
     updatedAt: Date;
   }): User {
@@ -136,6 +138,7 @@ export class MongoUserRepository implements UserRepository {
       cashboxId: doc.cashboxId ?? undefined,
       warehouseId: doc.warehouseId ?? undefined,
       planningId: doc.planningId ?? undefined,
+      avatarObjectKey: doc.avatarObjectKey ?? undefined,
       createdAt: doc.createdAt,
       updatedAt: doc.updatedAt,
     });

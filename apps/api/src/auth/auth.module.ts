@@ -9,6 +9,7 @@ import {
   ListUsersUseCase,
   LoginUseCase,
   RenewTokenUseCase,
+  SeedDefaultRolesUseCase,
   SyncUsersFromErpUseCase,
   type ErpUserDirectory,
 } from '@gigahub/application-identity';
@@ -17,9 +18,13 @@ import type { EnvConfig } from '@gigahub/shared/config';
 import { UserModel, UserSchema } from './persistence/user.schema';
 import { CredentialModel, CredentialSchema } from './persistence/credential.schema';
 import { SessionModel, SessionSchema } from './persistence/session.schema';
+import { RoleModel, RoleSchema } from './persistence/role.schema';
+import { GrantModel, GrantSchema } from './persistence/grant.schema';
 import { MongoUserRepository } from './persistence/mongo-user.repository';
 import { MongoCredentialRepository } from './persistence/mongo-credential.repository';
 import { MongoSessionRepository } from './persistence/mongo-session.repository';
+import { MongoRoleRepository } from './persistence/mongo-role.repository';
+import { MongoGrantRepository } from './persistence/mongo-grant.repository';
 import {
   Argon2PasswordHasher,
   CryptoRefreshTokenService,
@@ -29,7 +34,7 @@ import {
 import { JoseAccessTokenIssuer } from './crypto/jose-token.issuer';
 import { AuthController } from './auth.controller';
 import { UsersController } from './users.controller';
-import { AuthDevSeedService } from './auth-dev-seed.service';
+import { AuthRolesBootstrapService } from './auth-roles-bootstrap.service';
 import { SyncUsersScheduler } from './sync-users.scheduler';
 import { AccessTokenGuard } from './access-token.guard';
 
@@ -42,6 +47,8 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
       { name: UserModel.name, schema: UserSchema },
       { name: CredentialModel.name, schema: CredentialSchema },
       { name: SessionModel.name, schema: SessionSchema },
+      { name: RoleModel.name, schema: RoleSchema },
+      { name: GrantModel.name, schema: GrantSchema },
     ]),
   ],
   controllers: [AuthController, UsersController],
@@ -49,13 +56,21 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
     MongoUserRepository,
     MongoCredentialRepository,
     MongoSessionRepository,
+    MongoRoleRepository,
+    MongoGrantRepository,
     Argon2PasswordHasher,
     CryptoRefreshTokenService,
     UuidGenerator,
     SystemClock,
     JoseAccessTokenIssuer,
     AccessTokenGuard,
-    AuthDevSeedService,
+    {
+      provide: SeedDefaultRolesUseCase,
+      useFactory: (roles: MongoRoleRepository, ids: UuidGenerator) =>
+        new SeedDefaultRolesUseCase(roles, ids),
+      inject: [MongoRoleRepository, UuidGenerator],
+    },
+    AuthRolesBootstrapService,
     {
       provide: ERP_USER_DIRECTORY,
       useFactory: (config: ConfigService<EnvConfig, true>): ErpUserDirectory | null => {
@@ -153,8 +168,25 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
     },
     {
       provide: GetUserUseCase,
-      useFactory: (users: MongoUserRepository) => new GetUserUseCase(users),
-      inject: [MongoUserRepository],
+      useFactory: (
+        users: MongoUserRepository,
+        roles: MongoRoleRepository,
+        grants: MongoGrantRepository,
+        config: ConfigService<EnvConfig, true>,
+      ) =>
+        new GetUserUseCase(
+          users,
+          roles,
+          grants,
+          null,
+          config.get('MINIO_BUCKET', { infer: true }),
+        ),
+      inject: [
+        MongoUserRepository,
+        MongoRoleRepository,
+        MongoGrantRepository,
+        ConfigService,
+      ],
     },
     {
       provide: InactivateUserUseCase,
@@ -163,12 +195,28 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
         sessions: MongoSessionRepository,
         erp: ErpUserDirectory | null,
         clock: SystemClock,
-      ) => new InactivateUserUseCase(users, sessions, erp, clock),
+        roles: MongoRoleRepository,
+        grants: MongoGrantRepository,
+        config: ConfigService<EnvConfig, true>,
+      ) =>
+        new InactivateUserUseCase(
+          users,
+          sessions,
+          erp,
+          clock,
+          roles,
+          grants,
+          null,
+          config.get('MINIO_BUCKET', { infer: true }),
+        ),
       inject: [
         MongoUserRepository,
         MongoSessionRepository,
         ERP_USER_DIRECTORY,
         SystemClock,
+        MongoRoleRepository,
+        MongoGrantRepository,
+        ConfigService,
       ],
     },
     {

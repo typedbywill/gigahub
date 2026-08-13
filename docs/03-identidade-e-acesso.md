@@ -38,7 +38,7 @@ Esses valores são identidades externas vinculáveis e mutáveis.
    - colaborador com vínculo IXC (`idErp`): validação **ao vivo** no MySQL do
      ERP, comparando `SHA-256(hex)` da senha com `usuarios.senha` (mesmo método
      do IXC);
-   - usuário local (ex.: seed de desenvolvimento): Argon2id na `Credential`
+   - usuário local (bootstrap manual no banco): Argon2id na `Credential`
      do GigaHub.
 4. O backend cria uma sessão e retorna access token e refresh token.
 5. O login bem-sucedido e as falhas relevantes são auditados.

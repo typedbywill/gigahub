@@ -38,6 +38,9 @@ export class UserModel {
   @Prop()
   planningId?: string;
 
+  @Prop()
+  avatarObjectKey?: string;
+
   createdAt!: Date;
   updatedAt!: Date;
 }

@@ -118,4 +118,20 @@ describe('User', () => {
       }),
     ).toThrow(DomainError);
   });
+
+  it('sets and clears avatar object key', () => {
+    const user = active();
+    expect(user.avatarObjectKey).toBeUndefined();
+
+    user.setAvatar('avatars/usr-1/photo.webp');
+    expect(user.avatarObjectKey).toBe('avatars/usr-1/photo.webp');
+
+    user.clearAvatar();
+    expect(user.avatarObjectKey).toBeUndefined();
+  });
+
+  it('rejects empty avatar object key', () => {
+    const user = active();
+    expect(() => user.setAvatar('  ')).toThrow();
+  });
 });

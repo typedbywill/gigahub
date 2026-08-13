@@ -10,6 +10,7 @@ export const publicUserDtoSchema = z.object({
   idErp: z.string().min(1).optional(),
   idErpEmployee: z.string().min(1).optional(),
   jobTitle: z.string().min(1).optional(),
+  avatarUrl: z.string().url().optional(),
 });
 
 export type PublicUserDto = z.infer<typeof publicUserDtoSchema>;
@@ -82,10 +83,31 @@ export const userListItemDtoSchema = publicUserDtoSchema.extend({
 
 export type UserListItemDto = z.infer<typeof userListItemDtoSchema>;
 
+export const roleSummaryDtoSchema = z.object({
+  id: z.string().min(1),
+  slug: z.string().min(1),
+  name: z.string().min(1),
+});
+
+export type RoleSummaryDto = z.infer<typeof roleSummaryDtoSchema>;
+
+export const roleListItemDtoSchema = roleSummaryDtoSchema.extend({
+  permissionIds: z.array(z.string().min(1)),
+});
+
+export type RoleListItemDto = z.infer<typeof roleListItemDtoSchema>;
+
+export const listRolesResponseDtoSchema = z.object({
+  items: z.array(roleListItemDtoSchema),
+});
+
+export type ListRolesResponseDto = z.infer<typeof listRolesResponseDtoSchema>;
+
 export const userDetailDtoSchema = userListItemDtoSchema.extend({
   cashboxId: z.string().min(1).optional(),
   warehouseId: z.string().min(1).optional(),
   planningId: z.string().min(1).optional(),
+  roles: z.array(roleSummaryDtoSchema).default([]),
 });
 
 export type UserDetailDto = z.infer<typeof userDetailDtoSchema>;
@@ -105,6 +127,47 @@ export const inactivateUserResponseDtoSchema = z.object({
 
 export type InactivateUserResponseDto = z.infer<
   typeof inactivateUserResponseDtoSchema
+>;
+
+export const updateUserRequestDtoSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    email: z.string().email().optional(),
+  })
+  .refine((value) => value.name !== undefined || value.email !== undefined, {
+    message: 'At least one of name or email is required',
+  });
+
+export type UpdateUserRequestDto = z.infer<typeof updateUserRequestDtoSchema>;
+
+export const updateUserResponseDtoSchema = z.object({
+  user: userDetailDtoSchema,
+});
+
+export type UpdateUserResponseDto = z.infer<typeof updateUserResponseDtoSchema>;
+
+export const replaceUserRolesRequestDtoSchema = z.object({
+  roleIds: z.array(z.string().min(1)),
+});
+
+export type ReplaceUserRolesRequestDto = z.infer<
+  typeof replaceUserRolesRequestDtoSchema
+>;
+
+export const replaceUserRolesResponseDtoSchema = z.object({
+  user: userDetailDtoSchema,
+});
+
+export type ReplaceUserRolesResponseDto = z.infer<
+  typeof replaceUserRolesResponseDtoSchema
+>;
+
+export const updateUserAvatarResponseDtoSchema = z.object({
+  user: userDetailDtoSchema,
+});
+
+export type UpdateUserAvatarResponseDto = z.infer<
+  typeof updateUserAvatarResponseDtoSchema
 >;
 
 /** @deprecated Prefer PublicUserDto once auth is wired. */

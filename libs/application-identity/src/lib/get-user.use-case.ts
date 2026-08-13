@@ -1,18 +1,27 @@
 import type { UserDetailDto } from '@gigahub/shared/contracts';
 import { userId } from '@gigahub/shared/kernel';
+import { buildUserDetailDto } from './build-user-detail';
 import {
   ApplicationError,
   ApplicationErrorCodes,
+  type GrantRepository,
+  type ObjectStoragePort,
+  type RoleRepository,
   type UserRepository,
 } from './ports';
-import { toUserDetailDto } from './mappers';
 
 export interface GetUserCommand {
   userId: string;
 }
 
 export class GetUserUseCase {
-  constructor(private readonly users: UserRepository) {}
+  constructor(
+    private readonly users: UserRepository,
+    private readonly roles: RoleRepository,
+    private readonly grants: GrantRepository,
+    private readonly storage: ObjectStoragePort | null,
+    private readonly avatarBucket: string,
+  ) {}
 
   async execute(command: GetUserCommand): Promise<UserDetailDto> {
     const user = await this.users.findById(userId(command.userId));
@@ -23,6 +32,11 @@ export class GetUserUseCase {
         { userId: command.userId },
       );
     }
-    return toUserDetailDto(user);
+    return buildUserDetailDto(user, {
+      roles: this.roles,
+      grants: this.grants,
+      storage: this.storage,
+      avatarBucket: this.avatarBucket,
+    });
   }
 }

@@ -22,6 +22,7 @@ export interface UserSnapshot {
   cashboxId?: string;
   warehouseId?: string;
   planningId?: string;
+  avatarObjectKey?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -86,6 +87,7 @@ export class User {
       cashboxId: optionalNonEmpty(input.cashboxId, 'cashboxId'),
       warehouseId: optionalNonEmpty(input.warehouseId, 'warehouseId'),
       planningId: optionalNonEmpty(input.planningId, 'planningId'),
+      avatarObjectKey: optionalNonEmpty(input.avatarObjectKey, 'avatarObjectKey'),
       createdAt: now,
       updatedAt: input.updatedAt ?? now,
     });
@@ -161,6 +163,10 @@ export class User {
 
   get planningId(): string | undefined {
     return this.props.planningId;
+  }
+
+  get avatarObjectKey(): string | undefined {
+    return this.props.avatarObjectKey;
   }
 
   hasErpLink(): boolean {
@@ -242,6 +248,16 @@ export class User {
 
   bumpAuthorizationVersion(): void {
     this.props.authorizationVersion += 1;
+    this.touch();
+  }
+
+  setAvatar(objectKey: string): void {
+    this.props.avatarObjectKey = assertNonEmpty(objectKey, 'avatarObjectKey');
+    this.touch();
+  }
+
+  clearAvatar(): void {
+    this.props.avatarObjectKey = undefined;
     this.touch();
   }
 

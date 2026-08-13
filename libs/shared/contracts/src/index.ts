@@ -13,6 +13,14 @@ export type {
   UserDetailDto,
   PaginatedUsersDto,
   InactivateUserResponseDto,
+  RoleSummaryDto,
+  RoleListItemDto,
+  ListRolesResponseDto,
+  UpdateUserRequestDto,
+  UpdateUserResponseDto,
+  ReplaceUserRolesRequestDto,
+  ReplaceUserRolesResponseDto,
+  UpdateUserAvatarResponseDto,
 } from './lib/identity';
 export {
   userStatusSchema,
@@ -28,6 +36,14 @@ export {
   userDetailDtoSchema,
   paginatedUsersDtoSchema,
   inactivateUserResponseDtoSchema,
+  roleSummaryDtoSchema,
+  roleListItemDtoSchema,
+  listRolesResponseDtoSchema,
+  updateUserRequestDtoSchema,
+  updateUserResponseDtoSchema,
+  replaceUserRolesRequestDtoSchema,
+  replaceUserRolesResponseDtoSchema,
+  updateUserAvatarResponseDtoSchema,
 } from './lib/identity';
 export {
   geoPointDtoSchema,

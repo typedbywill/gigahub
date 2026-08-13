@@ -1,11 +1,16 @@
 import type {
   PublicUserDto,
+  RoleSummaryDto,
   UserDetailDto,
   UserListItemDto,
 } from '@gigahub/shared/contracts';
-import type { User } from '@gigahub/domain/identity';
+import type { Role, User } from '@gigahub/domain/identity';
+import type { ObjectStoragePort } from './ports';
 
-export function toPublicUserDto(user: User): PublicUserDto {
+export function toPublicUserDto(
+  user: User,
+  avatarUrl?: string,
+): PublicUserDto {
   return {
     id: user.id,
     email: user.email,
@@ -14,23 +19,54 @@ export function toPublicUserDto(user: User): PublicUserDto {
     idErp: user.idErp,
     idErpEmployee: user.idErpEmployee,
     jobTitle: user.jobTitle,
+    avatarUrl,
   };
 }
 
-export function toUserListItemDto(user: User): UserListItemDto {
+export function toUserListItemDto(
+  user: User,
+  avatarUrl?: string,
+): UserListItemDto {
   const snap = user.toSnapshot();
   return {
-    ...toPublicUserDto(user),
+    ...toPublicUserDto(user, avatarUrl),
     createdAt: snap.createdAt.toISOString(),
     updatedAt: snap.updatedAt.toISOString(),
   };
 }
 
-export function toUserDetailDto(user: User): UserDetailDto {
+export function toRoleSummaryDto(role: Role): RoleSummaryDto {
   return {
-    ...toUserListItemDto(user),
+    id: role.id,
+    slug: role.slug,
+    name: role.name,
+  };
+}
+
+export function toUserDetailDto(
+  user: User,
+  options: {
+    avatarUrl?: string;
+    roles?: RoleSummaryDto[];
+  } = {},
+): UserDetailDto {
+  return {
+    ...toUserListItemDto(user, options.avatarUrl),
     cashboxId: user.cashboxId,
     warehouseId: user.warehouseId,
     planningId: user.planningId,
+    roles: options.roles ?? [],
   };
+}
+
+export async function resolveAvatarUrl(
+  user: User,
+  storage: ObjectStoragePort | null,
+  bucket: string,
+): Promise<string | undefined> {
+  const key = user.avatarObjectKey;
+  if (!key || !storage) {
+    return undefined;
+  }
+  return storage.getFileUrl(bucket, key);
 }

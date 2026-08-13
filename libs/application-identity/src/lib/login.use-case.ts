@@ -24,7 +24,7 @@ export interface LoginCommand {
 
 /**
  * ERP-linked users authenticate against IXC (SHA-256).
- * Local-only users (e.g. dev seed) use Argon2 Credential.
+ * Local-only users (manual bootstrap) use Argon2 Credential.
  */
 export class LoginUseCase {
   constructor(

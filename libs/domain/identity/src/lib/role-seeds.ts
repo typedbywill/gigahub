@@ -7,7 +7,8 @@ export interface RoleSeedDefinition {
 }
 
 /**
- * Default product roles for bootstrap/dev seed.
+ * Default product roles for bootstrap (idempotent on API startup).
+ * Includes admin-acesso so a manually granted first admin can manage access.
  * Persist via Role.create — composition remains mutable after seed.
  */
 export const DEFAULT_ROLE_SEEDS: readonly RoleSeedDefinition[] = [
