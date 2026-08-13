@@ -12,8 +12,10 @@ import {
   type SessionRepository,
   type UserRepository,
 } from './ports';
+import type { ResolveEffectiveAccess } from './resolve-effective-access';
 
 export interface InactivateUserCommand {
+  actorUserId: string;
   userId: string;
 }
 
@@ -29,6 +31,7 @@ export class InactivateUserUseCase {
     private readonly clock: Clock,
     private readonly roles: RoleRepository,
     private readonly grants: GrantRepository,
+    private readonly access: ResolveEffectiveAccess,
     private readonly storage: ObjectStoragePort | null,
     private readonly avatarBucket: string,
   ) {}
@@ -36,6 +39,8 @@ export class InactivateUserUseCase {
   async execute(
     command: InactivateUserCommand,
   ): Promise<InactivateUserResponseDto> {
+    await this.access.assertCan(command.actorUserId, 'users:inactivate');
+
     const user = await this.users.findById(userId(command.userId));
     if (!user) {
       throw new ApplicationError(

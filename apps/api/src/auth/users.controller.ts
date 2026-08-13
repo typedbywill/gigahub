@@ -4,6 +4,7 @@ import {
   ConflictException,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -62,7 +63,11 @@ export class UsersController {
   ) {}
 
   @Get()
-  async list(@Query() query: Record<string, unknown>): Promise<PaginatedUsersDto> {
+  async list(
+    @Query() query: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<PaginatedUsersDto> {
+    const actorUserId = this.requireActor(req);
     const parsed = userListQueryDtoSchema.safeParse(query);
     if (!parsed.success) {
       throw new BadRequestException({
@@ -71,13 +76,26 @@ export class UsersController {
         details: parsed.error.flatten(),
       });
     }
-    return this.listUsers.execute(parsed.data);
+    try {
+      return await this.listUsers.execute({
+        ...parsed.data,
+        actorUserId,
+      });
+    } catch (error) {
+      this.rethrow(error);
+    }
   }
 
   @Get(':id')
-  async getById(@Param('id') id: string): Promise<UserDetailDto> {
+  async getById(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<UserDetailDto> {
     try {
-      return await this.getUser.execute({ userId: id });
+      return await this.getUser.execute({
+        actorUserId: this.requireActor(req),
+        userId: id,
+      });
     } catch (error) {
       this.rethrow(error);
     }
@@ -87,6 +105,7 @@ export class UsersController {
   async updateProfile(
     @Param('id') id: string,
     @Body() body: unknown,
+    @Req() req: AuthenticatedRequest,
   ): Promise<UpdateUserResponseDto> {
     const parsed = updateUserRequestDtoSchema.safeParse(body);
     if (!parsed.success) {
@@ -98,6 +117,7 @@ export class UsersController {
     }
     try {
       return await this.updateUserProfile.execute({
+        actorUserId: this.requireActor(req),
         userId: id,
         name: parsed.data.name,
         email: parsed.data.email,
@@ -122,6 +142,7 @@ export class UsersController {
           mimetype: string;
         }
       | undefined,
+    @Req() req: AuthenticatedRequest,
   ): Promise<UpdateUserAvatarResponseDto> {
     if (!file?.buffer?.length) {
       throw new BadRequestException({
@@ -131,6 +152,7 @@ export class UsersController {
     }
     try {
       return await this.setUserAvatar.execute({
+        actorUserId: this.requireActor(req),
         userId: id,
         file: file.buffer,
         contentType: file.mimetype,
@@ -143,9 +165,13 @@ export class UsersController {
   @Delete(':id/avatar')
   async removeAvatar(
     @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
   ): Promise<UpdateUserAvatarResponseDto> {
     try {
-      return await this.clearUserAvatar.execute({ userId: id });
+      return await this.clearUserAvatar.execute({
+        actorUserId: this.requireActor(req),
+        userId: id,
+      });
     } catch (error) {
       this.rethrow(error);
     }
@@ -165,17 +191,13 @@ export class UsersController {
         details: parsed.error.flatten(),
       });
     }
-    if (!req.userId) {
-      throw new UnauthorizedException({
-        error: 'UNAUTHORIZED',
-        message: 'Missing access token subject',
-      });
-    }
+    const actorUserId = this.requireActor(req);
     try {
       return await this.replaceUserRoles.execute({
+        actorUserId,
         userId: id,
         roleIds: parsed.data.roleIds,
-        grantedByUserId: req.userId,
+        grantedByUserId: actorUserId,
       });
     } catch (error) {
       this.rethrow(error);
@@ -184,12 +206,28 @@ export class UsersController {
 
   @Post(':id/inactivate')
   @HttpCode(HttpStatus.OK)
-  async inactivate(@Param('id') id: string): Promise<InactivateUserResponseDto> {
+  async inactivate(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ): Promise<InactivateUserResponseDto> {
     try {
-      return await this.inactivateUser.execute({ userId: id });
+      return await this.inactivateUser.execute({
+        actorUserId: this.requireActor(req),
+        userId: id,
+      });
     } catch (error) {
       this.rethrow(error);
     }
+  }
+
+  private requireActor(req: AuthenticatedRequest): string {
+    if (!req.userId) {
+      throw new UnauthorizedException({
+        error: 'UNAUTHORIZED',
+        message: 'Missing access token subject',
+      });
+    }
+    return req.userId;
   }
 
   private rethrow(error: unknown): never {
@@ -198,6 +236,13 @@ export class UsersController {
         throw new NotFoundException({
           error: error.code,
           message: error.message,
+        });
+      }
+      if (error.code === ApplicationErrorCodes.PermissionDenied) {
+        throw new ForbiddenException({
+          error: error.code,
+          message: error.message,
+          details: error.details,
         });
       }
       if (error.code === ApplicationErrorCodes.ErpUnavailable) {

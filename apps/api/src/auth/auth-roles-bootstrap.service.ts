@@ -14,7 +14,7 @@ export class AuthRolesBootstrapService implements OnModuleInit {
   async onModuleInit(): Promise<void> {
     const result = await this.seedDefaultRoles.execute();
     this.logger.log(
-      `Default roles bootstrap: created=${result.created} skipped=${result.skipped}`,
+      `Default roles bootstrap: created=${result.created} updated=${result.updated} skipped=${result.skipped}`,
     );
   }
 }

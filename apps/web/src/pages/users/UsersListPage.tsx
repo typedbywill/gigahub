@@ -28,6 +28,7 @@ import {
   type UsersListStatusFilter,
 } from './users-list-search';
 import { routes } from '../../shared/routes';
+import { Permissions } from '../../shared/permissions';
 
 function statusLabel(status: UserListItemDto['status']): string {
   return status === 'active' ? 'Ativo' : 'Inativo';
@@ -36,10 +37,12 @@ function statusLabel(status: UserListItemDto['status']): string {
 const UserActionsCell = React.memo(function UserActionsCell({
   user,
   listHref,
+  canInactivate,
   onInactivate,
 }: {
   user: UserListItemDto;
   listHref: string;
+  canInactivate: boolean;
   onInactivate: (user: UserListItemDto) => void;
 }) {
   const navigate = useNavigate();
@@ -70,7 +73,7 @@ const UserActionsCell = React.memo(function UserActionsCell({
             <LuEye className="size-4 shrink-0 text-muted" />
             <Label>Ver detalhes</Label>
           </Dropdown.Item>
-          {user.status === 'active' ? (
+          {canInactivate && user.status === 'active' ? (
             <Dropdown.Item
               id="inactivate"
               textValue="Inativar"
@@ -88,6 +91,9 @@ const UserActionsCell = React.memo(function UserActionsCell({
 
 export const UsersListPage: React.FC = () => {
   const accessToken = useAuthStore((s) => s.accessToken);
+  const canInactivate = useAuthStore((s) =>
+    s.hasPermission(Permissions.UsersInactivate),
+  );
   const [searchParams, setSearchParams] = useSearchParams();
 
   const listState = useMemo(
@@ -287,12 +293,13 @@ export const UsersListPage: React.FC = () => {
           <UserActionsCell
             user={row}
             listHref={listHref}
+            canInactivate={canInactivate}
             onInactivate={handleInactivate}
           />
         ),
       },
     ],
-    [handleInactivate, listHref],
+    [canInactivate, handleInactivate, listHref],
   );
 
   const getRowId = useCallback((row: UserListItemDto) => row.id, []);

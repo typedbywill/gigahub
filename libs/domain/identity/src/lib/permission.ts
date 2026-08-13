@@ -56,9 +56,28 @@ export const PERMISSION_CATALOG = [
     group: 'gamification',
   },
   {
+    id: 'users:read',
+    title: 'Ler usuários',
+    description: 'Listar e visualizar colaboradores',
+    group: 'users',
+  },
+  {
+    id: 'users:update',
+    title: 'Atualizar usuários',
+    description: 'Alterar perfil e avatar de colaboradores',
+    group: 'users',
+  },
+  {
+    id: 'users:inactivate',
+    title: 'Inativar usuários',
+    description: 'Bloquear colaboradores e revogar sessões',
+    group: 'users',
+  },
+  {
     id: 'access:manage',
     title: 'Gerenciar acesso',
-    description: 'Administrar roles, grants e visualizar permissões efetivas',
+    description:
+      'Administrar roles, grants, permissões de roles e atribuição de acesso a usuários',
     group: 'access',
   },
 ] as const satisfies readonly PermissionDefinition[];

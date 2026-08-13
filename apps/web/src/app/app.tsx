@@ -9,6 +9,7 @@ import {
   useParams,
 } from 'react-router-dom';
 import { Layout } from '../shared/components/Layout';
+import { RequirePermission } from '../shared/components/RequirePermission';
 import { HomePage } from '../pages/HomePage';
 import { LoginPage } from '../pages/LoginPage';
 import { PermissionsPage } from '../pages/settings/PermissionsPage';
@@ -16,6 +17,7 @@ import { RoleDetailPage } from '../pages/settings/RoleDetailPage';
 import { UsersListPage } from '../pages/users/UsersListPage';
 import { UserDetailPage } from '../pages/users/UserDetailPage';
 import { routes } from '../shared/routes';
+import { Permissions } from '../shared/permissions';
 import { useAuthStore } from '../shared/stores/auth.store';
 import { useThemeStore } from '../shared/stores/theme.store';
 
@@ -98,12 +100,37 @@ export function App() {
           <Route element={<ProtectedShell />}>
             <Route path={routes.home} element={<HomePage />} />
 
-            <Route path={routes.usuarios} element={<UsersListPage />} />
-            <Route path={`${routes.usuarios}/:id`} element={<UserDetailPage />} />
-            <Route path={routes.permissoes} element={<PermissionsPage />} />
+            <Route
+              path={routes.usuarios}
+              element={
+                <RequirePermission permission={Permissions.UsersRead}>
+                  <UsersListPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path={`${routes.usuarios}/:id`}
+              element={
+                <RequirePermission permission={Permissions.UsersRead}>
+                  <UserDetailPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path={routes.permissoes}
+              element={
+                <RequirePermission permission={Permissions.AccessManage}>
+                  <PermissionsPage />
+                </RequirePermission>
+              }
+            />
             <Route
               path={`${routes.permissoes}/:id`}
-              element={<RoleDetailPage />}
+              element={
+                <RequirePermission permission={Permissions.AccessManage}>
+                  <RoleDetailPage />
+                </RequirePermission>
+              }
             />
 
             {/* Aliases curtos = /configuracoes/... */}

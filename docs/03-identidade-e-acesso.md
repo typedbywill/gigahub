@@ -106,6 +106,9 @@ finance:cashbox:inspect
 telemetry:location:read
 gamification:adjust
 access:manage
+users:read
+users:update
+users:inactivate
 ```
 
 O backend verifica permissões no caso de uso. O frontend usa o mesmo catálogo para

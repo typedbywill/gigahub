@@ -57,3 +57,42 @@ Kernel (`assertNonEmpty`, `geoPoint`, IDs) é compartilhado; a política
   API, worker ou UI.
 - Teste comportamento, não getters: transições, recusas, códigos de erro.
 - Não dependa de Nest, Mongo ou HTTP nos specs de `libs/domain`.
+
+## UI — acessibilidade, praticidade e consistência
+
+Ao tocar em `apps/web` (e em componentes compartilhados de UI), trate
+acessibilidade e usabilidade como parte do entrega — não como polish opcional.
+
+### Acessibilidade
+
+- Controles só-ícone ou ambíguos levam `aria-label` (ou texto visível).
+- Ícones decorativos: `aria-hidden`. Estados expansíveis: `aria-expanded`.
+- Foque real: ordem de tab lógica; não remova outline sem `focus-visible`
+  equivalente.
+- Diálogos/menus: Escape fecha; foco fica preso enquanto abertos e volta
+  ao gatilho ao fechar (padrão do design system / HeroUI quando disponível).
+- Contraste legível em claro e escuro; não dependa só de cor para status.
+- Formulários: label associado, erro anunciável, submit por Enter no fluxo
+  principal.
+
+### Praticidade e atalhos
+
+- Listagens com busca: reutilize `useFocusSearchOnType` (`/` foca; digitar
+  fora de campo editável foca e preenche). Não reinventar atalho paralelo.
+- Ações frequentes devem ser alcançáveis sem mouse (botão nativo / item de
+  menu focável), não só em hover.
+- Loading, vazio e erro com mensagem clara e próxima da ação — nunca tela
+  muda sem feedback.
+- Prefira padrões já existentes (`DataTable`, layout, menus de ação) a UI
+  nova só para “ficar diferente”.
+
+### Consistência visual
+
+- Reuse tokens, espaçamentos, tipografia e componentes do design system do
+  app; evite cores/raios/sombras one-off.
+- Mesma hierarquia em telas irmãs (lista → detalhe → settings): títulos,
+  densidade, posição de CTA e filtros alinhados ao que já existe.
+- Ícones da mesma família e tamanho do contexto; botões destrutivos no
+  mesmo padrão visual das outras telas.
+- Antes de inventar layout: espelhe a página análoga mais próxima
+  (`UsersListPage`, `PermissionsPage`, etc.).

@@ -15,6 +15,7 @@ import {
   type UserRepository,
 } from './ports';
 import { toPublicUserDto } from './mappers';
+import type { ResolveEffectiveAccess } from './resolve-effective-access';
 
 export interface LoginCommand {
   email: string;
@@ -37,6 +38,7 @@ export class LoginUseCase {
     private readonly refreshTokens: RefreshTokenService,
     private readonly ids: IdGenerator,
     private readonly clock: Clock,
+    private readonly access: ResolveEffectiveAccess,
   ) {}
 
   async execute(command: LoginCommand): Promise<AuthTokens> {
@@ -94,10 +96,12 @@ export class LoginUseCase {
       email: user.email,
     });
 
+    const permissionIds = await this.access.permissionIds(user.id);
+
     return {
       accessToken,
       refreshToken,
-      user: toPublicUserDto(user),
+      user: toPublicUserDto(user, { permissionIds }),
     };
   }
 

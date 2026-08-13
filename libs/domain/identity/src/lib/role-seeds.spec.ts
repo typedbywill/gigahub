@@ -22,10 +22,24 @@ describe('DEFAULT_ROLE_SEEDS', () => {
     }
   });
 
-  it('gives admin-acesso the access:manage permission', () => {
+  it('gives admin-acesso access and user-control permissions', () => {
     const admin = DEFAULT_ROLE_SEEDS.find(
       (seed) => seed.slug === 'admin-acesso',
     );
-    expect(admin?.permissionIds).toContain('access:manage');
+    expect(admin?.permissionIds).toEqual(
+      expect.arrayContaining([
+        'access:manage',
+        'users:read',
+        'users:update',
+        'users:inactivate',
+      ]),
+    );
+  });
+
+  it('gives supervisor users:read', () => {
+    const supervisor = DEFAULT_ROLE_SEEDS.find(
+      (seed) => seed.slug === 'supervisor',
+    );
+    expect(supervisor?.permissionIds).toContain('users:read');
   });
 });

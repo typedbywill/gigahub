@@ -11,6 +11,7 @@ export const publicUserDtoSchema = z.object({
   idErpEmployee: z.string().min(1).optional(),
   jobTitle: z.string().min(1).optional(),
   avatarUrl: z.string().url().optional(),
+  permissionIds: z.array(z.string().min(1)).default([]),
 });
 
 export type PublicUserDto = z.infer<typeof publicUserDtoSchema>;

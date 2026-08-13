@@ -3,6 +3,7 @@ import { LoginUseCase } from './login.use-case';
 import { RenewTokenUseCase } from './renew-token.use-case';
 import { ChangePasswordUseCase } from './change-password.use-case';
 import { SyncUsersFromErpUseCase } from './sync-users-from-erp.use-case';
+import { ResolveEffectiveAccess } from './resolve-effective-access';
 import {
   ApplicationErrorCodes,
   type CredentialRepository,
@@ -13,6 +14,14 @@ import {
 
 describe('LoginUseCase and RenewTokenUseCase', () => {
   const now = new Date('2026-08-13T12:00:00.000Z');
+
+  function allowAccess(): ResolveEffectiveAccess {
+    return {
+      forUser: jest.fn(),
+      permissionIds: jest.fn(async () => ['users:read']),
+      assertCan: jest.fn(async () => undefined),
+    } as unknown as ResolveEffectiveAccess;
+  }
 
   function build(opts?: { erpLinked?: boolean; erp?: ErpUserDirectory | null }) {
     const user = User.create({
@@ -82,6 +91,7 @@ describe('LoginUseCase and RenewTokenUseCase', () => {
       opts?.erp === undefined
         ? null
         : opts.erp;
+    const access = allowAccess();
 
     return {
       user,
@@ -97,6 +107,7 @@ describe('LoginUseCase and RenewTokenUseCase', () => {
         refreshTokens,
         ids,
         clock,
+        access,
       ),
       renew: new RenewTokenUseCase(
         users,
@@ -104,6 +115,7 @@ describe('LoginUseCase and RenewTokenUseCase', () => {
         tokens,
         refreshTokens,
         clock,
+        access,
       ),
       changePassword: new ChangePasswordUseCase(
         users,
@@ -112,6 +124,7 @@ describe('LoginUseCase and RenewTokenUseCase', () => {
         hasher,
         erp,
         clock,
+        access,
       ),
     };
   }
@@ -124,9 +137,11 @@ describe('LoginUseCase and RenewTokenUseCase', () => {
     });
     expect(logged.accessToken).toBe('access-token');
     expect(logged.user.email).toBe('admin@gigahub.local');
+    expect(logged.user.permissionIds).toEqual(['users:read']);
 
     const renewed = await renew.execute({ refreshToken: logged.refreshToken });
     expect(renewed.refreshToken).not.toBe(logged.refreshToken);
+    expect(renewed.user.permissionIds).toEqual(['users:read']);
   });
 
   it('logs in ERP-linked user via IXC verifyPassword', async () => {

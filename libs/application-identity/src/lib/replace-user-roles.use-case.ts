@@ -11,8 +11,10 @@ import {
   type RoleRepository,
   type UserRepository,
 } from './ports';
+import type { ResolveEffectiveAccess } from './resolve-effective-access';
 
 export interface ReplaceUserRolesCommand {
+  actorUserId: string;
   userId: string;
   roleIds: string[];
   grantedByUserId: string;
@@ -23,6 +25,7 @@ export class ReplaceUserRolesUseCase {
     private readonly users: UserRepository,
     private readonly roles: RoleRepository,
     private readonly grants: GrantRepository,
+    private readonly access: ResolveEffectiveAccess,
     private readonly storage: ObjectStoragePort | null,
     private readonly avatarBucket: string,
     private readonly ids: IdGenerator,
@@ -31,6 +34,8 @@ export class ReplaceUserRolesUseCase {
   async execute(
     command: ReplaceUserRolesCommand,
   ): Promise<ReplaceUserRolesResponseDto> {
+    await this.access.assertCan(command.actorUserId, 'access:manage');
+
     const user = await this.users.findById(userId(command.userId));
     if (!user) {
       throw new ApplicationError(

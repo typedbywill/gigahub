@@ -9,8 +9,10 @@ import {
   type RoleRepository,
   type UserRepository,
 } from './ports';
+import type { ResolveEffectiveAccess } from './resolve-effective-access';
 
 export interface UpdateUserProfileCommand {
+  actorUserId: string;
   userId: string;
   name?: string;
   email?: string;
@@ -21,6 +23,7 @@ export class UpdateUserProfileUseCase {
     private readonly users: UserRepository,
     private readonly roles: RoleRepository,
     private readonly grants: GrantRepository,
+    private readonly access: ResolveEffectiveAccess,
     private readonly storage: ObjectStoragePort | null,
     private readonly avatarBucket: string,
   ) {}
@@ -28,6 +31,8 @@ export class UpdateUserProfileUseCase {
   async execute(
     command: UpdateUserProfileCommand,
   ): Promise<UpdateUserResponseDto> {
+    await this.access.assertCan(command.actorUserId, 'users:update');
+
     const user = await this.users.findById(userId(command.userId));
     if (!user) {
       throw new ApplicationError(

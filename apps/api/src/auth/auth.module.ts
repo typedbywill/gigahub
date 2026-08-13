@@ -15,6 +15,7 @@ import {
   RenewTokenUseCase,
   ReplaceRolePermissionsUseCase,
   ReplaceUserRolesUseCase,
+  ResolveEffectiveAccess,
   SeedDefaultRolesUseCase,
   SetUserAvatarUseCase,
   SyncUsersFromErpUseCase,
@@ -85,6 +86,14 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
     JoseAccessTokenIssuer,
     AccessTokenGuard,
     {
+      provide: ResolveEffectiveAccess,
+      useFactory: (
+        roles: MongoRoleRepository,
+        grants: MongoGrantRepository,
+      ) => new ResolveEffectiveAccess(roles, grants),
+      inject: [MongoRoleRepository, MongoGrantRepository],
+    },
+    {
       provide: AVATAR_BUCKET,
       useFactory: (config: ConfigService<EnvConfig, true>) =>
         config.get('MINIO_BUCKET', { infer: true }),
@@ -126,6 +135,7 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
         refresh: CryptoRefreshTokenService,
         ids: UuidGenerator,
         clock: SystemClock,
+        access: ResolveEffectiveAccess,
       ) =>
         new LoginUseCase(
           users,
@@ -137,6 +147,7 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
           refresh,
           ids,
           clock,
+          access,
         ),
       inject: [
         MongoUserRepository,
@@ -148,6 +159,7 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
         CryptoRefreshTokenService,
         UuidGenerator,
         SystemClock,
+        ResolveEffectiveAccess,
       ],
     },
     {
@@ -158,13 +170,23 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
         tokens: JoseAccessTokenIssuer,
         refresh: CryptoRefreshTokenService,
         clock: SystemClock,
-      ) => new RenewTokenUseCase(users, sessions, tokens, refresh, clock),
+        access: ResolveEffectiveAccess,
+      ) =>
+        new RenewTokenUseCase(
+          users,
+          sessions,
+          tokens,
+          refresh,
+          clock,
+          access,
+        ),
       inject: [
         MongoUserRepository,
         MongoSessionRepository,
         JoseAccessTokenIssuer,
         CryptoRefreshTokenService,
         SystemClock,
+        ResolveEffectiveAccess,
       ],
     },
     {
@@ -176,8 +198,17 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
         hasher: Argon2PasswordHasher,
         erp: ErpUserDirectory | null,
         clock: SystemClock,
+        access: ResolveEffectiveAccess,
       ) =>
-        new ChangePasswordUseCase(users, credentials, sessions, hasher, erp, clock),
+        new ChangePasswordUseCase(
+          users,
+          credentials,
+          sessions,
+          hasher,
+          erp,
+          clock,
+          access,
+        ),
       inject: [
         MongoUserRepository,
         MongoCredentialRepository,
@@ -185,16 +216,23 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
         Argon2PasswordHasher,
         ERP_USER_DIRECTORY,
         SystemClock,
+        ResolveEffectiveAccess,
       ],
     },
     {
       provide: ListUsersUseCase,
       useFactory: (
         users: MongoUserRepository,
+        access: ResolveEffectiveAccess,
         storage: ObjectStoragePort,
         bucket: string,
-      ) => new ListUsersUseCase(users, storage, bucket),
-      inject: [MongoUserRepository, STORAGE_PORT, AVATAR_BUCKET],
+      ) => new ListUsersUseCase(users, access, storage, bucket),
+      inject: [
+        MongoUserRepository,
+        ResolveEffectiveAccess,
+        STORAGE_PORT,
+        AVATAR_BUCKET,
+      ],
     },
     {
       provide: GetUserUseCase,
@@ -202,13 +240,15 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
         users: MongoUserRepository,
         roles: MongoRoleRepository,
         grants: MongoGrantRepository,
+        access: ResolveEffectiveAccess,
         storage: ObjectStoragePort,
         bucket: string,
-      ) => new GetUserUseCase(users, roles, grants, storage, bucket),
+      ) => new GetUserUseCase(users, roles, grants, access, storage, bucket),
       inject: [
         MongoUserRepository,
         MongoRoleRepository,
         MongoGrantRepository,
+        ResolveEffectiveAccess,
         STORAGE_PORT,
         AVATAR_BUCKET,
       ],
@@ -222,6 +262,7 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
         clock: SystemClock,
         roles: MongoRoleRepository,
         grants: MongoGrantRepository,
+        access: ResolveEffectiveAccess,
         storage: ObjectStoragePort,
         bucket: string,
       ) =>
@@ -232,6 +273,7 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
           clock,
           roles,
           grants,
+          access,
           storage,
           bucket,
         ),
@@ -242,6 +284,7 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
         SystemClock,
         MongoRoleRepository,
         MongoGrantRepository,
+        ResolveEffectiveAccess,
         STORAGE_PORT,
         AVATAR_BUCKET,
       ],
@@ -252,13 +295,23 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
         users: MongoUserRepository,
         roles: MongoRoleRepository,
         grants: MongoGrantRepository,
+        access: ResolveEffectiveAccess,
         storage: ObjectStoragePort,
         bucket: string,
-      ) => new UpdateUserProfileUseCase(users, roles, grants, storage, bucket),
+      ) =>
+        new UpdateUserProfileUseCase(
+          users,
+          roles,
+          grants,
+          access,
+          storage,
+          bucket,
+        ),
       inject: [
         MongoUserRepository,
         MongoRoleRepository,
         MongoGrantRepository,
+        ResolveEffectiveAccess,
         STORAGE_PORT,
         AVATAR_BUCKET,
       ],
@@ -269,14 +322,25 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
         users: MongoUserRepository,
         roles: MongoRoleRepository,
         grants: MongoGrantRepository,
+        access: ResolveEffectiveAccess,
         storage: ObjectStoragePort,
         bucket: string,
         ids: UuidGenerator,
-      ) => new SetUserAvatarUseCase(users, roles, grants, storage, bucket, ids),
+      ) =>
+        new SetUserAvatarUseCase(
+          users,
+          roles,
+          grants,
+          access,
+          storage,
+          bucket,
+          ids,
+        ),
       inject: [
         MongoUserRepository,
         MongoRoleRepository,
         MongoGrantRepository,
+        ResolveEffectiveAccess,
         STORAGE_PORT,
         AVATAR_BUCKET,
         UuidGenerator,
@@ -288,13 +352,23 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
         users: MongoUserRepository,
         roles: MongoRoleRepository,
         grants: MongoGrantRepository,
+        access: ResolveEffectiveAccess,
         storage: ObjectStoragePort,
         bucket: string,
-      ) => new ClearUserAvatarUseCase(users, roles, grants, storage, bucket),
+      ) =>
+        new ClearUserAvatarUseCase(
+          users,
+          roles,
+          grants,
+          access,
+          storage,
+          bucket,
+        ),
       inject: [
         MongoUserRepository,
         MongoRoleRepository,
         MongoGrantRepository,
+        ResolveEffectiveAccess,
         STORAGE_PORT,
         AVATAR_BUCKET,
       ],
@@ -305,15 +379,25 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
         users: MongoUserRepository,
         roles: MongoRoleRepository,
         grants: MongoGrantRepository,
+        access: ResolveEffectiveAccess,
         storage: ObjectStoragePort,
         bucket: string,
         ids: UuidGenerator,
       ) =>
-        new ReplaceUserRolesUseCase(users, roles, grants, storage, bucket, ids),
+        new ReplaceUserRolesUseCase(
+          users,
+          roles,
+          grants,
+          access,
+          storage,
+          bucket,
+          ids,
+        ),
       inject: [
         MongoUserRepository,
         MongoRoleRepository,
         MongoGrantRepository,
+        ResolveEffectiveAccess,
         STORAGE_PORT,
         AVATAR_BUCKET,
         UuidGenerator,
@@ -321,24 +405,34 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
     },
     {
       provide: ListRolesUseCase,
-      useFactory: (roles: MongoRoleRepository) => new ListRolesUseCase(roles),
-      inject: [MongoRoleRepository],
+      useFactory: (
+        roles: MongoRoleRepository,
+        access: ResolveEffectiveAccess,
+      ) => new ListRolesUseCase(roles, access),
+      inject: [MongoRoleRepository, ResolveEffectiveAccess],
     },
     {
       provide: CreateRoleUseCase,
-      useFactory: (roles: MongoRoleRepository, ids: UuidGenerator) =>
-        new CreateRoleUseCase(roles, ids),
-      inject: [MongoRoleRepository, UuidGenerator],
+      useFactory: (
+        roles: MongoRoleRepository,
+        access: ResolveEffectiveAccess,
+        ids: UuidGenerator,
+      ) => new CreateRoleUseCase(roles, access, ids),
+      inject: [MongoRoleRepository, ResolveEffectiveAccess, UuidGenerator],
     },
     {
       provide: ListPermissionsUseCase,
-      useFactory: () => new ListPermissionsUseCase(),
+      useFactory: (access: ResolveEffectiveAccess) =>
+        new ListPermissionsUseCase(access),
+      inject: [ResolveEffectiveAccess],
     },
     {
       provide: ReplaceRolePermissionsUseCase,
-      useFactory: (roles: MongoRoleRepository) =>
-        new ReplaceRolePermissionsUseCase(roles),
-      inject: [MongoRoleRepository],
+      useFactory: (
+        roles: MongoRoleRepository,
+        access: ResolveEffectiveAccess,
+      ) => new ReplaceRolePermissionsUseCase(roles, access),
+      inject: [MongoRoleRepository, ResolveEffectiveAccess],
     },
     {
       provide: SyncUsersFromErpUseCase,

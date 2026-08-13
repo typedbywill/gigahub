@@ -9,7 +9,10 @@ import type { ObjectStoragePort } from './ports';
 
 export function toPublicUserDto(
   user: User,
-  avatarUrl?: string,
+  options: {
+    avatarUrl?: string;
+    permissionIds?: readonly string[];
+  } = {},
 ): PublicUserDto {
   return {
     id: user.id,
@@ -19,7 +22,8 @@ export function toPublicUserDto(
     idErp: user.idErp,
     idErpEmployee: user.idErpEmployee,
     jobTitle: user.jobTitle,
-    avatarUrl,
+    avatarUrl: options.avatarUrl,
+    permissionIds: options.permissionIds ? [...options.permissionIds] : [],
   };
 }
 
@@ -29,7 +33,7 @@ export function toUserListItemDto(
 ): UserListItemDto {
   const snap = user.toSnapshot();
   return {
-    ...toPublicUserDto(user, avatarUrl),
+    ...toPublicUserDto(user, { avatarUrl }),
     createdAt: snap.createdAt.toISOString(),
     updatedAt: snap.updatedAt.toISOString(),
   };

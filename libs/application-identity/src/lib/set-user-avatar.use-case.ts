@@ -10,6 +10,7 @@ import {
   type RoleRepository,
   type UserRepository,
 } from './ports';
+import type { ResolveEffectiveAccess } from './resolve-effective-access';
 
 const ALLOWED_CONTENT_TYPES = new Set([
   'image/jpeg',
@@ -20,6 +21,7 @@ const ALLOWED_CONTENT_TYPES = new Set([
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
 export interface SetUserAvatarCommand {
+  actorUserId: string;
   userId: string;
   file: Buffer;
   contentType: string;
@@ -30,6 +32,7 @@ export class SetUserAvatarUseCase {
     private readonly users: UserRepository,
     private readonly roles: RoleRepository,
     private readonly grants: GrantRepository,
+    private readonly access: ResolveEffectiveAccess,
     private readonly storage: ObjectStoragePort,
     private readonly avatarBucket: string,
     private readonly ids: IdGenerator,
@@ -38,6 +41,8 @@ export class SetUserAvatarUseCase {
   async execute(
     command: SetUserAvatarCommand,
   ): Promise<UpdateUserAvatarResponseDto> {
+    await this.access.assertCan(command.actorUserId, 'users:update');
+
     const contentType = command.contentType.toLowerCase().split(';')[0]?.trim();
     if (!contentType || !ALLOWED_CONTENT_TYPES.has(contentType)) {
       throw new ApplicationError(
@@ -102,6 +107,7 @@ export class SetUserAvatarUseCase {
 }
 
 export interface ClearUserAvatarCommand {
+  actorUserId: string;
   userId: string;
 }
 
@@ -110,6 +116,7 @@ export class ClearUserAvatarUseCase {
     private readonly users: UserRepository,
     private readonly roles: RoleRepository,
     private readonly grants: GrantRepository,
+    private readonly access: ResolveEffectiveAccess,
     private readonly storage: ObjectStoragePort,
     private readonly avatarBucket: string,
   ) {}
@@ -117,6 +124,8 @@ export class ClearUserAvatarUseCase {
   async execute(
     command: ClearUserAvatarCommand,
   ): Promise<UpdateUserAvatarResponseDto> {
+    await this.access.assertCan(command.actorUserId, 'users:update');
+
     const user = await this.users.findById(userId(command.userId));
     if (!user) {
       throw new ApplicationError(

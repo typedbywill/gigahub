@@ -12,6 +12,7 @@ import {
 } from 'react-icons/lu';
 import { useMediaQuery } from '../hooks/use-media-query';
 import { routes } from '../routes';
+import { Permissions } from '../permissions';
 import { useAuthStore } from '../stores/auth.store';
 import { useThemeStore } from '../stores/theme.store';
 import { Sidebar, type SidebarNavItem } from './Sidebar';
@@ -33,6 +34,7 @@ function userInitials(name: string): string {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const user = useAuthStore((s) => s.user);
+  const hasPermission = useAuthStore((s) => s.hasPermission);
   const logout = useAuthStore((s) => s.logout);
   const theme = useThemeStore((s) => s.theme);
   const toggleTheme = useThemeStore((s) => s.toggleTheme);
@@ -59,36 +61,48 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, [mobileOpen, isMobile]);
 
-  const bottomItems = useMemo<SidebarNavItem[]>(
-    () => [
+  const canReadUsers = hasPermission(Permissions.UsersRead);
+  const canManageAccess = hasPermission(Permissions.AccessManage);
+
+  const bottomItems = useMemo<SidebarNavItem[]>(() => {
+    const settingsChildren: SidebarNavItem[] = [];
+    if (canReadUsers) {
+      settingsChildren.push({
+        id: 'settings-users',
+        label: 'Usuários',
+        icon: <LuUsers />,
+        href: routes.usuarios,
+      });
+    }
+    if (canManageAccess) {
+      settingsChildren.push({
+        id: 'settings-permissions',
+        label: 'Permissões',
+        icon: <LuShield />,
+        href: routes.permissoes,
+      });
+    }
+
+    const items: SidebarNavItem[] = [
       {
         id: 'theme',
         label: 'Alterar Tema',
         icon: isDark ? <LuSun /> : <LuMoon />,
         onPress: toggleTheme,
       },
-      {
+    ];
+
+    if (settingsChildren.length > 0) {
+      items.push({
         id: 'settings',
         label: 'Configurações',
         icon: <LuSettings />,
-        children: [
-          {
-            id: 'settings-users',
-            label: 'Usuários',
-            icon: <LuUsers />,
-            href: routes.usuarios,
-          },
-          {
-            id: 'settings-permissions',
-            label: 'Permissões',
-            icon: <LuShield />,
-            href: routes.permissoes,
-          },
-        ],
-      },
-    ],
-    [isDark, toggleTheme],
-  );
+        children: settingsChildren,
+      });
+    }
+
+    return items;
+  }, [canManageAccess, canReadUsers, isDark, toggleTheme]);
 
   const sidebarCollapsed = !isMobile && collapsed;
 

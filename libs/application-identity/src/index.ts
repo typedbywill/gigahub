@@ -76,3 +76,4 @@ export {
   ReplaceUserRolesUseCase,
   type ReplaceUserRolesCommand,
 } from './lib/replace-user-roles.use-case';
+export { ResolveEffectiveAccess } from './lib/resolve-effective-access';

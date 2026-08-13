@@ -17,9 +17,11 @@ interface AuthState {
   logout: () => void;
   setSession: (user: PublicUserDto, accessToken: string) => void;
   patchCurrentUser: (patch: Partial<PublicUserDto>) => void;
+  hasPermission: (permissionId: string) => boolean;
+  hasAnyPermission: (...permissionIds: string[]) => boolean;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
   isAuthenticated: false,
@@ -45,6 +47,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       accessToken: null,
       isAuthenticated: false,
     }),
+  hasPermission: (permissionId) => {
+    const ids = get().user?.permissionIds ?? [];
+    return ids.includes(permissionId);
+  },
+  hasAnyPermission: (...permissionIds) => {
+    const ids = get().user?.permissionIds ?? [];
+    return permissionIds.some((id) => ids.includes(id));
+  },
   bootstrap: async () => {
     set({ isBootstrapping: true });
     try {

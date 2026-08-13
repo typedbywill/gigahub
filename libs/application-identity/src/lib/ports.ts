@@ -138,6 +138,7 @@ export const ApplicationErrorCodes = {
   RefreshTokenReuse: 'REFRESH_TOKEN_REUSE',
   WeakPassword: 'WEAK_PASSWORD',
   Unauthorized: 'UNAUTHORIZED',
+  PermissionDenied: 'PERMISSION_DENIED',
   ErpUnavailable: 'ERP_UNAVAILABLE',
   NotFound: 'NOT_FOUND',
   Conflict: 'CONFLICT',

@@ -17,6 +17,8 @@ export interface UserDetailHeaderProps {
   roleName?: string;
   idErp?: string;
   backTo: string;
+  canUpdate: boolean;
+  canInactivate: boolean;
   uploadingAvatar: boolean;
   inactivating: boolean;
   confirmOpen: boolean;
@@ -46,6 +48,8 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
   roleName,
   idErp,
   backTo,
+  canUpdate,
+  canInactivate,
   uploadingAvatar,
   inactivating,
   confirmOpen,
@@ -98,17 +102,19 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
                 }}
               />
 
-              <Button
-                size="sm"
-                variant="secondary"
-                isIconOnly
-                aria-label="Trocar foto"
-                isPending={uploadingAvatar}
-                className="absolute -bottom-1 -right-1 size-9 min-w-9 rounded-full border border-border shadow-sm"
-                onPress={() => fileInputRef.current?.click()}
-              >
-                <LuCamera className="size-4" />
-              </Button>
+              {canUpdate ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  isIconOnly
+                  aria-label="Trocar foto"
+                  isPending={uploadingAvatar}
+                  className="absolute -bottom-1 -right-1 size-9 min-w-9 rounded-full border border-border shadow-sm"
+                  onPress={() => fileInputRef.current?.click()}
+                >
+                  <LuCamera className="size-4" />
+                </Button>
+              ) : null}
             </div>
 
             <div className="flex min-w-0 flex-1 flex-col gap-3">
@@ -150,7 +156,7 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
                 )}
               </div>
 
-              {avatarUrl ? (
+              {canUpdate && avatarUrl ? (
                 <div>
                   <Button
                     size="sm"
@@ -167,7 +173,7 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
             </div>
           </div>
 
-          {isActive ? (
+          {canInactivate && isActive ? (
             <div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
               <AlertDialog
                 isOpen={confirmOpen}

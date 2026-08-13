@@ -27,6 +27,7 @@ export const DEFAULT_ROLE_SEEDS: readonly RoleSeedDefinition[] = [
       'care:inbox:read',
       'care:ticket:assign',
       'telemetry:location:read',
+      'users:read',
     ],
   },
   {
@@ -39,6 +40,9 @@ export const DEFAULT_ROLE_SEEDS: readonly RoleSeedDefinition[] = [
     name: 'Administrador de acesso',
     permissionIds: [
       'access:manage',
+      'users:read',
+      'users:update',
+      'users:inactivate',
       'work-order:read',
       'care:inbox:read',
       'telemetry:location:read',

@@ -5,17 +5,23 @@ import type {
   UserRepository,
 } from './ports';
 import { resolveAvatarUrl, toUserListItemDto } from './mappers';
+import type { ResolveEffectiveAccess } from './resolve-effective-access';
 
-export type ListUsersCommand = UserListQuery;
+export type ListUsersCommand = UserListQuery & {
+  actorUserId: string;
+};
 
 export class ListUsersUseCase {
   constructor(
     private readonly users: UserRepository,
+    private readonly access: ResolveEffectiveAccess,
     private readonly storage: ObjectStoragePort | null = null,
     private readonly avatarBucket = 'gigahub',
   ) {}
 
   async execute(command: ListUsersCommand): Promise<PaginatedUsersDto> {
+    await this.access.assertCan(command.actorUserId, 'users:read');
+
     const page = Math.max(1, command.page);
     const pageSize = Math.min(100, Math.max(1, command.pageSize));
     const result = await this.users.list({

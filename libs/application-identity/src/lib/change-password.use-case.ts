@@ -13,6 +13,7 @@ import {
   type UserRepository,
 } from './ports';
 import { toPublicUserDto } from './mappers';
+import type { ResolveEffectiveAccess } from './resolve-effective-access';
 
 export interface ChangePasswordCommand {
   userId: string;
@@ -32,6 +33,7 @@ export class ChangePasswordUseCase {
     private readonly hasher: PasswordHasher,
     private readonly erp: ErpUserDirectory | null,
     private readonly clock: Clock,
+    private readonly access: ResolveEffectiveAccess,
   ) {}
 
   async execute(command: ChangePasswordCommand): Promise<{ user: PublicUserDto }> {
@@ -66,7 +68,8 @@ export class ChangePasswordUseCase {
     }
 
     await this.sessions.revokeAllForUser(user.id, this.clock.now());
-    return { user: toPublicUserDto(user) };
+    const permissionIds = await this.access.permissionIds(user.id);
+    return { user: toPublicUserDto(user, { permissionIds }) };
   }
 
   private async changeErpPassword(

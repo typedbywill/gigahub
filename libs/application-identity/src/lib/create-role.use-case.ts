@@ -7,8 +7,10 @@ import {
   type IdGenerator,
   type RoleRepository,
 } from './ports';
+import type { ResolveEffectiveAccess } from './resolve-effective-access';
 
 export interface CreateRoleCommand {
+  actorUserId: string;
   name: string;
   slug: string;
   permissionIds?: string[];
@@ -17,10 +19,13 @@ export interface CreateRoleCommand {
 export class CreateRoleUseCase {
   constructor(
     private readonly roles: RoleRepository,
+    private readonly access: ResolveEffectiveAccess,
     private readonly ids: IdGenerator,
   ) {}
 
   async execute(command: CreateRoleCommand): Promise<CreateRoleResponseDto> {
+    await this.access.assertCan(command.actorUserId, 'access:manage');
+
     const existing = await this.roles.findBySlug(command.slug);
     if (existing) {
       throw new ApplicationError(

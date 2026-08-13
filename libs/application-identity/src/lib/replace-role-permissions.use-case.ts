@@ -5,18 +5,25 @@ import {
   ApplicationErrorCodes,
   type RoleRepository,
 } from './ports';
+import type { ResolveEffectiveAccess } from './resolve-effective-access';
 
 export interface ReplaceRolePermissionsCommand {
+  actorUserId: string;
   roleId: string;
   permissionIds: string[];
 }
 
 export class ReplaceRolePermissionsUseCase {
-  constructor(private readonly roles: RoleRepository) {}
+  constructor(
+    private readonly roles: RoleRepository,
+    private readonly access: ResolveEffectiveAccess,
+  ) {}
 
   async execute(
     command: ReplaceRolePermissionsCommand,
   ): Promise<ReplaceRolePermissionsResponseDto> {
+    await this.access.assertCan(command.actorUserId, 'access:manage');
+
     const role = await this.roles.findById(roleId(command.roleId));
     if (!role) {
       throw new ApplicationError(

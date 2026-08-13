@@ -10,6 +10,7 @@ import {
   type UserRepository,
 } from './ports';
 import { toPublicUserDto } from './mappers';
+import type { ResolveEffectiveAccess } from './resolve-effective-access';
 
 export interface RenewTokenCommand {
   refreshToken: string;
@@ -22,6 +23,7 @@ export class RenewTokenUseCase {
     private readonly tokens: TokenIssuer,
     private readonly refreshTokens: RefreshTokenService,
     private readonly clock: Clock,
+    private readonly access: ResolveEffectiveAccess,
   ) {}
 
   async execute(command: RenewTokenCommand): Promise<AuthTokens> {
@@ -96,10 +98,12 @@ export class RenewTokenUseCase {
       email: user.email,
     });
 
+    const permissionIds = await this.access.permissionIds(user.id);
+
     return {
       accessToken,
       refreshToken: nextRefresh,
-      user: toPublicUserDto(user),
+      user: toPublicUserDto(user, { permissionIds }),
     };
   }
 }

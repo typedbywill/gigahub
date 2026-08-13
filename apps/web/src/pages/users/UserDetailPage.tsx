@@ -29,6 +29,7 @@ import {
   uploadUserAvatarRequest,
 } from '../../shared/api/users.api';
 import { routes } from '../../shared/routes';
+import { Permissions } from '../../shared/permissions';
 import { UserDetailHeader } from './UserDetailHeader';
 
 const fieldClassName =
@@ -59,6 +60,10 @@ export const UserDetailPage: React.FC = () => {
   const accessToken = useAuthStore((s) => s.accessToken);
   const authUser = useAuthStore((s) => s.user);
   const patchCurrentUser = useAuthStore((s) => s.patchCurrentUser);
+  const hasPermission = useAuthStore((s) => s.hasPermission);
+  const canUpdate = hasPermission(Permissions.UsersUpdate);
+  const canInactivate = hasPermission(Permissions.UsersInactivate);
+  const canManageAccess = hasPermission(Permissions.AccessManage);
   const backTo =
     (location.state as DetailLocationState | null)?.from ?? routes.usuarios;
   const { contains } = useFilter({ sensitivity: 'base' });
@@ -113,12 +118,18 @@ export const UserDetailPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const [detail, roles] = await Promise.all([
-        getUserRequest(accessToken, id),
-        listRolesRequest(accessToken),
-      ]);
+      const detail = await getUserRequest(accessToken, id);
       applyUser(detail);
-      setRolesCatalog(roles.items);
+      if (canManageAccess) {
+        try {
+          const roles = await listRolesRequest(accessToken);
+          setRolesCatalog(roles.items);
+        } catch {
+          setRolesCatalog([]);
+        }
+      } else {
+        setRolesCatalog([]);
+      }
     } catch (err) {
       setUser(null);
       setError(
@@ -129,7 +140,7 @@ export const UserDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [accessToken, applyUser, id]);
+  }, [accessToken, applyUser, canManageAccess, id]);
 
   useEffect(() => {
     void load();
@@ -303,6 +314,8 @@ export const UserDetailPage: React.FC = () => {
         roleName={selectedRoleName}
         idErp={user.idErp}
         backTo={backTo}
+        canUpdate={canUpdate}
+        canInactivate={canInactivate}
         uploadingAvatar={uploadingAvatar}
         inactivating={inactivating}
         confirmOpen={confirmOpen}
@@ -336,7 +349,9 @@ export const UserDetailPage: React.FC = () => {
               Perfil
             </h2>
             <p className="text-sm text-muted">
-              Nome e e-mail editáveis pelo administrador.
+              {canUpdate
+                ? 'Nome e e-mail editáveis pelo administrador.'
+                : 'Nome e e-mail do colaborador (somente leitura).'}
             </p>
           </div>
           <form
@@ -350,6 +365,7 @@ export const UserDetailPage: React.FC = () => {
                 fullWidth
                 value={name}
                 onChange={setName}
+                isReadOnly={!canUpdate}
                 className="flex flex-col gap-1.5"
               >
                 <Label className="text-sm text-muted">Nome</Label>
@@ -362,21 +378,24 @@ export const UserDetailPage: React.FC = () => {
                 fullWidth
                 value={email}
                 onChange={setEmail}
+                isReadOnly={!canUpdate}
                 className="flex flex-col gap-1.5"
               >
                 <Label className="text-sm text-muted">E-mail</Label>
                 <Input fullWidth className={fieldClassName} />
               </TextField>
             </div>
-            <div>
-              <Button
-                type="submit"
-                isDisabled={!profileDirty}
-                isPending={savingProfile}
-              >
-                Salvar perfil
-              </Button>
-            </div>
+            {canUpdate ? (
+              <div>
+                <Button
+                  type="submit"
+                  isDisabled={!profileDirty}
+                  isPending={savingProfile}
+                >
+                  Salvar perfil
+                </Button>
+              </div>
+            ) : null}
           </form>
         </section>
 
@@ -390,71 +409,87 @@ export const UserDetailPage: React.FC = () => {
             </p>
           </div>
 
-          {rolesCatalog.length === 0 ? (
-            <p className="text-sm text-muted">Nenhum grupo disponível.</p>
-          ) : (
-            <Autocomplete
-              className="w-full"
-              placeholder="Buscar grupo…"
-              value={selectedRoleId}
-              onChange={(key: Key | Key[] | null) => {
-                if (Array.isArray(key)) {
-                  setSelectedRoleId(key[0] != null ? String(key[0]) : null);
-                  return;
-                }
-                setSelectedRoleId(key != null ? String(key) : null);
-              }}
-            >
-              <Label className="text-sm text-muted">Grupo</Label>
-              <Autocomplete.Trigger className={autocompleteTriggerClassName}>
-                <Autocomplete.Value />
-                <Autocomplete.ClearButton />
-                <Autocomplete.Indicator />
-              </Autocomplete.Trigger>
-              <Autocomplete.Popover>
-                <Autocomplete.Filter filter={contains}>
-                  <SearchField autoFocus name="role-search" variant="secondary">
-                    <SearchField.Group>
-                      <SearchField.SearchIcon />
-                      <SearchField.Input
-                        placeholder="Pesquisar…"
-                        className="bg-transparent text-foreground placeholder:text-muted"
-                      />
-                      <SearchField.ClearButton />
-                    </SearchField.Group>
-                  </SearchField>
-                  <ListBox
-                    renderEmptyState={() => (
-                      <EmptyState>Nenhum grupo encontrado</EmptyState>
-                    )}
+          {canManageAccess ? (
+            <>
+              {rolesCatalog.length === 0 ? (
+                <p className="text-sm text-muted">Nenhum grupo disponível.</p>
+              ) : (
+                <Autocomplete
+                  className="w-full"
+                  placeholder="Buscar grupo…"
+                  value={selectedRoleId}
+                  onChange={(key: Key | Key[] | null) => {
+                    if (Array.isArray(key)) {
+                      setSelectedRoleId(
+                        key[0] != null ? String(key[0]) : null,
+                      );
+                      return;
+                    }
+                    setSelectedRoleId(key != null ? String(key) : null);
+                  }}
+                >
+                  <Label className="text-sm text-muted">Grupo</Label>
+                  <Autocomplete.Trigger
+                    className={autocompleteTriggerClassName}
                   >
-                    {rolesCatalog.map((role) => (
-                      <ListBox.Item
-                        key={role.id}
-                        id={role.id}
-                        textValue={role.name}
+                    <Autocomplete.Value />
+                    <Autocomplete.ClearButton />
+                    <Autocomplete.Indicator />
+                  </Autocomplete.Trigger>
+                  <Autocomplete.Popover>
+                    <Autocomplete.Filter filter={contains}>
+                      <SearchField
+                        autoFocus
+                        name="role-search"
+                        variant="secondary"
                       >
-                        {role.name}
-                        <ListBox.ItemIndicator />
-                      </ListBox.Item>
-                    ))}
-                  </ListBox>
-                </Autocomplete.Filter>
-              </Autocomplete.Popover>
-            </Autocomplete>
-          )}
+                        <SearchField.Group>
+                          <SearchField.SearchIcon />
+                          <SearchField.Input
+                            placeholder="Pesquisar…"
+                            className="bg-transparent text-foreground placeholder:text-muted"
+                          />
+                          <SearchField.ClearButton />
+                        </SearchField.Group>
+                      </SearchField>
+                      <ListBox
+                        renderEmptyState={() => (
+                          <EmptyState>Nenhum grupo encontrado</EmptyState>
+                        )}
+                      >
+                        {rolesCatalog.map((role) => (
+                          <ListBox.Item
+                            key={role.id}
+                            id={role.id}
+                            textValue={role.name}
+                          >
+                            {role.name}
+                            <ListBox.ItemIndicator />
+                          </ListBox.Item>
+                        ))}
+                      </ListBox>
+                    </Autocomplete.Filter>
+                  </Autocomplete.Popover>
+                </Autocomplete>
+              )}
 
-          <div className="mt-4">
-            <Button
-              isDisabled={!rolesDirty}
-              isPending={savingRoles}
-              onPress={() => {
-                void saveRoles();
-              }}
-            >
-              Salvar acesso
-            </Button>
-          </div>
+              <div className="mt-4">
+                <Button
+                  isDisabled={!rolesDirty}
+                  isPending={savingRoles}
+                  onPress={() => {
+                    void saveRoles();
+                  }}
+                >
+                  Salvar acesso
+                </Button>
+              </div>
+            </>
+          ) : (
+            <p className="text-sm text-foreground">
+              {user.roles[0]?.name ?? 'Nenhum grupo atribuído'}
+            </p>
+          )}
         </section>
       </div>
 

@@ -65,7 +65,16 @@ describe('permission catalog', () => {
       'finance',
       'telemetry',
       'gamification',
+      'users',
       'access',
+    ]);
+  });
+
+  it('lists user-control permissions', () => {
+    expect(listPermissionsByGroup('users').map((entry) => entry.id)).toEqual([
+      'users:read',
+      'users:update',
+      'users:inactivate',
     ]);
   });
 });
