@@ -21,6 +21,8 @@ RUN corepack enable && corepack prepare pnpm@11.10.0 --activate \
   && apk add --no-cache python3 make g++
 COPY --from=build /app/dist/apps/api/package.json ./
 COPY --from=build /app/dist/apps/api/pnpm-lock.yaml ./
+# Standalone install has no root pnpm-workspace.yaml — allow argon2 native build.
+RUN printf '%s\n' 'allowBuilds:' '  argon2: true' > pnpm-workspace.yaml
 RUN --mount=type=cache,id=gigahub-pnpm-prod,target=/pnpm/store \
   pnpm config set store-dir /pnpm/store \
   && pnpm install --frozen-lockfile --prod
