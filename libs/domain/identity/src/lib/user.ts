@@ -196,6 +196,11 @@ export class User {
     this.touch();
   }
 
+  changeEmail(email: string): void {
+    this.props.email = normalizeEmail(email);
+    this.touch();
+  }
+
   linkErp(input: LinkErpInput): void {
     this.props.idErp = assertNonEmpty(input.idErp, 'idErp');
     this.props.idErpEmployee = assertNonEmpty(input.idErpEmployee, 'idErpEmployee');

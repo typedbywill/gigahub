@@ -1,11 +1,12 @@
 import { Session } from '@gigahub/domain/identity';
-import { DomainError } from '@gigahub/shared/kernel';
+import { DomainError, type UserId } from '@gigahub/shared/kernel';
 import {
   ApplicationError,
   ApplicationErrorCodes,
   type AuthTokens,
   type Clock,
   type CredentialRepository,
+  type ErpUserDirectory,
   type IdGenerator,
   type PasswordHasher,
   type RefreshTokenService,
@@ -21,12 +22,17 @@ export interface LoginCommand {
   deviceLabel?: string;
 }
 
+/**
+ * ERP-linked users authenticate against IXC (SHA-256).
+ * Local-only users (e.g. dev seed) use Argon2 Credential.
+ */
 export class LoginUseCase {
   constructor(
     private readonly users: UserRepository,
     private readonly credentials: CredentialRepository,
     private readonly sessions: SessionRepository,
     private readonly hasher: PasswordHasher,
+    private readonly erp: ErpUserDirectory | null,
     private readonly tokens: TokenIssuer,
     private readonly refreshTokens: RefreshTokenService,
     private readonly ids: IdGenerator,
@@ -55,19 +61,13 @@ export class LoginUseCase {
       throw error;
     }
 
-    const credential = await this.credentials.findByUserId(user.id);
-    if (!credential) {
-      throw new ApplicationError(
-        ApplicationErrorCodes.InvalidCredentials,
-        'Invalid email or password',
-      );
-    }
-
-    const matches = await this.hasher.verify(
+    const passwordOk = await this.verifyPassword(
+      user.hasErpLink(),
+      email,
       command.password,
-      credential.passwordHash,
+      user.id,
     );
-    if (!matches) {
+    if (!passwordOk) {
       throw new ApplicationError(
         ApplicationErrorCodes.InvalidCredentials,
         'Invalid email or password',
@@ -99,5 +99,36 @@ export class LoginUseCase {
       refreshToken,
       user: toPublicUserDto(user),
     };
+  }
+
+  private async verifyPassword(
+    erpLinked: boolean,
+    email: string,
+    plaintext: string,
+    userId: UserId,
+  ): Promise<boolean> {
+    if (erpLinked) {
+      if (!this.erp) {
+        throw new ApplicationError(
+          ApplicationErrorCodes.ErpUnavailable,
+          'ERP authentication is not configured',
+        );
+      }
+      try {
+        return await this.erp.verifyPassword(email, plaintext);
+      } catch (error) {
+        if (error instanceof ApplicationError) throw error;
+        throw new ApplicationError(
+          ApplicationErrorCodes.ErpUnavailable,
+          'ERP authentication is unavailable',
+        );
+      }
+    }
+
+    const credential = await this.credentials.findByUserId(userId);
+    if (!credential) {
+      return false;
+    }
+    return this.hasher.verify(plaintext, credential.passwordHash);
   }
 }

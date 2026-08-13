@@ -20,7 +20,7 @@ export class UserModel {
   @Prop({ required: true, default: 0 })
   authorizationVersion!: number;
 
-  @Prop()
+  @Prop({ unique: true, sparse: true, index: true })
   idErp?: string;
 
   @Prop()

@@ -9,6 +9,8 @@ import type { PublicUserDto } from '@gigahub/shared/contracts';
 export interface UserRepository {
   findByEmail(email: string): Promise<User | null>;
   findById(id: UserId): Promise<User | null>;
+  findByIdErp(idErp: string): Promise<User | null>;
+  findAllWithErpLink(): Promise<User[]>;
   save(user: User): Promise<void>;
 }
 
@@ -22,6 +24,26 @@ export interface SessionRepository {
   findByRefreshTokenHash(hash: string): Promise<Session | null>;
   save(session: Session): Promise<void>;
   revokeFamily(familyId: string, at: Date): Promise<void>;
+  revokeAllForUser(userId: UserId, at: Date): Promise<void>;
+}
+
+export interface ErpCollaborator {
+  idErp: string;
+  idErpEmployee: string;
+  email: string;
+  name: string;
+  active: boolean;
+  jobTitle?: string;
+  cashboxId?: string;
+  warehouseId?: string;
+  planningId?: string;
+}
+
+/** Directory + auth against IXC (usuarios). Password uses SHA-256 hex like the ERP. */
+export interface ErpUserDirectory {
+  listCollaborators(): Promise<ErpCollaborator[]>;
+  verifyPassword(email: string, plaintext: string): Promise<boolean>;
+  updatePassword(idErp: string, plaintext: string): Promise<void>;
 }
 
 export interface PasswordHasher {
@@ -71,4 +93,7 @@ export const ApplicationErrorCodes = {
   InvalidCredentials: 'INVALID_CREDENTIALS',
   InvalidRefreshToken: 'INVALID_REFRESH_TOKEN',
   RefreshTokenReuse: 'REFRESH_TOKEN_REUSE',
+  WeakPassword: 'WEAK_PASSWORD',
+  Unauthorized: 'UNAUTHORIZED',
+  ErpUnavailable: 'ERP_UNAVAILABLE',
 } as const;

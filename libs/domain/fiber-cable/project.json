@@ -1,0 +1,9 @@
+{
+  "name": "fiber-cable",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/fiber-cable/src",
+  "projectType": "library",
+  "tags": ["type:domain", "scope:network"],
+  "// targets": "to see all targets run: nx show project fiber-cable --web",
+  "targets": {}
+}

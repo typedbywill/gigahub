@@ -62,6 +62,15 @@ export class MongoSessionRepository implements SessionRepository {
       .exec();
   }
 
+  async revokeAllForUser(userIdValue: string, at: Date): Promise<void> {
+    await this.model
+      .updateMany(
+        { userId: userIdValue, revokedAt: { $exists: false } },
+        { $set: { revokedAt: at, updatedAt: at } },
+      )
+      .exec();
+  }
+
   private toDomain(doc: {
     _id: string;
     userId: string;

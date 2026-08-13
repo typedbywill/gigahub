@@ -59,4 +59,23 @@ export async function renewTokenRequest(): Promise<RenewTokenResponseDto> {
   return res.json() as Promise<RenewTokenResponseDto>;
 }
 
+export async function changePasswordRequest(
+  payload: { currentPassword: string; newPassword: string },
+  accessToken: string,
+): Promise<{ user: PublicUserDto }> {
+  const res = await fetch('/api/v1/auth/change-password', {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    await parseError(res);
+  }
+  return res.json() as Promise<{ user: PublicUserDto }>;
+}
+
 export type { PublicUserDto };

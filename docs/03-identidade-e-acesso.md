@@ -34,13 +34,17 @@ Esses valores são identidades externas vinculáveis e mutáveis.
 
 1. O cliente envia credenciais por HTTPS.
 2. O backend aplica rate limit por origem e identidade normalizada.
-3. A senha é comparada com hash resistente a força bruta, preferencialmente Argon2id.
+3. A senha é verificada assim:
+   - colaborador com vínculo IXC (`idErp`): validação **ao vivo** no MySQL do
+     ERP, comparando `SHA-256(hex)` da senha com `usuarios.senha` (mesmo método
+     do IXC);
+   - usuário local (ex.: seed de desenvolvimento): Argon2id na `Credential`
+     do GigaHub.
 4. O backend cria uma sessão e retorna access token e refresh token.
 5. O login bem-sucedido e as falhas relevantes são auditados.
 
-Senhas em claro do sistema legado exigem migração explícita. Uma estratégia aceitável
-é re-hash no primeiro login válido, seguida de prazo para remoção total da comparação
-legada. Novas credenciais nunca usam o formato antigo.
+Senhas de colaboradores ERP **não** são copiadas para o GigaHub. O sync de
+usuários atualiza só perfil e status.
 
 ### Access token JWT
 
@@ -174,11 +178,15 @@ Antes dessa evolução, devem ser respondidas:
 
 ## Integração com IXC
 
-- O sync do IXC atualiza atributos profissionais (`name`, `jobTitle`, caixa,
-  almoxarifado, planejamento) e o espelhamento de ativo/inativo via
-  `applyErpActive`; não substitui a identidade interna (`UserId`).
-- Desativação no sistema oficial deve bloquear novos logins e revogar sessões conforme
-  política definida.
+- O sync do IXC (boot + cron ~5 min, `IXC_USER_SYNC_ENABLED`) atualiza atributos
+  profissionais (`name`, `jobTitle`, caixa, almoxarifado, planejamento) e o
+  espelhamento de ativo/inativo via `applyErpActive`; não substitui a identidade
+  interna (`UserId`) e **não** persiste senha.
+- Login e troca de senha de colaboradores vinculados usam o MySQL do IXC
+  (`usuarios.senha` em SHA-256 hex). `POST /auth/change-password` atualiza a
+  senha no ERP e revoga sessões do GigaHub.
+- Desativação no sistema oficial (ausência no lote ou `status !== A`) bloqueia
+  novos logins conforme política do domínio.
 
 ## Service accounts
 

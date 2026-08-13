@@ -35,6 +35,23 @@ export const renewTokenResponseDtoSchema = z.object({
 
 export type RenewTokenResponseDto = z.infer<typeof renewTokenResponseDtoSchema>;
 
+export const changePasswordRequestDtoSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(8),
+});
+
+export type ChangePasswordRequestDto = z.infer<
+  typeof changePasswordRequestDtoSchema
+>;
+
+export const changePasswordResponseDtoSchema = z.object({
+  user: publicUserDtoSchema,
+});
+
+export type ChangePasswordResponseDto = z.infer<
+  typeof changePasswordResponseDtoSchema
+>;
+
 /** @deprecated Prefer PublicUserDto once auth is wired. */
 export interface UserStub {
   id: string;

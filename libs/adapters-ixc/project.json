@@ -1,0 +1,16 @@
+{
+  "name": "adapters-ixc",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/adapters-ixc/src",
+  "projectType": "library",
+  "tags": ["type:adapter", "scope:ixc"],
+  "targets": {
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "jestConfig": "libs/adapters-ixc/jest.config.cts"
+      }
+    }
+  }
+}

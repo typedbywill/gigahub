@@ -1,0 +1,9 @@
+{
+  "name": "application-network",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/application-network/src",
+  "projectType": "library",
+  "tags": ["type:application", "scope:network"],
+  "// targets": "to see all targets run: nx show project application-network --web",
+  "targets": {}
+}

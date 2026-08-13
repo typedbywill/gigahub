@@ -7,6 +7,7 @@ import { HealthModule } from '../health/health.module';
 import { StorageModule } from '../storage/storage.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { AuthModule } from '../auth/auth.module';
+import { ProjetoModule } from '../projeto/projeto.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { AuthModule } from '../auth/auth.module';
     StorageModule,
     RealtimeModule,
     AuthModule,
+    ProjetoModule,
   ],
 })
 export class AppModule {}

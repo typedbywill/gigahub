@@ -20,6 +20,19 @@ export class MongoUserRepository implements UserRepository {
     return doc ? this.toDomain(doc) : null;
   }
 
+  async findByIdErp(idErp: string): Promise<User | null> {
+    const doc = await this.model.findOne({ idErp }).lean().exec();
+    return doc ? this.toDomain(doc) : null;
+  }
+
+  async findAllWithErpLink(): Promise<User[]> {
+    const docs = await this.model
+      .find({ idErp: { $exists: true, $nin: [null, ''] } })
+      .lean()
+      .exec();
+    return docs.map((doc) => this.toDomain(doc));
+  }
+
   async save(user: User): Promise<void> {
     const snap = user.toSnapshot();
     await this.model

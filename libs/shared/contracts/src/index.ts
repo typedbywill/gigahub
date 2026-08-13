@@ -6,6 +6,8 @@ export type {
   LoginRequestDto,
   LoginResponseDto,
   RenewTokenResponseDto,
+  ChangePasswordRequestDto,
+  ChangePasswordResponseDto,
 } from './lib/identity';
 export {
   userStatusSchema,
@@ -13,6 +15,8 @@ export {
   loginRequestDtoSchema,
   loginResponseDtoSchema,
   renewTokenResponseDtoSchema,
+  changePasswordRequestDtoSchema,
+  changePasswordResponseDtoSchema,
 } from './lib/identity';
 export {
   geoPointDtoSchema,
@@ -45,3 +49,15 @@ export {
   type WorkOrderEventPayload,
   type CareTicketEventPayload,
 } from './lib/events';
+export {
+  nearbyProjectQueryDtoSchema,
+  nearbyFiberAccessTerminalDtoSchema,
+  nearbyFiberAccessTerminalsResponseDtoSchema,
+  nearbyFiberCableDtoSchema,
+  nearbyFiberCablesResponseDtoSchema,
+  type NearbyProjectQueryDto,
+  type NearbyFiberAccessTerminalDto,
+  type NearbyFiberAccessTerminalsResponseDto,
+  type NearbyFiberCableDto,
+  type NearbyFiberCablesResponseDto,
+} from './lib/project-network';

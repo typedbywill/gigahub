@@ -47,6 +47,14 @@ export const envSchema = z.object({
   AUTH_DEV_SEED_EMAIL: z.string().email().default('admin@gigahub.local'),
   AUTH_DEV_SEED_PASSWORD: z.string().min(8).default('admin1234'),
   AUTH_DEV_SEED_NAME: z.string().default('GigaHub Admin'),
+  IXC_USER_SYNC_ENABLED: z
+    .preprocess((val) => val === true || val === 'true', z.boolean())
+    .default(false),
+  IXC_DB_HOST: z.string().default('127.0.0.1'),
+  IXC_DB_PORT: z.coerce.number().default(3306),
+  IXC_DB_USER: z.string().default(''),
+  IXC_DB_PASS: z.string().default(''),
+  IXC_DB_NAME: z.string().default('ixcprovedor'),
 });
 
 export type EnvConfig = z.infer<typeof envSchema> & {
