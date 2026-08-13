@@ -52,6 +52,61 @@ export type ChangePasswordResponseDto = z.infer<
   typeof changePasswordResponseDtoSchema
 >;
 
+export const userListStatusFilterSchema = z.enum(['active', 'blocked', 'all']);
+
+export const userListQueryDtoSchema = z.object({
+  q: z.string().optional(),
+  status: userListStatusFilterSchema.default('all'),
+  erpLinked: z
+    .union([z.boolean(), z.enum(['true', 'false'])])
+    .optional()
+    .transform((value) => {
+      if (value === undefined) {
+        return undefined;
+      }
+      if (typeof value === 'boolean') {
+        return value;
+      }
+      return value === 'true';
+    }),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export type UserListQueryDto = z.infer<typeof userListQueryDtoSchema>;
+
+export const userListItemDtoSchema = publicUserDtoSchema.extend({
+  createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
+});
+
+export type UserListItemDto = z.infer<typeof userListItemDtoSchema>;
+
+export const userDetailDtoSchema = userListItemDtoSchema.extend({
+  cashboxId: z.string().min(1).optional(),
+  warehouseId: z.string().min(1).optional(),
+  planningId: z.string().min(1).optional(),
+});
+
+export type UserDetailDto = z.infer<typeof userDetailDtoSchema>;
+
+export const paginatedUsersDtoSchema = z.object({
+  items: z.array(userListItemDtoSchema),
+  total: z.number().int().nonnegative(),
+  page: z.number().int().min(1),
+  pageSize: z.number().int().min(1),
+});
+
+export type PaginatedUsersDto = z.infer<typeof paginatedUsersDtoSchema>;
+
+export const inactivateUserResponseDtoSchema = z.object({
+  user: userDetailDtoSchema,
+});
+
+export type InactivateUserResponseDto = z.infer<
+  typeof inactivateUserResponseDtoSchema
+>;
+
 /** @deprecated Prefer PublicUserDto once auth is wired. */
 export interface UserStub {
   id: string;

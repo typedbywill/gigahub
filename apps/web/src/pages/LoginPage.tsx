@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
   Button,
+  Checkbox,
   Input,
   InputGroup,
   Label,
@@ -16,6 +17,11 @@ import {
 import { useAuthStore } from '../shared/stores/auth.store';
 import { ApiClientError } from '../shared/api/auth.api';
 import { LoginBrandPanel } from './login/LoginBrandPanel';
+import {
+  clearRememberedEmail,
+  readRememberedEmail,
+  writeRememberedEmail,
+} from './login/remember-email';
 
 const fieldClassName =
   'rounded-xl border border-white/15 bg-white/5 text-white shadow-none placeholder:text-white/35';
@@ -25,8 +31,11 @@ export const LoginPage: React.FC = () => {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const login = useAuthStore((s) => s.login);
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(() => readRememberedEmail() ?? '');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(
+    () => readRememberedEmail() !== null,
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -40,7 +49,13 @@ export const LoginPage: React.FC = () => {
     setError(null);
     setSubmitting(true);
     try {
-      await login(email.trim(), password);
+      const trimmedEmail = email.trim();
+      await login(trimmedEmail, password);
+      if (rememberMe) {
+        writeRememberedEmail(trimmedEmail);
+      } else {
+        clearRememberedEmail();
+      }
       navigate('/', { replace: true });
     } catch (err) {
       if (err instanceof ApiClientError) {
@@ -139,6 +154,20 @@ export const LoginPage: React.FC = () => {
                   </InputGroup.Suffix>
                 </InputGroup>
               </TextField>
+
+              <Checkbox
+                name="remember"
+                isSelected={rememberMe}
+                onChange={setRememberMe}
+                className="text-sm text-white/70"
+              >
+                <Checkbox.Content>
+                  <Checkbox.Control className="border-white/30">
+                    <Checkbox.Indicator />
+                  </Checkbox.Control>
+                  Lembrar-me
+                </Checkbox.Content>
+              </Checkbox>
 
               {error ? (
                 <p className="text-sm text-red-400" role="alert">

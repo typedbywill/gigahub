@@ -8,6 +8,11 @@ export type {
   RenewTokenResponseDto,
   ChangePasswordRequestDto,
   ChangePasswordResponseDto,
+  UserListQueryDto,
+  UserListItemDto,
+  UserDetailDto,
+  PaginatedUsersDto,
+  InactivateUserResponseDto,
 } from './lib/identity';
 export {
   userStatusSchema,
@@ -17,6 +22,12 @@ export {
   renewTokenResponseDtoSchema,
   changePasswordRequestDtoSchema,
   changePasswordResponseDtoSchema,
+  userListStatusFilterSchema,
+  userListQueryDtoSchema,
+  userListItemDtoSchema,
+  userDetailDtoSchema,
+  paginatedUsersDtoSchema,
+  inactivateUserResponseDtoSchema,
 } from './lib/identity';
 export {
   geoPointDtoSchema,

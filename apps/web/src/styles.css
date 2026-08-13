@@ -84,4 +84,8 @@ body {
   .login-float {
     animation: none;
   }
+
+  .sidebar-collapse {
+    transition: none !important;
+  }
 }

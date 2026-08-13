@@ -6,11 +6,25 @@ import type {
 import type { SessionId, UserId } from '@gigahub/shared/kernel';
 import type { PublicUserDto } from '@gigahub/shared/contracts';
 
+export interface UserListQuery {
+  q?: string;
+  status?: 'active' | 'blocked' | 'all';
+  erpLinked?: boolean;
+  page: number;
+  pageSize: number;
+}
+
+export interface UserListResult {
+  items: User[];
+  total: number;
+}
+
 export interface UserRepository {
   findByEmail(email: string): Promise<User | null>;
   findById(id: UserId): Promise<User | null>;
   findByIdErp(idErp: string): Promise<User | null>;
   findAllWithErpLink(): Promise<User[]>;
+  list(query: UserListQuery): Promise<UserListResult>;
   save(user: User): Promise<void>;
 }
 
@@ -44,6 +58,7 @@ export interface ErpUserDirectory {
   listCollaborators(): Promise<ErpCollaborator[]>;
   verifyPassword(email: string, plaintext: string): Promise<boolean>;
   updatePassword(idErp: string, plaintext: string): Promise<void>;
+  setCollaboratorActive(idErp: string, active: boolean): Promise<void>;
 }
 
 export interface PasswordHasher {
@@ -96,4 +111,5 @@ export const ApplicationErrorCodes = {
   WeakPassword: 'WEAK_PASSWORD',
   Unauthorized: 'UNAUTHORIZED',
   ErpUnavailable: 'ERP_UNAVAILABLE',
+  NotFound: 'NOT_FOUND',
 } as const;

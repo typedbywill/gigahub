@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '@gigahub/domain/identity';
-import type { UserRepository } from '@gigahub/application-identity';
+import type {
+  UserListQuery,
+  UserListResult,
+  UserRepository,
+} from '@gigahub/application-identity';
 import { userId, type UserId } from '@gigahub/shared/kernel';
 import { UserModel } from './user.schema';
 
@@ -31,6 +35,49 @@ export class MongoUserRepository implements UserRepository {
       .lean()
       .exec();
     return docs.map((doc) => this.toDomain(doc));
+  }
+
+  async list(query: UserListQuery): Promise<UserListResult> {
+    const filter: Record<string, unknown> = {};
+
+    if (query.status && query.status !== 'all') {
+      filter.status = query.status;
+    }
+
+    if (query.erpLinked === true) {
+      filter.idErp = { $exists: true, $nin: [null, ''] };
+    } else if (query.erpLinked === false) {
+      filter.$or = [
+        { idErp: { $exists: false } },
+        { idErp: null },
+        { idErp: '' },
+      ];
+    }
+
+    const q = query.q?.trim();
+    if (q) {
+      const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(escaped, 'i');
+      const existingAnd = Array.isArray(filter.$and) ? filter.$and : [];
+      filter.$and = [...existingAnd, { $or: [{ name: regex }, { email: regex }] }];
+    }
+
+    const skip = (query.page - 1) * query.pageSize;
+    const [docs, total] = await Promise.all([
+      this.model
+        .find(filter)
+        .sort({ name: 1 })
+        .skip(skip)
+        .limit(query.pageSize)
+        .lean()
+        .exec(),
+      this.model.countDocuments(filter).exec(),
+    ]);
+
+    return {
+      items: docs.map((doc) => this.toDomain(doc)),
+      total,
+    };
   }
 
   async save(user: User): Promise<void> {

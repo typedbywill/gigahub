@@ -6,6 +6,10 @@ import type { Pool, RowDataPacket, ResultSetHeader } from 'mysql2/promise';
 import { createPool } from 'mysql2/promise';
 import { formatIxcName, hashIxcPassword } from './ixc-password';
 
+/** IXC `usuarios.status`: active = A, inactive = I. */
+export const IXC_USER_STATUS_ACTIVE = 'A';
+export const IXC_USER_STATUS_INACTIVE = 'I';
+
 export interface IxcDbConfig {
   host: string;
   port: number;
@@ -77,7 +81,7 @@ export class MysqlErpUserDirectory implements ErpUserDirectory {
       idErpEmployee: String(row.idErpEmployee ?? ''),
       email: (row.email ?? '').trim(),
       name: formatIxcName(row.name ?? ''),
-      active: row.status === 'A',
+      active: row.status === IXC_USER_STATUS_ACTIVE,
       jobTitle: row.jobTitle?.trim() || undefined,
       cashboxId: asOptionalId(row.cashboxId),
       warehouseId: asOptionalId(row.warehouseId),
@@ -106,6 +110,17 @@ export class MysqlErpUserDirectory implements ErpUserDirectory {
     );
     if (result.affectedRows < 1) {
       throw new Error(`IXC user ${idErp} not found for password update`);
+    }
+  }
+
+  async setCollaboratorActive(idErp: string, active: boolean): Promise<void> {
+    const status = active ? IXC_USER_STATUS_ACTIVE : IXC_USER_STATUS_INACTIVE;
+    const [result] = await this.pool.execute<ResultSetHeader>(
+      `UPDATE usuarios SET status = ? WHERE id = ?`,
+      [status, idErp],
+    );
+    if (result.affectedRows < 1) {
+      throw new Error(`IXC user ${idErp} not found for status update`);
     }
   }
 

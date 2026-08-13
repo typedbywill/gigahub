@@ -2,6 +2,8 @@ export {
   ApplicationError,
   ApplicationErrorCodes,
   type UserRepository,
+  type UserListQuery,
+  type UserListResult,
   type CredentialRepository,
   type SessionRepository,
   type ErpCollaborator,
@@ -13,7 +15,11 @@ export {
   type Clock,
   type AuthTokens,
 } from './lib/ports';
-export { toPublicUserDto } from './lib/mappers';
+export {
+  toPublicUserDto,
+  toUserListItemDto,
+  toUserDetailDto,
+} from './lib/mappers';
 export { LoginUseCase, type LoginCommand } from './lib/login.use-case';
 export {
   RenewTokenUseCase,
@@ -27,3 +33,12 @@ export {
   SyncUsersFromErpUseCase,
   type SyncUsersFromErpResult,
 } from './lib/sync-users-from-erp.use-case';
+export {
+  ListUsersUseCase,
+  type ListUsersCommand,
+} from './lib/list-users.use-case';
+export { GetUserUseCase, type GetUserCommand } from './lib/get-user.use-case';
+export {
+  InactivateUserUseCase,
+  type InactivateUserCommand,
+} from './lib/inactivate-user.use-case';

@@ -36,6 +36,7 @@ describe('LoginUseCase and RenewTokenUseCase', () => {
       findById: jest.fn(async (id) => (id === user.id ? user : null)),
       findByIdErp: jest.fn(async () => null),
       findAllWithErpLink: jest.fn(async () => []),
+      list: jest.fn(async () => ({ items: [], total: 0 })),
       save: jest.fn(async () => undefined),
     };
     const credentials: CredentialRepository = {
@@ -133,6 +134,7 @@ describe('LoginUseCase and RenewTokenUseCase', () => {
       listCollaborators: async () => [],
       verifyPassword: jest.fn(async (_email, password) => password === 'ixc-secret'),
       updatePassword: jest.fn(async () => undefined),
+      setCollaboratorActive: jest.fn(async () => undefined),
     };
     const { login } = build({ erpLinked: true, erp });
     const logged = await login.execute({
@@ -167,6 +169,7 @@ describe('LoginUseCase and RenewTokenUseCase', () => {
       listCollaborators: async () => [],
       verifyPassword: jest.fn(async () => true),
       updatePassword: jest.fn(async () => undefined),
+      setCollaboratorActive: jest.fn(async () => undefined),
     };
     const { changePassword, sessions } = build({ erpLinked: true, erp });
     await changePassword.execute({
@@ -196,6 +199,10 @@ describe('SyncUsersFromErpUseCase', () => {
       findAllWithErpLink: jest.fn(async () =>
         [...store.values()].filter((u) => u.hasErpLink()),
       ),
+      list: jest.fn(async () => ({
+        items: [...store.values()],
+        total: store.size,
+      })),
       save: jest.fn(async (user) => {
         store.set(user.id, user);
         if (user.idErp) byErp.set(user.idErp, user);
@@ -226,6 +233,7 @@ describe('SyncUsersFromErpUseCase', () => {
       ],
       verifyPassword: async () => false,
       updatePassword: async () => undefined,
+      setCollaboratorActive: async () => undefined,
     };
 
     const sync = new SyncUsersFromErpUseCase(directory, users, ids);

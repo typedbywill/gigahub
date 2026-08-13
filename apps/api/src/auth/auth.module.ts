@@ -4,6 +4,9 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ScheduleModule } from '@nestjs/schedule';
 import {
   ChangePasswordUseCase,
+  GetUserUseCase,
+  InactivateUserUseCase,
+  ListUsersUseCase,
   LoginUseCase,
   RenewTokenUseCase,
   SyncUsersFromErpUseCase,
@@ -25,6 +28,7 @@ import {
 } from './crypto/crypto.services';
 import { JoseAccessTokenIssuer } from './crypto/jose-token.issuer';
 import { AuthController } from './auth.controller';
+import { UsersController } from './users.controller';
 import { AuthDevSeedService } from './auth-dev-seed.service';
 import { SyncUsersScheduler } from './sync-users.scheduler';
 import { AccessTokenGuard } from './access-token.guard';
@@ -40,7 +44,7 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
       { name: SessionModel.name, schema: SessionSchema },
     ]),
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, UsersController],
   providers: [
     MongoUserRepository,
     MongoCredentialRepository,
@@ -138,6 +142,31 @@ export const ERP_USER_DIRECTORY = 'ERP_USER_DIRECTORY';
         MongoCredentialRepository,
         MongoSessionRepository,
         Argon2PasswordHasher,
+        ERP_USER_DIRECTORY,
+        SystemClock,
+      ],
+    },
+    {
+      provide: ListUsersUseCase,
+      useFactory: (users: MongoUserRepository) => new ListUsersUseCase(users),
+      inject: [MongoUserRepository],
+    },
+    {
+      provide: GetUserUseCase,
+      useFactory: (users: MongoUserRepository) => new GetUserUseCase(users),
+      inject: [MongoUserRepository],
+    },
+    {
+      provide: InactivateUserUseCase,
+      useFactory: (
+        users: MongoUserRepository,
+        sessions: MongoSessionRepository,
+        erp: ErpUserDirectory | null,
+        clock: SystemClock,
+      ) => new InactivateUserUseCase(users, sessions, erp, clock),
+      inject: [
+        MongoUserRepository,
+        MongoSessionRepository,
         ERP_USER_DIRECTORY,
         SystemClock,
       ],

@@ -9,6 +9,9 @@ import {
 import { Layout } from '../shared/components/Layout';
 import { HomePage } from '../pages/HomePage';
 import { LoginPage } from '../pages/LoginPage';
+import { PermissionsPage } from '../pages/settings/PermissionsPage';
+import { UsersListPage } from '../pages/users/UsersListPage';
+import { UserDetailPage } from '../pages/users/UserDetailPage';
 import { useAuthStore } from '../shared/stores/auth.store';
 import { useThemeStore } from '../shared/stores/theme.store';
 
@@ -59,6 +62,13 @@ export function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route element={<ProtectedShell />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/usuarios" element={<UsersListPage />} />
+            <Route path="/usuarios/:id" element={<UserDetailPage />} />
+            <Route
+              path="/settings/users"
+              element={<Navigate to="/usuarios" replace />}
+            />
+            <Route path="/settings/permissions" element={<PermissionsPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
