@@ -23,6 +23,7 @@ export async function apiFetch<T>(
     method?: string;
     accessToken: string;
     body?: unknown;
+    formData?: FormData;
     query?: Record<string, string | number | boolean | undefined>;
     signal?: AbortSignal;
   },
@@ -40,7 +41,7 @@ export async function apiFetch<T>(
   const headers: Record<string, string> = {
     Authorization: `Bearer ${options.accessToken}`,
   };
-  if (options.body !== undefined) {
+  if (options.body !== undefined && options.formData === undefined) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -48,7 +49,12 @@ export async function apiFetch<T>(
     method: options.method ?? 'GET',
     credentials: 'include',
     headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    body:
+      options.formData !== undefined
+        ? options.formData
+        : options.body !== undefined
+          ? JSON.stringify(options.body)
+          : undefined,
     signal: options.signal,
   });
 

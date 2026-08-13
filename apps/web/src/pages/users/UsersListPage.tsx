@@ -27,6 +27,7 @@ import {
   type UsersListSearchState,
   type UsersListStatusFilter,
 } from './users-list-search';
+import { routes } from '../../shared/routes';
 
 function statusLabel(status: UserListItemDto['status']): string {
   return status === 'active' ? 'Ativo' : 'Inativo';
@@ -57,7 +58,7 @@ const UserActionsCell = React.memo(function UserActionsCell({
         <Dropdown.Menu
           onAction={(key) => {
             if (key === 'view') {
-              navigate(`/usuarios/${user.id}`, { state: { from: listHref } });
+              navigate(routes.usuario(user.id), { state: { from: listHref } });
               return;
             }
             if (key === 'inactivate') {
@@ -243,7 +244,7 @@ export const UsersListPage: React.FC = () => {
         isRowHeader: true,
         cell: (row) => (
           <Link
-            to={`/usuarios/${row.id}`}
+            to={routes.usuario(row.id)}
             state={{ from: listHref }}
             className="font-medium text-foreground underline-offset-2 hover:underline"
           >

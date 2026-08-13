@@ -13,8 +13,12 @@ import {
 } from './set-user-avatar.use-case';
 import { SeedDefaultRolesUseCase } from './seed-default-roles.use-case';
 import { ListRolesUseCase } from './list-roles.use-case';
+import { ListPermissionsUseCase } from './list-permissions.use-case';
+import { CreateRoleUseCase } from './create-role.use-case';
+import { ReplaceRolePermissionsUseCase } from './replace-role-permissions.use-case';
 import { ReplaceUserRolesUseCase } from './replace-user-roles.use-case';
 import {
+  ApplicationError,
   ApplicationErrorCodes,
   type ErpUserDirectory,
   type GrantRepository,
@@ -319,6 +323,92 @@ describe('Users admin use cases', () => {
     const result = await list.execute();
     expect(result.items).toHaveLength(1);
     expect(result.items[0]?.slug).toBe('tecnico');
+  });
+
+  it('lists permission catalog', async () => {
+    const result = await new ListPermissionsUseCase().execute();
+    expect(result.items.length).toBeGreaterThan(0);
+    expect(result.items.some((item) => item.id === 'access:manage')).toBe(
+      true,
+    );
+  });
+
+  it('creates a role', async () => {
+    const roles: Role[] = [];
+    const useCase = new CreateRoleUseCase(buildRoleRepo(roles), {
+      generate: () => 'role-new',
+    });
+    const result = await useCase.execute({
+      name: 'Auditor',
+      slug: 'auditor',
+      permissionIds: ['work-order:read'],
+    });
+    expect(result.role.id).toBe('role-new');
+    expect(result.role.slug).toBe('auditor');
+    expect(roles).toHaveLength(1);
+  });
+
+  it('rejects duplicate role slug', async () => {
+    const roles = [
+      Role.create({
+        id: 'role-1',
+        slug: 'tecnico',
+        name: 'Técnico',
+        permissionIds: ['work-order:read'],
+      }),
+    ];
+    const useCase = new CreateRoleUseCase(buildRoleRepo(roles), {
+      generate: () => 'role-2',
+    });
+    await expect(
+      useCase.execute({ name: 'Outro', slug: 'tecnico' }),
+    ).rejects.toMatchObject({
+      code: ApplicationErrorCodes.Conflict,
+    } satisfies Partial<ApplicationError>);
+  });
+
+  it('replaces role permissions', async () => {
+    const roles = [
+      Role.create({
+        id: 'role-1',
+        slug: 'tecnico',
+        name: 'Técnico',
+        permissionIds: ['work-order:read'],
+      }),
+    ];
+    const useCase = new ReplaceRolePermissionsUseCase(buildRoleRepo(roles));
+    const result = await useCase.execute({
+      roleId: 'role-1',
+      permissionIds: ['work-order:read', 'work-order:execute'],
+    });
+    expect(result.role.permissionIds).toEqual([
+      'work-order:read',
+      'work-order:execute',
+    ]);
+    expect([...roles[0]!.permissionIds]).toEqual([
+      'work-order:read',
+      'work-order:execute',
+    ]);
+  });
+
+  it('rejects unknown permission when replacing role permissions', async () => {
+    const roles = [
+      Role.create({
+        id: 'role-1',
+        slug: 'tecnico',
+        name: 'Técnico',
+        permissionIds: ['work-order:read'],
+      }),
+    ];
+    const useCase = new ReplaceRolePermissionsUseCase(buildRoleRepo(roles));
+    await expect(
+      useCase.execute({
+        roleId: 'role-1',
+        permissionIds: ['not-a-real:permission'],
+      }),
+    ).rejects.toMatchObject({
+      code: ApplicationErrorCodes.ValidationError,
+    } satisfies Partial<ApplicationError>);
   });
 
   it('replaces user roles and bumps authorization version', async () => {

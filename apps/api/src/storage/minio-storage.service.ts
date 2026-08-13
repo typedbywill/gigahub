@@ -1,6 +1,13 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadBucketCommand } from '@aws-sdk/client-s3';
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  HeadBucketCommand,
+  CreateBucketCommand,
+} from '@aws-sdk/client-s3';
+import type { EnvConfig } from '@gigahub/shared/config';
 import { StoragePort } from './storage.port';
 
 @Injectable()
@@ -8,13 +15,15 @@ export class MinioStorageService implements StoragePort, OnModuleInit {
   private readonly logger = new Logger(MinioStorageService.name);
   private client: S3Client;
   private endpoint: string;
+  private defaultBucket: string;
 
-  constructor(private readonly configService: ConfigService) {
-    const endpoint = this.configService.get<string>('MINIO_ENDPOINT', 'localhost');
-    const port = this.configService.get<number>('MINIO_PORT', 9000);
-    const useSSL = this.configService.get<boolean>('MINIO_USE_SSL', false);
-    const accessKey = this.configService.get<string>('MINIO_ACCESS_KEY', 'minioadmin');
-    const secretKey = this.configService.get<string>('MINIO_SECRET_KEY', 'minioadmin');
+  constructor(private readonly configService: ConfigService<EnvConfig, true>) {
+    const endpoint = this.configService.get('MINIO_ENDPOINT', { infer: true });
+    const port = this.configService.get('MINIO_PORT', { infer: true });
+    const useSSL = this.configService.get('MINIO_USE_SSL', { infer: true });
+    const accessKey = this.configService.get('MINIO_ACCESS_KEY', { infer: true });
+    const secretKey = this.configService.get('MINIO_SECRET_KEY', { infer: true });
+    this.defaultBucket = this.configService.get('MINIO_BUCKET', { infer: true });
 
     const protocol = useSSL ? 'https' : 'http';
     this.endpoint = `${protocol}://${endpoint}:${port}`;
@@ -30,11 +39,26 @@ export class MinioStorageService implements StoragePort, OnModuleInit {
     });
   }
 
-  onModuleInit() {
+  async onModuleInit(): Promise<void> {
     this.logger.log(`Initialized MinIO S3 client pointing to ${this.endpoint}`);
+    try {
+      await this.ensureBucket(this.defaultBucket);
+    } catch (error) {
+      this.logger.warn(
+        `Could not ensure MinIO bucket "${this.defaultBucket}": ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
-  async uploadFile(bucket: string, key: string, file: Buffer, contentType?: string): Promise<string> {
+  async uploadFile(
+    bucket: string,
+    key: string,
+    file: Buffer,
+    contentType?: string,
+  ): Promise<string> {
+    await this.ensureBucket(bucket);
     await this.client.send(
       new PutObjectCommand({
         Bucket: bucket,
@@ -66,5 +90,13 @@ export class MinioStorageService implements StoragePort, OnModuleInit {
     } catch {
       return false;
     }
+  }
+
+  async ensureBucket(bucket: string): Promise<void> {
+    if (await this.bucketExists(bucket)) {
+      return;
+    }
+    await this.client.send(new CreateBucketCommand({ Bucket: bucket }));
+    this.logger.log(`Created MinIO bucket "${bucket}"`);
   }
 }

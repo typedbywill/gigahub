@@ -63,6 +63,15 @@ export {
   type SeedDefaultRolesResult,
 } from './lib/seed-default-roles.use-case';
 export { ListRolesUseCase } from './lib/list-roles.use-case';
+export { ListPermissionsUseCase } from './lib/list-permissions.use-case';
+export {
+  CreateRoleUseCase,
+  type CreateRoleCommand,
+} from './lib/create-role.use-case';
+export {
+  ReplaceRolePermissionsUseCase,
+  type ReplaceRolePermissionsCommand,
+} from './lib/replace-role-permissions.use-case';
 export {
   ReplaceUserRolesUseCase,
   type ReplaceUserRolesCommand,

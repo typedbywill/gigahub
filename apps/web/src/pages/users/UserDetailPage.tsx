@@ -1,14 +1,41 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { AlertDialog, Button, Chip, Spinner } from '@heroui/react';
-import { LuArrowLeft } from 'react-icons/lu';
-import type { UserDetailDto } from '@gigahub/shared/contracts';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import type { Key } from '@heroui/react';
+import {
+  Autocomplete,
+  Button,
+  EmptyState,
+  Input,
+  Label,
+  ListBox,
+  SearchField,
+  Spinner,
+  TextField,
+  useFilter,
+} from '@heroui/react';
+import type {
+  RoleListItemDto,
+  UserDetailDto,
+} from '@gigahub/shared/contracts';
 import { useAuthStore } from '../../shared/stores/auth.store';
 import { ApiClientError } from '../../shared/api/auth.api';
+import { listRolesRequest } from '../../shared/api/roles.api';
 import {
+  deleteUserAvatarRequest,
   getUserRequest,
   inactivateUserRequest,
+  replaceUserRolesRequest,
+  updateUserRequest,
+  uploadUserAvatarRequest,
 } from '../../shared/api/users.api';
+import { routes } from '../../shared/routes';
+import { UserDetailHeader } from './UserDetailHeader';
+
+const fieldClassName =
+  'h-10 rounded-xl border border-border bg-background text-foreground shadow-none placeholder:text-muted';
+
+const autocompleteTriggerClassName =
+  'h-10 w-full rounded-xl border border-border bg-background text-foreground shadow-none';
 
 function formatDate(value: string): string {
   try {
@@ -30,14 +57,54 @@ export const UserDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const authUser = useAuthStore((s) => s.user);
+  const patchCurrentUser = useAuthStore((s) => s.patchCurrentUser);
   const backTo =
-    (location.state as DetailLocationState | null)?.from ?? '/usuarios';
+    (location.state as DetailLocationState | null)?.from ?? routes.usuarios;
+  const { contains } = useFilter({ sensitivity: 'base' });
 
   const [user, setUser] = useState<UserDetailDto | null>(null);
+  const [rolesCatalog, setRolesCatalog] = useState<RoleListItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [inactivating, setInactivating] = useState(false);
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [savingProfile, setSavingProfile] = useState(false);
+
+  const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+  const [savingRoles, setSavingRoles] = useState(false);
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const syncAuthIfSelf = useCallback(
+    (detail: UserDetailDto) => {
+      if (authUser?.id === detail.id) {
+        patchCurrentUser({
+          name: detail.name,
+          email: detail.email,
+          avatarUrl: detail.avatarUrl,
+          jobTitle: detail.jobTitle,
+          status: detail.status,
+        });
+      }
+    },
+    [authUser?.id, patchCurrentUser],
+  );
+
+  const applyUser = useCallback(
+    (detail: UserDetailDto) => {
+      setUser(detail);
+      setName(detail.name);
+      setEmail(detail.email);
+      setSelectedRoleId(detail.roles[0]?.id ?? null);
+      syncAuthIfSelf(detail);
+    },
+    [syncAuthIfSelf],
+  );
 
   const load = useCallback(async () => {
     if (!accessToken || !id) {
@@ -46,8 +113,12 @@ export const UserDetailPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const detail = await getUserRequest(accessToken, id);
-      setUser(detail);
+      const [detail, roles] = await Promise.all([
+        getUserRequest(accessToken, id),
+        listRolesRequest(accessToken),
+      ]);
+      applyUser(detail);
+      setRolesCatalog(roles.items);
     } catch (err) {
       setUser(null);
       setError(
@@ -58,7 +129,7 @@ export const UserDetailPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [accessToken, id]);
+  }, [accessToken, applyUser, id]);
 
   useEffect(() => {
     void load();
@@ -70,10 +141,12 @@ export const UserDetailPage: React.FC = () => {
     }
     setInactivating(true);
     setError(null);
+    setSuccess(null);
     try {
       const result = await inactivateUserRequest(accessToken, user.id);
-      setUser(result.user);
+      applyUser(result.user);
       setConfirmOpen(false);
+      setSuccess('Usuário inativado.');
     } catch (err) {
       setError(
         err instanceof ApiClientError
@@ -82,6 +155,100 @@ export const UserDetailPage: React.FC = () => {
       );
     } finally {
       setInactivating(false);
+    }
+  };
+
+  const saveProfile = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!accessToken || !user) {
+      return;
+    }
+    setSavingProfile(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await updateUserRequest(accessToken, user.id, {
+        name: name.trim(),
+        email: email.trim(),
+      });
+      applyUser(result.user);
+      setSuccess('Perfil atualizado.');
+    } catch (err) {
+      setError(
+        err instanceof ApiClientError
+          ? err.message
+          : 'Não foi possível salvar o perfil.',
+      );
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const saveRoles = async () => {
+    if (!accessToken || !user) {
+      return;
+    }
+    setSavingRoles(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await replaceUserRolesRequest(accessToken, user.id, {
+        roleIds: selectedRoleId ? [selectedRoleId] : [],
+      });
+      applyUser(result.user);
+      setSuccess('Nível de acesso atualizado.');
+    } catch (err) {
+      setError(
+        err instanceof ApiClientError
+          ? err.message
+          : 'Não foi possível salvar o nível de acesso.',
+      );
+    } finally {
+      setSavingRoles(false);
+    }
+  };
+
+  const onAvatarFile = async (file: File) => {
+    if (!accessToken || !user) {
+      return;
+    }
+    setUploadingAvatar(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await uploadUserAvatarRequest(accessToken, user.id, file);
+      applyUser(result.user);
+      setSuccess('Foto de perfil atualizada.');
+    } catch (err) {
+      setError(
+        err instanceof ApiClientError
+          ? err.message
+          : 'Não foi possível enviar a foto.',
+      );
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
+  const removeAvatar = async () => {
+    if (!accessToken || !user?.avatarUrl) {
+      return;
+    }
+    setUploadingAvatar(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const result = await deleteUserAvatarRequest(accessToken, user.id);
+      applyUser(result.user);
+      setSuccess('Foto de perfil removida.');
+    } catch (err) {
+      setError(
+        err instanceof ApiClientError
+          ? err.message
+          : 'Não foi possível remover a foto.',
+      );
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -95,7 +262,7 @@ export const UserDetailPage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="flex flex-col gap-4 p-6 md:p-8">
+      <div className="flex w-full flex-col gap-4 p-6 md:p-8">
         <p className="text-sm text-danger" role="alert">
           {error ?? 'Usuário não encontrado.'}
         </p>
@@ -106,9 +273,8 @@ export const UserDetailPage: React.FC = () => {
     );
   }
 
-  const fields: { label: string; value: string }[] = [
-    { label: 'E-mail', value: user.email },
-    { label: 'Cargo', value: user.jobTitle ?? '—' },
+  const readonlyFields: { label: string; value: string }[] = [
+    { label: 'Cargo (IXC)', value: user.jobTitle ?? '—' },
     { label: 'ID ERP', value: user.idErp ?? '—' },
     { label: 'ID Funcionário ERP', value: user.idErpEmployee ?? '—' },
     { label: 'Caixa', value: user.cashboxId ?? '—' },
@@ -118,90 +284,200 @@ export const UserDetailPage: React.FC = () => {
     { label: 'Atualizado em', value: formatDate(user.updatedAt) },
   ];
 
-  return (
-    <div className="flex flex-col gap-6 p-6 md:p-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex flex-col gap-3">
-          <Link
-            to={backTo}
-            className="inline-flex w-fit items-center gap-1.5 text-sm text-muted hover:text-foreground"
-          >
-            <LuArrowLeft className="size-4" />
-            Usuários
-          </Link>
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-display text-2xl font-bold text-foreground">
-              {user.name}
-            </h1>
-            <Chip
-              size="sm"
-              color={user.status === 'active' ? 'success' : 'danger'}
-              variant="soft"
-            >
-              {user.status === 'active' ? 'Ativo' : 'Inativo'}
-            </Chip>
-          </div>
-        </div>
+  const currentRoleId = user.roles[0]?.id ?? null;
+  const selectedRoleName =
+    rolesCatalog.find((role) => role.id === (selectedRoleId ?? currentRoleId))
+      ?.name ?? user.roles[0]?.name;
+  const profileDirty =
+    name.trim() !== user.name || email.trim().toLowerCase() !== user.email;
+  const rolesDirty = selectedRoleId !== currentRoleId;
 
-        {user.status === 'active' ? (
-          <AlertDialog isOpen={confirmOpen} onOpenChange={setConfirmOpen}>
-            <Button variant="danger">Inativar usuário</Button>
-            <AlertDialog.Backdrop>
-              <AlertDialog.Container>
-                <AlertDialog.Dialog className="sm:max-w-105">
-                  <AlertDialog.CloseTrigger />
-                  <AlertDialog.Header>
-                    <AlertDialog.Icon status="danger" />
-                    <AlertDialog.Heading>Inativar usuário?</AlertDialog.Heading>
-                  </AlertDialog.Header>
-                  <AlertDialog.Body>
-                    <p className="text-sm text-muted">
-                      {user.name} será inativado no GigaHub
-                      {user.idErp ? ' e no IXC' : ''}. Sessões ativas serão
-                      encerradas.
-                    </p>
-                  </AlertDialog.Body>
-                  <AlertDialog.Footer>
-                    <Button
-                      slot="close"
-                      variant="secondary"
-                      isDisabled={inactivating}
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      variant="danger"
-                      isPending={inactivating}
-                      onPress={() => {
-                        void confirmInactivate();
-                      }}
-                    >
-                      Inativar
-                    </Button>
-                  </AlertDialog.Footer>
-                </AlertDialog.Dialog>
-              </AlertDialog.Container>
-            </AlertDialog.Backdrop>
-          </AlertDialog>
-        ) : null}
-      </div>
+  return (
+    <div className="flex w-full flex-col gap-6 p-6 md:p-8">
+      <UserDetailHeader
+        name={user.name}
+        email={user.email}
+        status={user.status}
+        avatarUrl={user.avatarUrl}
+        jobTitle={user.jobTitle}
+        roleName={selectedRoleName}
+        idErp={user.idErp}
+        backTo={backTo}
+        uploadingAvatar={uploadingAvatar}
+        inactivating={inactivating}
+        confirmOpen={confirmOpen}
+        onConfirmOpenChange={setConfirmOpen}
+        onAvatarFile={(file) => {
+          void onAvatarFile(file);
+        }}
+        onRemoveAvatar={() => {
+          void removeAvatar();
+        }}
+        onInactivate={() => {
+          void confirmInactivate();
+        }}
+      />
 
       {error ? (
         <p className="text-sm text-danger" role="alert">
           {error}
         </p>
       ) : null}
+      {success ? (
+        <p className="text-sm text-accent" role="status">
+          {success}
+        </p>
+      ) : null}
 
-      <dl className="grid gap-4 sm:grid-cols-2">
-        {fields.map((field) => (
-          <div key={field.label} className="flex flex-col gap-1">
-            <dt className="text-xs font-medium uppercase tracking-wide text-muted">
-              {field.label}
-            </dt>
-            <dd className="text-sm text-foreground">{field.value}</dd>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
+          <div className="mb-4 flex flex-col gap-1">
+            <h2 className="font-display text-lg font-semibold text-foreground">
+              Perfil
+            </h2>
+            <p className="text-sm text-muted">
+              Nome e e-mail editáveis pelo administrador.
+            </p>
           </div>
-        ))}
-      </dl>
+          <form
+            className="flex flex-col gap-4"
+            onSubmit={(e) => void saveProfile(e)}
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField
+                name="name"
+                isRequired
+                fullWidth
+                value={name}
+                onChange={setName}
+                className="flex flex-col gap-1.5"
+              >
+                <Label className="text-sm text-muted">Nome</Label>
+                <Input fullWidth className={fieldClassName} />
+              </TextField>
+              <TextField
+                name="email"
+                type="email"
+                isRequired
+                fullWidth
+                value={email}
+                onChange={setEmail}
+                className="flex flex-col gap-1.5"
+              >
+                <Label className="text-sm text-muted">E-mail</Label>
+                <Input fullWidth className={fieldClassName} />
+              </TextField>
+            </div>
+            <div>
+              <Button
+                type="submit"
+                isDisabled={!profileDirty}
+                isPending={savingProfile}
+              >
+                Salvar perfil
+              </Button>
+            </div>
+          </form>
+        </section>
+
+        <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
+          <div className="mb-4 flex flex-col gap-1">
+            <h2 className="font-display text-lg font-semibold text-foreground">
+              Nível de acesso
+            </h2>
+            <p className="text-sm text-muted">
+              Grupo de permissões do usuário no GigaHub.
+            </p>
+          </div>
+
+          {rolesCatalog.length === 0 ? (
+            <p className="text-sm text-muted">Nenhum grupo disponível.</p>
+          ) : (
+            <Autocomplete
+              className="w-full"
+              placeholder="Buscar grupo…"
+              value={selectedRoleId}
+              onChange={(key: Key | Key[] | null) => {
+                if (Array.isArray(key)) {
+                  setSelectedRoleId(key[0] != null ? String(key[0]) : null);
+                  return;
+                }
+                setSelectedRoleId(key != null ? String(key) : null);
+              }}
+            >
+              <Label className="text-sm text-muted">Grupo</Label>
+              <Autocomplete.Trigger className={autocompleteTriggerClassName}>
+                <Autocomplete.Value />
+                <Autocomplete.ClearButton />
+                <Autocomplete.Indicator />
+              </Autocomplete.Trigger>
+              <Autocomplete.Popover>
+                <Autocomplete.Filter filter={contains}>
+                  <SearchField autoFocus name="role-search" variant="secondary">
+                    <SearchField.Group>
+                      <SearchField.SearchIcon />
+                      <SearchField.Input
+                        placeholder="Pesquisar…"
+                        className="bg-transparent text-foreground placeholder:text-muted"
+                      />
+                      <SearchField.ClearButton />
+                    </SearchField.Group>
+                  </SearchField>
+                  <ListBox
+                    renderEmptyState={() => (
+                      <EmptyState>Nenhum grupo encontrado</EmptyState>
+                    )}
+                  >
+                    {rolesCatalog.map((role) => (
+                      <ListBox.Item
+                        key={role.id}
+                        id={role.id}
+                        textValue={role.name}
+                      >
+                        {role.name}
+                        <ListBox.ItemIndicator />
+                      </ListBox.Item>
+                    ))}
+                  </ListBox>
+                </Autocomplete.Filter>
+              </Autocomplete.Popover>
+            </Autocomplete>
+          )}
+
+          <div className="mt-4">
+            <Button
+              isDisabled={!rolesDirty}
+              isPending={savingRoles}
+              onPress={() => {
+                void saveRoles();
+              }}
+            >
+              Salvar acesso
+            </Button>
+          </div>
+        </section>
+      </div>
+
+      <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
+        <div className="mb-4 flex flex-col gap-1">
+          <h2 className="font-display text-lg font-semibold text-foreground">
+            Dados do ERP
+          </h2>
+          <p className="text-sm text-muted">
+            Informações sincronizadas do IXC (somente leitura).
+          </p>
+        </div>
+        <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {readonlyFields.map((field) => (
+            <div key={field.label} className="flex flex-col gap-1">
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted">
+                {field.label}
+              </dt>
+              <dd className="text-sm text-foreground">{field.value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
     </div>
   );
 };

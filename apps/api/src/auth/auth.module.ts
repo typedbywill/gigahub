@@ -5,12 +5,15 @@ import { ScheduleModule } from '@nestjs/schedule';
 import {
   ChangePasswordUseCase,
   ClearUserAvatarUseCase,
+  CreateRoleUseCase,
   GetUserUseCase,
   InactivateUserUseCase,
+  ListPermissionsUseCase,
   ListRolesUseCase,
   ListUsersUseCase,
   LoginUseCase,
   RenewTokenUseCase,
+  ReplaceRolePermissionsUseCase,
   ReplaceUserRolesUseCase,
   SeedDefaultRolesUseCase,
   SetUserAvatarUseCase,
@@ -43,6 +46,7 @@ import { JoseAccessTokenIssuer } from './crypto/jose-token.issuer';
 import { AuthController } from './auth.controller';
 import { UsersController } from './users.controller';
 import { RolesController } from './roles.controller';
+import { PermissionsController } from './permissions.controller';
 import { AuthRolesBootstrapService } from './auth-roles-bootstrap.service';
 import { SyncUsersScheduler } from './sync-users.scheduler';
 import { AccessTokenGuard } from './access-token.guard';
@@ -62,7 +66,12 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
       { name: GrantModel.name, schema: GrantSchema },
     ]),
   ],
-  controllers: [AuthController, UsersController, RolesController],
+  controllers: [
+    AuthController,
+    UsersController,
+    RolesController,
+    PermissionsController,
+  ],
   providers: [
     MongoUserRepository,
     MongoCredentialRepository,
@@ -313,6 +322,22 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
     {
       provide: ListRolesUseCase,
       useFactory: (roles: MongoRoleRepository) => new ListRolesUseCase(roles),
+      inject: [MongoRoleRepository],
+    },
+    {
+      provide: CreateRoleUseCase,
+      useFactory: (roles: MongoRoleRepository, ids: UuidGenerator) =>
+        new CreateRoleUseCase(roles, ids),
+      inject: [MongoRoleRepository, UuidGenerator],
+    },
+    {
+      provide: ListPermissionsUseCase,
+      useFactory: () => new ListPermissionsUseCase(),
+    },
+    {
+      provide: ReplaceRolePermissionsUseCase,
+      useFactory: (roles: MongoRoleRepository) =>
+        new ReplaceRolePermissionsUseCase(roles),
       inject: [MongoRoleRepository],
     },
     {

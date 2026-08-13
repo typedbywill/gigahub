@@ -1,3 +1,5 @@
+import { routes } from '../../shared/routes';
+
 export type UsersListStatusFilter = 'all' | 'active' | 'blocked';
 
 export interface UsersListSearchState {
@@ -51,5 +53,5 @@ export function toUsersListSearchParams(
 export function usersListHref(state: UsersListSearchState): string {
   const params = toUsersListSearchParams(state);
   const query = params.toString();
-  return query ? `/usuarios?${query}` : '/usuarios';
+  return query ? `${routes.usuarios}?${query}` : routes.usuarios;
 }

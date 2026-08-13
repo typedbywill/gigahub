@@ -103,6 +103,58 @@ export const listRolesResponseDtoSchema = z.object({
 
 export type ListRolesResponseDto = z.infer<typeof listRolesResponseDtoSchema>;
 
+export const permissionDefinitionDtoSchema = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  description: z.string().min(1).optional(),
+  group: z.string().min(1),
+});
+
+export type PermissionDefinitionDto = z.infer<
+  typeof permissionDefinitionDtoSchema
+>;
+
+export const listPermissionsResponseDtoSchema = z.object({
+  items: z.array(permissionDefinitionDtoSchema),
+});
+
+export type ListPermissionsResponseDto = z.infer<
+  typeof listPermissionsResponseDtoSchema
+>;
+
+export const replaceRolePermissionsRequestDtoSchema = z.object({
+  permissionIds: z.array(z.string().min(1)),
+});
+
+export type ReplaceRolePermissionsRequestDto = z.infer<
+  typeof replaceRolePermissionsRequestDtoSchema
+>;
+
+export const replaceRolePermissionsResponseDtoSchema = z.object({
+  role: roleListItemDtoSchema,
+});
+
+export type ReplaceRolePermissionsResponseDto = z.infer<
+  typeof replaceRolePermissionsResponseDtoSchema
+>;
+
+export const createRoleRequestDtoSchema = z.object({
+  name: z.string().min(1),
+  slug: z
+    .string()
+    .min(1)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug must be kebab-case'),
+  permissionIds: z.array(z.string().min(1)).default([]),
+});
+
+export type CreateRoleRequestDto = z.infer<typeof createRoleRequestDtoSchema>;
+
+export const createRoleResponseDtoSchema = z.object({
+  role: roleListItemDtoSchema,
+});
+
+export type CreateRoleResponseDto = z.infer<typeof createRoleResponseDtoSchema>;
+
 export const userDetailDtoSchema = userListItemDtoSchema.extend({
   cashboxId: z.string().min(1).optional(),
   warehouseId: z.string().min(1).optional(),

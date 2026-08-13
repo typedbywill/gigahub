@@ -16,6 +16,7 @@ interface AuthState {
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
   setSession: (user: PublicUserDto, accessToken: string) => void;
+  patchCurrentUser: (patch: Partial<PublicUserDto>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -30,6 +31,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       accessToken,
       isAuthenticated: true,
     }),
+  patchCurrentUser: (patch) =>
+    set((state) =>
+      state.user
+        ? {
+            user: { ...state.user, ...patch },
+          }
+        : state,
+    ),
   logout: () =>
     set({
       user: null,

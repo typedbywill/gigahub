@@ -11,6 +11,7 @@ import {
   LuUsers,
 } from 'react-icons/lu';
 import { useMediaQuery } from '../hooks/use-media-query';
+import { routes } from '../routes';
 import { useAuthStore } from '../stores/auth.store';
 import { useThemeStore } from '../stores/theme.store';
 import { Sidebar, type SidebarNavItem } from './Sidebar';
@@ -75,13 +76,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             id: 'settings-users',
             label: 'Usuários',
             icon: <LuUsers />,
-            href: '/usuarios',
+            href: routes.usuarios,
           },
           {
             id: 'settings-permissions',
             label: 'Permissões',
             icon: <LuShield />,
-            href: '/settings/permissions',
+            href: routes.permissoes,
           },
         ],
       },
@@ -96,6 +97,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       className={`flex items-center gap-2 ${sidebarCollapsed ? 'flex-col px-0' : 'px-1'}`}
     >
       <Avatar size="sm" color="accent" className="shrink-0">
+        {user.avatarUrl ? (
+          <Avatar.Image alt={user.name} src={user.avatarUrl} />
+        ) : null}
         <Avatar.Fallback>{userInitials(user.name)}</Avatar.Fallback>
       </Avatar>
       {!sidebarCollapsed ? (
