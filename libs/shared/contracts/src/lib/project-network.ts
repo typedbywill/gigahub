@@ -19,6 +19,7 @@ export const nearbyFiberAccessTerminalDtoSchema = z.object({
   name: z.string().min(1),
   location: geoPointDtoSchema,
   distanceMeters: z.number().nonnegative(),
+  mapColorHex: z.string().regex(/^#[0-9a-fA-F]{6}$/),
 });
 
 export type NearbyFiberAccessTerminalDto = z.infer<
@@ -46,6 +47,10 @@ export const nearbyFiberCableDtoSchema = z.object({
   lengthMeters: z.number().nonnegative().optional(),
   path: z.array(geoPointDtoSchema).min(2),
   distanceMeters: z.number().nonnegative(),
+  strokeColorHex: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  strokeWidth: z.number().positive(),
+  strokeDashed: z.boolean(),
+  cableTypeName: z.string().min(1).optional(),
 });
 
 export type NearbyFiberCableDto = z.infer<typeof nearbyFiberCableDtoSchema>;

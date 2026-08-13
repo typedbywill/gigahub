@@ -62,6 +62,10 @@ export {
   SeedDefaultRolesUseCase,
   type SeedDefaultRolesResult,
 } from './lib/seed-default-roles.use-case';
+export {
+  EnsureBootstrapAdminsUseCase,
+  type EnsureBootstrapAdminsResult,
+} from './lib/ensure-bootstrap-admins.use-case';
 export { ListRolesUseCase } from './lib/list-roles.use-case';
 export { ListPermissionsUseCase } from './lib/list-permissions.use-case';
 export {

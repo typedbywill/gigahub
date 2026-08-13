@@ -59,6 +59,7 @@ export class ProjetoController {
             longitude: item.location.longitude,
           },
           distanceMeters: item.distanceMeters,
+          mapColorHex: item.mapColorHex,
         })),
       };
     } catch (error) {
@@ -90,6 +91,10 @@ export class ProjetoController {
             longitude: point.longitude,
           })),
           distanceMeters: item.distanceMeters,
+          strokeColorHex: item.strokeColorHex,
+          strokeWidth: item.strokeWidth,
+          strokeDashed: item.strokeDashed,
+          cableTypeName: item.cableTypeName,
         })),
       };
     } catch (error) {

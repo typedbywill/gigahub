@@ -9,12 +9,15 @@ import {
 } from '@gigahub/shared/kernel';
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { parseIxcCoordinate } from './ixc-geo';
+import { mapColorFromCaixaEstilo } from './ixc-map-colors';
 
 interface FatRow extends RowDataPacket {
   id: number;
   descricao: string;
   latitude: string | null;
   longitude: string | null;
+  codigo_estilo_caixa: string | null;
+  estilo_nome_tipo: string | null;
 }
 
 export class MysqlFiberAccessTerminalNearbyQuery
@@ -27,13 +30,20 @@ export class MysqlFiberAccessTerminalNearbyQuery
     radiusMeters: number,
   ): Promise<NearbyFiberAccessTerminalReadModel[]> {
     const [rows] = await this.pool.query<FatRow[]>(
-      `SELECT id, descricao, latitude, longitude
-       FROM rad_caixa_ftth
-       WHERE status = 'A'
-         AND latitude IS NOT NULL
-         AND longitude IS NOT NULL
-         AND latitude <> ''
-         AND longitude <> ''`,
+      `SELECT c.id,
+              c.descricao,
+              c.latitude,
+              c.longitude,
+              c.codigo_estilo_caixa,
+              t.nome_tipo AS estilo_nome_tipo
+       FROM rad_caixa_ftth c
+       LEFT JOIN df_tipo_elemento t
+         ON t.codigo_identificador = c.codigo_estilo_caixa
+       WHERE c.status = 'A'
+         AND c.latitude IS NOT NULL
+         AND c.longitude IS NOT NULL
+         AND c.latitude <> ''
+         AND c.longitude <> ''`,
     );
 
     const items: NearbyFiberAccessTerminalReadModel[] = [];
@@ -49,6 +59,10 @@ export class MysqlFiberAccessTerminalNearbyQuery
         name: (row.descricao ?? '').trim() || `FAT ${idErp}`,
         location,
         distanceMeters: distanceMeters(center, location),
+        mapColorHex: mapColorFromCaixaEstilo(
+          row.codigo_estilo_caixa,
+          row.estilo_nome_tipo,
+        ),
       });
     }
     return items;

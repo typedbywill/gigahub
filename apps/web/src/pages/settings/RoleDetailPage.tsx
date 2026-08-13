@@ -27,6 +27,7 @@ import {
   replaceRolePermissionsRequest,
 } from '../../shared/api/roles.api';
 import { routes } from '../../shared/routes';
+import { toast } from '../../shared/ui/toast';
 
 const GROUP_LABELS: Record<string, string> = {
   'work-order': 'Ordens de serviço',
@@ -74,7 +75,6 @@ export const RoleDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!accessToken || !id) {
@@ -167,7 +167,6 @@ export const RoleDetailPage: React.FC = () => {
       }
       return current.filter((idValue) => idValue !== permissionId);
     });
-    setSuccess(null);
   }, []);
 
   const toggleGroup = useCallback(
@@ -183,7 +182,6 @@ export const RoleDetailPage: React.FC = () => {
         }
         return [...next];
       });
-      setSuccess(null);
     },
     [],
   );
@@ -191,7 +189,6 @@ export const RoleDetailPage: React.FC = () => {
   const toggleAll = useCallback(
     (on: boolean) => {
       setSelectedIds(on ? [...allCatalogIds] : []);
-      setSuccess(null);
     },
     [allCatalogIds],
   );
@@ -201,8 +198,6 @@ export const RoleDetailPage: React.FC = () => {
       return;
     }
     setSelectedIds([...role.permissionIds]);
-    setSuccess(null);
-    setError(null);
   }, [role]);
 
   const save = async () => {
@@ -210,17 +205,15 @@ export const RoleDetailPage: React.FC = () => {
       return;
     }
     setSaving(true);
-    setError(null);
-    setSuccess(null);
     try {
       const result = await replaceRolePermissionsRequest(accessToken, role.id, {
         permissionIds: selectedIds,
       });
       setRole(result.role);
       setSelectedIds([...result.role.permissionIds]);
-      setSuccess('Permissões atualizadas.');
+      toast.success('Permissões atualizadas.');
     } catch (err) {
-      setError(
+      toast.error(
         err instanceof ApiClientError
           ? err.message
           : 'Não foi possível salvar as permissões.',
@@ -337,17 +330,6 @@ export const RoleDetailPage: React.FC = () => {
               </SearchField.Group>
             </SearchField>
           </div>
-
-          {error ? (
-            <p className="text-sm text-danger" role="alert">
-              {error}
-            </p>
-          ) : null}
-          {success ? (
-            <p className="text-sm text-accent" role="status">
-              {success}
-            </p>
-          ) : null}
         </div>
       </header>
 

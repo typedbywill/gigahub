@@ -121,6 +121,8 @@ experiência e navegação, mas nunca é a barreira de segurança.
 - São criadas no bootstrap da API de forma idempotente (não há seed de usuário).
 - `admin-acesso` inclui `access:manage` para o primeiro admin concedido manualmente
   no banco (após sync ou insert local) poder gerenciar os demais.
+- Em desenvolvimento/ops, `AUTH_BOOTSTRAP_ADMIN_ERP_IDS` (lista de `usuarios.id` do
+  IXC) concede `admin-acesso` de forma idempotente no boot da API.
 - Um usuário pode possuir mais de uma role.
 - Roles são a forma preferida de conceder acesso recorrente e reutilizável.
 - Alterar a composição de uma role afeta todos os usuários que a possuem.

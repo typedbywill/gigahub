@@ -30,6 +30,7 @@ import {
 } from '../../shared/api/users.api';
 import { routes } from '../../shared/routes';
 import { Permissions } from '../../shared/permissions';
+import { toast } from '../../shared/ui/toast';
 import { UserDetailHeader } from './UserDetailHeader';
 
 const fieldClassName =
@@ -72,7 +73,6 @@ export const UserDetailPage: React.FC = () => {
   const [rolesCatalog, setRolesCatalog] = useState<RoleListItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [inactivating, setInactivating] = useState(false);
 
@@ -151,15 +151,13 @@ export const UserDetailPage: React.FC = () => {
       return;
     }
     setInactivating(true);
-    setError(null);
-    setSuccess(null);
     try {
       const result = await inactivateUserRequest(accessToken, user.id);
       applyUser(result.user);
       setConfirmOpen(false);
-      setSuccess('Usuário inativado.');
+      toast.success('Usuário inativado.');
     } catch (err) {
-      setError(
+      toast.error(
         err instanceof ApiClientError
           ? err.message
           : 'Não foi possível inativar o usuário.',
@@ -175,17 +173,15 @@ export const UserDetailPage: React.FC = () => {
       return;
     }
     setSavingProfile(true);
-    setError(null);
-    setSuccess(null);
     try {
       const result = await updateUserRequest(accessToken, user.id, {
         name: name.trim(),
         email: email.trim(),
       });
       applyUser(result.user);
-      setSuccess('Perfil atualizado.');
+      toast.success('Perfil atualizado.');
     } catch (err) {
-      setError(
+      toast.error(
         err instanceof ApiClientError
           ? err.message
           : 'Não foi possível salvar o perfil.',
@@ -200,16 +196,14 @@ export const UserDetailPage: React.FC = () => {
       return;
     }
     setSavingRoles(true);
-    setError(null);
-    setSuccess(null);
     try {
       const result = await replaceUserRolesRequest(accessToken, user.id, {
         roleIds: selectedRoleId ? [selectedRoleId] : [],
       });
       applyUser(result.user);
-      setSuccess('Nível de acesso atualizado.');
+      toast.success('Nível de acesso atualizado.');
     } catch (err) {
-      setError(
+      toast.error(
         err instanceof ApiClientError
           ? err.message
           : 'Não foi possível salvar o nível de acesso.',
@@ -224,14 +218,12 @@ export const UserDetailPage: React.FC = () => {
       return;
     }
     setUploadingAvatar(true);
-    setError(null);
-    setSuccess(null);
     try {
       const result = await uploadUserAvatarRequest(accessToken, user.id, file);
       applyUser(result.user);
-      setSuccess('Foto de perfil atualizada.');
+      toast.success('Foto de perfil atualizada.');
     } catch (err) {
-      setError(
+      toast.error(
         err instanceof ApiClientError
           ? err.message
           : 'Não foi possível enviar a foto.',
@@ -246,14 +238,12 @@ export const UserDetailPage: React.FC = () => {
       return;
     }
     setUploadingAvatar(true);
-    setError(null);
-    setSuccess(null);
     try {
       const result = await deleteUserAvatarRequest(accessToken, user.id);
       applyUser(result.user);
-      setSuccess('Foto de perfil removida.');
+      toast.success('Foto de perfil removida.');
     } catch (err) {
-      setError(
+      toast.error(
         err instanceof ApiClientError
           ? err.message
           : 'Não foi possível remover a foto.',
@@ -330,17 +320,6 @@ export const UserDetailPage: React.FC = () => {
           void confirmInactivate();
         }}
       />
-
-      {error ? (
-        <p className="text-sm text-danger" role="alert">
-          {error}
-        </p>
-      ) : null}
-      {success ? (
-        <p className="text-sm text-accent" role="status">
-          {success}
-        </p>
-      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">

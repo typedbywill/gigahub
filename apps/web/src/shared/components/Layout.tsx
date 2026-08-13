@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { Avatar, Button } from '@heroui/react';
 import {
   LuLogOut,
+  LuMap,
   LuMenu,
   LuMoon,
+  LuNetwork,
   LuSettings,
   LuShield,
   LuSun,
@@ -63,6 +65,25 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const canReadUsers = hasPermission(Permissions.UsersRead);
   const canManageAccess = hasPermission(Permissions.AccessManage);
+
+  const topItems = useMemo<SidebarNavItem[]>(
+    () => [
+      {
+        id: 'rede',
+        label: 'Rede',
+        icon: <LuNetwork />,
+        children: [
+          {
+            id: 'rede-projeto',
+            label: 'Projeto',
+            href: routes.redeProjeto,
+            icon: <LuMap />,
+          },
+        ],
+      },
+    ],
+    [],
+  );
 
   const bottomItems = useMemo<SidebarNavItem[]>(() => {
     const settingsChildren: SidebarNavItem[] = [];
@@ -171,7 +192,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       ) : null}
 
       <Sidebar
-        topItems={[]}
+        topItems={topItems}
         bottomItems={bottomItems}
         footer={footer}
         collapsed={sidebarCollapsed}

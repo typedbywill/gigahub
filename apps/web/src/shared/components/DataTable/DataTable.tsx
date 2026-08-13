@@ -9,6 +9,10 @@ import {
 } from '@heroui/react';
 import { useFitPageSize } from '../../hooks/use-fit-page-size';
 import { useFocusSearchOnType } from '../../hooks/use-focus-search-on-type';
+import {
+  DataTableExportButton,
+  type DataTableExportConfig,
+} from './DataTableExportButton';
 
 export interface DataTableColumn<T> {
   id: string;
@@ -51,6 +55,8 @@ export interface DataTableProps<T extends object> {
   searchPlaceholder?: string;
   presets?: DataTablePreset[];
   toolbarEnd?: React.ReactNode;
+  /** When set, shows a reusable download control (JSON / Excel / CSV / PDF). */
+  exportConfig?: DataTableExportConfig<T>;
   pagination?: DataTablePagination;
   onRowAction?: (key: string) => void;
   /**
@@ -84,6 +90,7 @@ interface DataTableGridProps<T extends object> {
   isLoading: boolean;
   emptyMessage: string;
   pagination?: DataTablePagination;
+  exportConfig?: DataTableExportConfig<T>;
   onRowAction?: (key: string) => void;
   fillHeight: boolean;
   bodyViewportRef: React.RefObject<HTMLDivElement | null>;
@@ -97,6 +104,7 @@ function DataTableGridInner<T extends object>({
   isLoading,
   emptyMessage,
   pagination,
+  exportConfig,
   onRowAction,
   fillHeight,
   bodyViewportRef,
@@ -113,6 +121,7 @@ function DataTableGridInner<T extends object>({
   const rangeEnd = pagination
     ? Math.min(pagination.page * pagination.pageSize, pagination.total)
     : 0;
+  const showFooter = Boolean(pagination) || Boolean(exportConfig);
 
   return (
     <Table
@@ -173,63 +182,72 @@ function DataTableGridInner<T extends object>({
           </Table.Body>
         </Table.Content>
       </Table.ScrollContainer>
-      {pagination ? (
-        <Table.Footer className="flex shrink-0 flex-col gap-2 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
-          <Pagination size="sm" className="w-full sm:w-auto">
-            <Pagination.Summary>
-              {pagination.total === 0
-                ? '0 resultados'
-                : `${rangeStart}–${rangeEnd} de ${pagination.total}`}
-              {isLoading && items.length > 0 ? ' · atualizando…' : ''}
-            </Pagination.Summary>
-            <Pagination.Content>
-              <Pagination.Item>
-                <Pagination.Previous
-                  isDisabled={pagination.page <= 1 || isLoading}
-                  onPress={() =>
-                    pagination.onPageChange(Math.max(1, pagination.page - 1))
-                  }
-                >
-                  <Pagination.PreviousIcon />
-                  Anterior
-                </Pagination.Previous>
-              </Pagination.Item>
-              {pages.map((pageNum, index) => {
-                const prev = pages[index - 1];
-                const showEllipsis = prev !== undefined && pageNum - prev > 1;
-                return (
-                  <React.Fragment key={pageNum}>
-                    {showEllipsis ? (
+      {showFooter ? (
+        <Table.Footer className="flex shrink-0 items-center gap-2 border-t border-border pt-3">
+          {pagination ? (
+            <Pagination size="sm" className="min-w-0 flex-1">
+              <Pagination.Summary>
+                {pagination.total === 0
+                  ? '0 resultados'
+                  : `${rangeStart}–${rangeEnd} de ${pagination.total}`}
+                {isLoading && items.length > 0 ? ' · atualizando…' : ''}
+              </Pagination.Summary>
+              <Pagination.Content>
+                <Pagination.Item>
+                  <Pagination.Previous
+                    isDisabled={pagination.page <= 1 || isLoading}
+                    onPress={() =>
+                      pagination.onPageChange(Math.max(1, pagination.page - 1))
+                    }
+                  >
+                    <Pagination.PreviousIcon />
+                    Anterior
+                  </Pagination.Previous>
+                </Pagination.Item>
+                {pages.map((pageNum, index) => {
+                  const prev = pages[index - 1];
+                  const showEllipsis = prev !== undefined && pageNum - prev > 1;
+                  return (
+                    <React.Fragment key={pageNum}>
+                      {showEllipsis ? (
+                        <Pagination.Item>
+                          <span className="px-1 text-muted">…</span>
+                        </Pagination.Item>
+                      ) : null}
                       <Pagination.Item>
-                        <span className="px-1 text-muted">…</span>
+                        <Pagination.Link
+                          isActive={pageNum === pagination.page}
+                          onPress={() => pagination.onPageChange(pageNum)}
+                        >
+                          {pageNum}
+                        </Pagination.Link>
                       </Pagination.Item>
-                    ) : null}
-                    <Pagination.Item>
-                      <Pagination.Link
-                        isActive={pageNum === pagination.page}
-                        onPress={() => pagination.onPageChange(pageNum)}
-                      >
-                        {pageNum}
-                      </Pagination.Link>
-                    </Pagination.Item>
-                  </React.Fragment>
-                );
-              })}
-              <Pagination.Item>
-                <Pagination.Next
-                  isDisabled={pagination.page >= totalPages || isLoading}
-                  onPress={() =>
-                    pagination.onPageChange(
-                      Math.min(totalPages, pagination.page + 1),
-                    )
-                  }
-                >
-                  Próxima
-                  <Pagination.NextIcon />
-                </Pagination.Next>
-              </Pagination.Item>
-            </Pagination.Content>
-          </Pagination>
+                    </React.Fragment>
+                  );
+                })}
+                <Pagination.Item>
+                  <Pagination.Next
+                    isDisabled={pagination.page >= totalPages || isLoading}
+                    onPress={() =>
+                      pagination.onPageChange(
+                        Math.min(totalPages, pagination.page + 1),
+                      )
+                    }
+                  >
+                    Próxima
+                    <Pagination.NextIcon />
+                  </Pagination.Next>
+                </Pagination.Item>
+              </Pagination.Content>
+            </Pagination>
+          ) : (
+            <div className="min-w-0 flex-1" />
+          )}
+          {exportConfig ? (
+            <div className="ml-auto shrink-0">
+              <DataTableExportButton config={exportConfig} items={items} />
+            </div>
+          ) : null}
         </Table.Footer>
       ) : null}
     </Table>
@@ -253,6 +271,7 @@ export function DataTable<T extends object>({
   searchPlaceholder = 'Pesquisar…',
   presets,
   toolbarEnd,
+  exportConfig,
   pagination,
   onRowAction,
   fillHeight = false,
@@ -396,6 +415,7 @@ export function DataTable<T extends object>({
         isLoading={isLoading}
         emptyMessage={emptyMessage}
         pagination={pagination}
+        exportConfig={exportConfig}
         onRowAction={onRowAction}
         fillHeight={fillHeight}
         bodyViewportRef={bodyViewportRef}

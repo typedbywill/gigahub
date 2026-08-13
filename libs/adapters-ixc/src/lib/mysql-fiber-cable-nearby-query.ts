@@ -9,6 +9,7 @@ import {
   minDistanceToPath,
   parseIxcCoordinate,
 } from './ixc-geo';
+import { mapCableStrokeFromTipo } from './ixc-map-colors';
 
 /**
  * IXC Soft stores fiber cables as `df_elemento.tipo = 'CB'`.
@@ -34,6 +35,10 @@ interface ElementRow extends RowDataPacket {
   id_projeto: number;
   comprimento: number | null;
   ativo: string;
+  cor_ativa: string | null;
+  especura_linha: number | null;
+  pontilhada: string | null;
+  nome_tipo: string | null;
 }
 
 export class MysqlFiberCableNearbyQuery implements FiberCableNearbyQuery {
@@ -90,11 +95,20 @@ export class MysqlFiberCableNearbyQuery implements FiberCableNearbyQuery {
     }
 
     const [elements] = await this.pool.query<ElementRow[]>(
-      `SELECT id, descricao, id_projeto, comprimento, ativo
-       FROM df_elemento
-       WHERE id IN (?)
-         AND tipo = ?
-         AND ativo = 'S'`,
+      `SELECT e.id,
+              e.descricao,
+              e.id_projeto,
+              e.comprimento,
+              e.ativo,
+              t.cor_ativa,
+              t.especura_linha,
+              t.pontilhada,
+              t.nome_tipo
+       FROM df_elemento e
+       LEFT JOIN df_tipo_elemento t ON t.id = e.id_tipo_elemento
+       WHERE e.id IN (?)
+         AND e.tipo = ?
+         AND e.ativo = 'S'`,
       [candidateElementIds, IXC_FIBER_CABLE_ELEMENT_TIPO],
     );
 
@@ -155,20 +169,30 @@ export class MysqlFiberCableNearbyQuery implements FiberCableNearbyQuery {
         continue;
       }
       const idErp = String(element.id);
+      const stroke = mapCableStrokeFromTipo({
+        corAtiva: element.cor_ativa,
+        especuraLinha: element.especura_linha,
+        pontilhada: element.pontilhada,
+      });
+      const typeName = (element.nome_tipo ?? '').trim();
       items.push({
         id: idErp,
         idErp,
         name: (element.descricao ?? '').trim() || `Cable ${idErp}`,
         projectIdErp: String(element.id_projeto),
         lengthMeters:
-          element.comprimento == null || !Number.isFinite(Number(element.comprimento))
+          element.comprimento == null ||
+          !Number.isFinite(Number(element.comprimento))
             ? undefined
             : Number(element.comprimento),
         path,
         distanceMeters: distance,
+        strokeColorHex: stroke.strokeColorHex,
+        strokeWidth: stroke.strokeWidth,
+        strokeDashed: stroke.strokeDashed,
+        cableTypeName: typeName || undefined,
       });
     }
-
     return items;
   }
 }

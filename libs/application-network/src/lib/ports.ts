@@ -6,6 +6,8 @@ export interface NearbyFiberAccessTerminalReadModel {
   name: string;
   location: GeoPoint;
   distanceMeters: number;
+  /** Map fill/stroke from IXC "Estilo da Caixa" (`codigo_estilo_caixa`). */
+  mapColorHex: string;
 }
 
 export interface NearbyFiberCableReadModel {
@@ -16,6 +18,11 @@ export interface NearbyFiberCableReadModel {
   lengthMeters?: number;
   path: ReadonlyArray<GeoPoint>;
   distanceMeters: number;
+  /** Line color from `df_tipo_elemento.cor_ativa`. */
+  strokeColorHex: string;
+  strokeWidth: number;
+  strokeDashed: boolean;
+  cableTypeName?: string;
 }
 
 export interface FiberAccessTerminalNearbyQuery {

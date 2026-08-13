@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Button, Chip } from '@heroui/react';
 import {
@@ -7,6 +7,7 @@ import {
   LuPanelLeftClose,
   LuX,
 } from 'react-icons/lu';
+import { useSidebarStore } from '../stores/sidebar.store';
 
 export type SidebarNavItem = {
   id: string;
@@ -157,7 +158,8 @@ function SidebarGroup({
   onNavigate?: () => void;
   onExpandSidebar?: () => void;
 }) {
-  const [expanded, setExpanded] = useState(true);
+  const expanded = useSidebarStore((s) => s.expandedGroupIds.has(item.id));
+  const toggleGroup = useSidebarStore((s) => s.toggleGroup);
   const children = item.children ?? [];
 
   if (collapsed) {
@@ -184,7 +186,7 @@ function SidebarGroup({
         className={itemClassName(false, item.highlighted, false)}
         aria-expanded={expanded}
         onClick={() => {
-          setExpanded((value) => !value);
+          toggleGroup(item.id);
           item.onPress?.();
         }}
       >

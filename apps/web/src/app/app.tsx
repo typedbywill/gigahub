@@ -12,6 +12,7 @@ import { Layout } from '../shared/components/Layout';
 import { RequirePermission } from '../shared/components/RequirePermission';
 import { HomePage } from '../pages/HomePage';
 import { LoginPage } from '../pages/LoginPage';
+import { RedeProjetoPage } from '../pages/rede/RedeProjetoPage';
 import { PermissionsPage } from '../pages/settings/PermissionsPage';
 import { RoleDetailPage } from '../pages/settings/RoleDetailPage';
 import { UsersListPage } from '../pages/users/UsersListPage';
@@ -19,17 +20,21 @@ import { UserDetailPage } from '../pages/users/UserDetailPage';
 import { routes } from '../shared/routes';
 import { Permissions } from '../shared/permissions';
 import { useAuthStore } from '../shared/stores/auth.store';
+import { useSidebarStore } from '../shared/stores/sidebar.store';
 import { useThemeStore } from '../shared/stores/theme.store';
+import { Toaster } from '../shared/ui/toast';
 
 function AuthBootstrap({ children }: { children: React.ReactNode }) {
   const bootstrapped = useAuthStore((s) => s.bootstrapped);
   const isBootstrapping = useAuthStore((s) => s.isBootstrapping);
   const bootstrap = useAuthStore((s) => s.bootstrap);
   const hydrateTheme = useThemeStore((s) => s.hydrate);
+  const hydrateSidebar = useSidebarStore((s) => s.hydrate);
 
   useEffect(() => {
     hydrateTheme();
-  }, [hydrateTheme]);
+    hydrateSidebar();
+  }, [hydrateSidebar, hydrateTheme]);
 
   useEffect(() => {
     if (!bootstrapped && !isBootstrapping) {
@@ -95,10 +100,13 @@ export function App() {
   return (
     <BrowserRouter>
       <AuthBootstrap>
+        <Toaster />
         <Routes>
           <Route path={routes.login} element={<LoginPage />} />
           <Route element={<ProtectedShell />}>
             <Route path={routes.home} element={<HomePage />} />
+
+            <Route path={routes.redeProjeto} element={<RedeProjetoPage />} />
 
             <Route
               path={routes.usuarios}

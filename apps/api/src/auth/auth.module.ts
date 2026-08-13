@@ -6,6 +6,7 @@ import {
   ChangePasswordUseCase,
   ClearUserAvatarUseCase,
   CreateRoleUseCase,
+  EnsureBootstrapAdminsUseCase,
   GetUserUseCase,
   InactivateUserUseCase,
   ListPermissionsUseCase,
@@ -104,6 +105,36 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
       useFactory: (roles: MongoRoleRepository, ids: UuidGenerator) =>
         new SeedDefaultRolesUseCase(roles, ids),
       inject: [MongoRoleRepository, UuidGenerator],
+    },
+    {
+      provide: EnsureBootstrapAdminsUseCase,
+      useFactory: (
+        users: MongoUserRepository,
+        roles: MongoRoleRepository,
+        grants: MongoGrantRepository,
+        ids: UuidGenerator,
+        config: ConfigService<EnvConfig, true>,
+      ) => {
+        const raw = config.get('AUTH_BOOTSTRAP_ADMIN_ERP_IDS', { infer: true });
+        const erpIds = raw
+          .split(',')
+          .map((value) => value.trim())
+          .filter(Boolean);
+        return new EnsureBootstrapAdminsUseCase(
+          users,
+          roles,
+          grants,
+          ids,
+          erpIds,
+        );
+      },
+      inject: [
+        MongoUserRepository,
+        MongoRoleRepository,
+        MongoGrantRepository,
+        UuidGenerator,
+        ConfigService,
+      ],
     },
     AuthRolesBootstrapService,
     {

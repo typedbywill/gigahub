@@ -49,6 +49,8 @@ export const envSchema = z.object({
   IXC_DB_USER: z.string().default(''),
   IXC_DB_PASS: z.string().default(''),
   IXC_DB_NAME: z.string().default('ixcprovedor'),
+  /** Comma-separated IXC `usuarios.id` values that receive `admin-acesso` on API boot. */
+  AUTH_BOOTSTRAP_ADMIN_ERP_IDS: z.string().default(''),
 });
 
 export type EnvConfig = z.infer<typeof envSchema> & {

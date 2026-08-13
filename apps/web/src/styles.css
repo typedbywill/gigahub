@@ -100,3 +100,9 @@ body {
     transition: none !important;
   }
 }
+
+/* Rede > Projeto: hide Mapbox chrome (attribution + logo). */
+.project-map-root .mapboxgl-ctrl-attrib,
+.project-map-root .mapboxgl-ctrl-logo {
+  display: none !important;
+}

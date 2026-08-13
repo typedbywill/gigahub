@@ -251,6 +251,32 @@ export const PermissionsPage: React.FC = () => {
     );
   }, [items, search]);
 
+  const exportConfig = useMemo(
+    () => ({
+      filename: 'funcoes',
+      title: 'Funções e permissões',
+      columns: [
+        {
+          id: 'name',
+          label: 'Função',
+          value: (row: RoleListItemDto) => row.name,
+        },
+        {
+          id: 'slug',
+          label: 'Slug',
+          value: (row: RoleListItemDto) => row.slug,
+        },
+        {
+          id: 'permissions',
+          label: 'Permissões',
+          value: (row: RoleListItemDto) => row.permissionIds.length,
+        },
+      ],
+      getRows: () => filteredItems,
+    }),
+    [filteredItems],
+  );
+
   const visibleItems = useMemo(() => {
     if (pageSize < 1) {
       return filteredItems;
@@ -294,6 +320,7 @@ export const PermissionsPage: React.FC = () => {
         onSearchSubmit={applySearch}
         onSearchClear={() => applySearch('')}
         searchPlaceholder="Buscar por nome, slug ou permissão…"
+        exportConfig={exportConfig}
         toolbarEnd={
           <Button size="sm" onPress={openCreate}>
             <LuPlus className="size-4" />

@@ -304,6 +304,38 @@ export const UsersListPage: React.FC = () => {
 
   const getRowId = useCallback((row: UserListItemDto) => row.id, []);
 
+  const exportConfig = useMemo(
+    () => ({
+      filename: 'usuarios',
+      title: 'Usuários',
+      columns: [
+        { id: 'name', label: 'Nome', value: (row: UserListItemDto) => row.name },
+        {
+          id: 'email',
+          label: 'E-mail',
+          value: (row: UserListItemDto) => row.email,
+        },
+        {
+          id: 'status',
+          label: 'Status',
+          value: (row: UserListItemDto) => statusLabel(row.status),
+        },
+        {
+          id: 'jobTitle',
+          label: 'Cargo',
+          value: (row: UserListItemDto) => row.jobTitle ?? '',
+        },
+        {
+          id: 'erp',
+          label: 'ERP',
+          value: (row: UserListItemDto) =>
+            row.idErp ? `IXC #${row.idErp}` : 'Local',
+        },
+      ],
+    }),
+    [],
+  );
+
   const pagination = useMemo(
     () => ({
       page,
@@ -370,6 +402,7 @@ export const UsersListPage: React.FC = () => {
         onSearchClear={() => applySearch('')}
         searchPlaceholder="Buscar por nome ou e-mail…"
         presets={presets}
+        exportConfig={exportConfig}
         pagination={pagination}
       />
 
