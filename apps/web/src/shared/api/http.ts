@@ -24,6 +24,7 @@ export async function apiFetch<T>(
     accessToken: string;
     body?: unknown;
     query?: Record<string, string | number | boolean | undefined>;
+    signal?: AbortSignal;
   },
 ): Promise<T> {
   const url = new URL(path, window.location.origin);
@@ -48,6 +49,7 @@ export async function apiFetch<T>(
     credentials: 'include',
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    signal: options.signal,
   });
 
   if (!res.ok) {

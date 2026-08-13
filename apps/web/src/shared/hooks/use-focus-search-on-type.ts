@@ -1,4 +1,4 @@
-import { useEffect, type RefObject } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 
 function isEditableTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
@@ -34,20 +34,28 @@ export function useFocusSearchOnType(
   options: FocusSearchOnTypeOptions = {},
 ): void {
   const { enabled = true, value = '', onChange } = options;
+  const valueRef = useRef(value);
+  const onChangeRef = useRef(onChange);
+  valueRef.current = value;
+  onChangeRef.current = onChange;
 
   useEffect(() => {
-    if (!enabled || !onChange) {
+    if (!enabled) {
       return;
     }
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.defaultPrevented || event.isComposing) {
+      const change = onChangeRef.current;
+      if (!change || event.defaultPrevented || event.isComposing) {
         return;
       }
       if (event.ctrlKey || event.metaKey || event.altKey) {
         return;
       }
-      if (isEditableTarget(event.target) || isEditableTarget(document.activeElement)) {
+      if (
+        isEditableTarget(event.target) ||
+        isEditableTarget(document.activeElement)
+      ) {
         return;
       }
 
@@ -68,11 +76,11 @@ export function useFocusSearchOnType(
       }
 
       event.preventDefault();
-      onChange(value + event.key);
+      change(valueRef.current + event.key);
       input.focus();
     };
 
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [enabled, inputRef, onChange, value]);
+  }, [enabled, inputRef]);
 }

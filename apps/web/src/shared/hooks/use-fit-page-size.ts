@@ -1,4 +1,4 @@
-import { useEffect, useState, type RefObject } from 'react';
+import { useEffect, useRef, useState, type RefObject } from 'react';
 
 export interface FitPageSizeOptions {
   /** Estimated height of one data row in px. */
@@ -7,11 +7,13 @@ export interface FitPageSizeOptions {
   headerHeight?: number;
   min?: number;
   max?: number;
+  /** Ignore rapid resize churn (ms). */
+  debounceMs?: number;
 }
 
 /**
- * Computes how many table body rows fit inside `containerRef` (the scroll/body
- * viewport). Recomputes on resize.
+ * Computes how many table body rows fit inside `containerRef`.
+ * Debounced so content reflows / scrollbar changes do not thrash pageSize.
  */
 export function useFitPageSize(
   containerRef: RefObject<HTMLElement | null>,
@@ -21,8 +23,10 @@ export function useFitPageSize(
   const headerHeight = options.headerHeight ?? 40;
   const min = options.min ?? 5;
   const max = options.max ?? 100;
+  const debounceMs = options.debounceMs ?? 150;
 
-  const [pageSize, setPageSize] = useState(min);
+  const [pageSize, setPageSize] = useState(0);
+  const lastAppliedRef = useRef(0);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -30,15 +34,28 @@ export function useFitPageSize(
       return;
     }
 
-    let frame = 0;
+    let debounceTimer = 0;
+    let raf = 0;
+
+    const apply = (next: number) => {
+      if (next === lastAppliedRef.current) {
+        return;
+      }
+      lastAppliedRef.current = next;
+      setPageSize(next);
+    };
 
     const measure = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(() => {
         const available = el.clientHeight - headerHeight;
+        if (available < rowHeight) {
+          return;
+        }
         const rows = Math.floor(available / rowHeight);
         const next = Math.min(max, Math.max(min, rows));
-        setPageSize((prev) => (prev === next ? prev : next));
+        window.clearTimeout(debounceTimer);
+        debounceTimer = window.setTimeout(() => apply(next), debounceMs);
       });
     };
 
@@ -46,10 +63,11 @@ export function useFitPageSize(
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => {
-      cancelAnimationFrame(frame);
+      cancelAnimationFrame(raf);
+      window.clearTimeout(debounceTimer);
       observer.disconnect();
     };
-  }, [containerRef, headerHeight, max, min, rowHeight]);
+  }, [containerRef, debounceMs, headerHeight, max, min, rowHeight]);
 
   return pageSize;
 }

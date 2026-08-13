@@ -16,9 +16,11 @@ export interface ListUsersParams {
 export function listUsersRequest(
   accessToken: string,
   params: ListUsersParams = {},
+  signal?: AbortSignal,
 ): Promise<PaginatedUsersDto> {
   return apiFetch<PaginatedUsersDto>('/api/v1/users', {
     accessToken,
+    signal,
     query: {
       q: params.q,
       status: params.status,
