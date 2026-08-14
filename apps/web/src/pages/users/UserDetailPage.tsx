@@ -4,6 +4,7 @@ import type { Key } from '@heroui/react';
 import {
   Autocomplete,
   Button,
+  Chip,
   EmptyState,
   Input,
   Label,
@@ -13,6 +14,22 @@ import {
   TextField,
   useFilter,
 } from '@heroui/react';
+import {
+  LuBox,
+  LuBriefcase,
+  LuBuilding2,
+  LuCalendar,
+  LuCheck,
+  LuClock,
+  LuCreditCard,
+  LuIdCard,
+  LuMail,
+  LuRefreshCw,
+  LuShield,
+  LuUser,
+  LuUserCheck,
+  LuWallet,
+} from 'react-icons/lu';
 import type {
   RoleListItemDto,
   UserDetailDto,
@@ -53,6 +70,46 @@ function formatDate(value: string): string {
 type DetailLocationState = {
   from?: string;
 };
+
+function DetailSectionCard({
+  title,
+  subtitle,
+  icon,
+  badge,
+  children,
+}: {
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  badge?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-xs transition-all">
+      <div className="h-0.5 bg-accent" aria-hidden />
+      <div className="p-5 md:p-6">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span
+              className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent"
+              aria-hidden
+            >
+              {icon}
+            </span>
+            <div>
+              <h2 className="font-display text-base font-semibold text-foreground">
+                {title}
+              </h2>
+              <p className="text-xs text-muted">{subtitle}</p>
+            </div>
+          </div>
+          {badge ? <div>{badge}</div> : null}
+        </div>
+        {children}
+      </div>
+    </section>
+  );
+}
 
 export const UserDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -179,7 +236,7 @@ export const UserDetailPage: React.FC = () => {
         email: email.trim(),
       });
       applyUser(result.user);
-      toast.success('Perfil atualizado.');
+      toast.success('Perfil atualizado com sucesso.');
     } catch (err) {
       toast.error(
         err instanceof ApiClientError
@@ -263,8 +320,8 @@ export const UserDetailPage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="flex w-full flex-col gap-4 p-6 md:p-8">
-        <p className="text-sm text-danger" role="alert">
+      <div className="flex w-full flex-col items-center justify-center gap-4 p-8 text-center">
+        <p className="text-sm font-medium text-danger" role="alert">
           {error ?? 'Usuário não encontrado.'}
         </p>
         <Button variant="secondary" onPress={() => navigate(backTo)}>
@@ -274,15 +331,51 @@ export const UserDetailPage: React.FC = () => {
     );
   }
 
-  const readonlyFields: { label: string; value: string }[] = [
-    { label: 'Cargo (IXC)', value: user.jobTitle ?? '—' },
-    { label: 'ID ERP', value: user.idErp ?? '—' },
-    { label: 'ID Funcionário ERP', value: user.idErpEmployee ?? '—' },
-    { label: 'Caixa', value: user.cashboxId ?? '—' },
-    { label: 'Almoxarifado', value: user.warehouseId ?? '—' },
-    { label: 'Planejamento', value: user.planningId ?? '—' },
-    { label: 'Criado em', value: formatDate(user.createdAt) },
-    { label: 'Atualizado em', value: formatDate(user.updatedAt) },
+  const readonlyFields: {
+    label: string;
+    value: string;
+    icon: React.ReactNode;
+  }[] = [
+    {
+      label: 'Cargo (IXC)',
+      value: user.jobTitle ?? '—',
+      icon: <LuBriefcase className="size-4 text-muted" />,
+    },
+    {
+      label: 'ID ERP',
+      value: user.idErp ?? '—',
+      icon: <LuIdCard className="size-4 text-muted" />,
+    },
+    {
+      label: 'ID Funcionário ERP',
+      value: user.idErpEmployee ?? '—',
+      icon: <LuUserCheck className="size-4 text-muted" />,
+    },
+    {
+      label: 'Caixa',
+      value: user.cashboxId ?? '—',
+      icon: <LuWallet className="size-4 text-muted" />,
+    },
+    {
+      label: 'Almoxarifado',
+      value: user.warehouseId ?? '—',
+      icon: <LuBox className="size-4 text-muted" />,
+    },
+    {
+      label: 'Planejamento',
+      value: user.planningId ?? '—',
+      icon: <LuCreditCard className="size-4 text-muted" />,
+    },
+    {
+      label: 'Criado em',
+      value: formatDate(user.createdAt),
+      icon: <LuCalendar className="size-4 text-muted" />,
+    },
+    {
+      label: 'Atualizado em',
+      value: formatDate(user.updatedAt),
+      icon: <LuClock className="size-4 text-muted" />,
+    },
   ];
 
   const currentRoleId = user.roles[0]?.id ?? null;
@@ -303,6 +396,7 @@ export const UserDetailPage: React.FC = () => {
         jobTitle={user.jobTitle}
         roleName={selectedRoleName}
         idErp={user.idErp}
+        userId={user.id}
         backTo={backTo}
         canUpdate={canUpdate}
         canInactivate={canInactivate}
@@ -322,17 +416,23 @@ export const UserDetailPage: React.FC = () => {
       />
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
-          <div className="mb-4 flex flex-col gap-1">
-            <h2 className="font-display text-lg font-semibold text-foreground">
-              Perfil
-            </h2>
-            <p className="text-sm text-muted">
-              {canUpdate
-                ? 'Nome e e-mail editáveis pelo administrador.'
-                : 'Nome e e-mail do colaborador (somente leitura).'}
-            </p>
-          </div>
+        {/* Section 1: Perfil */}
+        <DetailSectionCard
+          title="Perfil e Identificação"
+          subtitle="Dados básicos do colaborador no sistema."
+          icon={<LuUser className="size-4" />}
+          badge={
+            canUpdate ? (
+              <Chip size="sm" variant="soft" color="success">
+                Editável
+              </Chip>
+            ) : (
+              <Chip size="sm" variant="soft">
+                Somente leitura
+              </Chip>
+            )
+          }
+        >
           <form
             className="flex flex-col gap-4"
             onSubmit={(e) => void saveProfile(e)}
@@ -347,9 +447,17 @@ export const UserDetailPage: React.FC = () => {
                 isReadOnly={!canUpdate}
                 className="flex flex-col gap-1.5"
               >
-                <Label className="text-sm text-muted">Nome</Label>
-                <Input fullWidth className={fieldClassName} />
+                <Label className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  <LuUser className="size-3.5 text-muted" />
+                  Nome completo
+                </Label>
+                <Input
+                  fullWidth
+                  className={fieldClassName}
+                  placeholder="Nome do colaborador"
+                />
               </TextField>
+
               <TextField
                 name="email"
                 type="email"
@@ -360,42 +468,70 @@ export const UserDetailPage: React.FC = () => {
                 isReadOnly={!canUpdate}
                 className="flex flex-col gap-1.5"
               >
-                <Label className="text-sm text-muted">E-mail</Label>
-                <Input fullWidth className={fieldClassName} />
+                <Label className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  <LuMail className="size-3.5 text-muted" />
+                  E-mail de acesso
+                </Label>
+                <Input
+                  fullWidth
+                  className={fieldClassName}
+                  placeholder="usuario@empresa.com.br"
+                />
               </TextField>
             </div>
+
             {canUpdate ? (
-              <div>
+              <div className="mt-4 flex items-center justify-between border-t border-border/50 pt-4">
+                {profileDirty ? (
+                  <span className="text-xs font-medium text-amber-500 dark:text-amber-400">
+                    • Alterações pendentes no perfil
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted">
+                    Sem alterações pendentes
+                  </span>
+                )}
                 <Button
                   type="submit"
                   isDisabled={!profileDirty}
                   isPending={savingProfile}
+                  className="gap-1.5 font-medium"
                 >
+                  <LuCheck className="size-4" />
                   Salvar perfil
                 </Button>
               </div>
             ) : null}
           </form>
-        </section>
+        </DetailSectionCard>
 
-        <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
-          <div className="mb-4 flex flex-col gap-1">
-            <h2 className="font-display text-lg font-semibold text-foreground">
-              Nível de acesso
-            </h2>
-            <p className="text-sm text-muted">
-              Grupo de permissões do usuário no GigaHub.
-            </p>
-          </div>
-
+        {/* Section 2: Access Management */}
+        <DetailSectionCard
+          title="Nível de Acesso"
+          subtitle="Grupo de permissões associado ao usuário."
+          icon={<LuShield className="size-4" />}
+          badge={
+            canManageAccess ? (
+              <Chip size="sm" variant="soft" color="accent">
+                Gestão ativa
+              </Chip>
+            ) : (
+              <Chip size="sm" variant="soft">
+                Atribuído
+              </Chip>
+            )
+          }
+        >
           {canManageAccess ? (
-            <>
+            <div className="flex flex-col gap-4">
               {rolesCatalog.length === 0 ? (
-                <p className="text-sm text-muted">Nenhum grupo disponível.</p>
+                <p className="text-sm text-muted">
+                  Nenhum grupo de permissões disponível.
+                </p>
               ) : (
                 <Autocomplete
                   className="w-full"
-                  placeholder="Buscar grupo…"
+                  placeholder="Buscar grupo de permissões…"
                   value={selectedRoleId}
                   onChange={(key: Key | Key[] | null) => {
                     if (Array.isArray(key)) {
@@ -407,7 +543,10 @@ export const UserDetailPage: React.FC = () => {
                     setSelectedRoleId(key != null ? String(key) : null);
                   }}
                 >
-                  <Label className="text-sm text-muted">Grupo</Label>
+                  <Label className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+                    <LuShield className="size-3.5 text-muted" />
+                    Grupo de Permissões
+                  </Label>
                   <Autocomplete.Trigger
                     className={autocompleteTriggerClassName}
                   >
@@ -425,7 +564,7 @@ export const UserDetailPage: React.FC = () => {
                         <SearchField.Group>
                           <SearchField.SearchIcon />
                           <SearchField.Input
-                            placeholder="Pesquisar…"
+                            placeholder="Pesquisar grupos…"
                             className="bg-transparent text-foreground placeholder:text-muted"
                           />
                           <SearchField.ClearButton />
@@ -452,46 +591,108 @@ export const UserDetailPage: React.FC = () => {
                 </Autocomplete>
               )}
 
-              <div className="mt-4">
+              {/* Selected Role Summary Preview */}
+              {selectedRoleName ? (
+                <div className="rounded-xl border border-border/60 bg-background/50 p-3.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <LuShield className="size-4 text-accent" />
+                      <span className="text-sm font-semibold text-foreground">
+                        {selectedRoleName}
+                      </span>
+                    </div>
+                    <Chip
+                      size="sm"
+                      variant="soft"
+                      color={rolesDirty ? 'warning' : 'accent'}
+                    >
+                      {rolesDirty ? 'Alteração pendente' : 'Grupo ativo'}
+                    </Chip>
+                  </div>
+                  <p className="mt-1.5 text-xs text-muted">
+                    As permissões operacionais do colaborador são herdadas
+                    diretamente deste grupo de acesso.
+                  </p>
+                </div>
+              ) : null}
+
+              <div className="mt-2 flex items-center justify-between border-t border-border/50 pt-4">
+                {rolesDirty ? (
+                  <span className="text-xs font-medium text-amber-500 dark:text-amber-400">
+                    • Novo grupo selecionado
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted">
+                    Grupo de acesso mantido
+                  </span>
+                )}
                 <Button
                   isDisabled={!rolesDirty}
                   isPending={savingRoles}
+                  className="gap-1.5 font-medium"
                   onPress={() => {
                     void saveRoles();
                   }}
                 >
+                  <LuCheck className="size-4" />
                   Salvar acesso
                 </Button>
               </div>
-            </>
+            </div>
           ) : (
-            <p className="text-sm text-foreground">
-              {user.roles[0]?.name ?? 'Nenhum grupo atribuído'}
-            </p>
+            <div className="rounded-xl border border-border/60 bg-background/50 p-4">
+              <div className="flex items-center gap-2">
+                <LuShield className="size-4 text-accent" />
+                <span className="text-sm font-semibold text-foreground">
+                  {user.roles[0]?.name ?? 'Nenhum grupo atribuído'}
+                </span>
+              </div>
+            </div>
           )}
-        </section>
+        </DetailSectionCard>
       </div>
 
-      <section className="rounded-2xl border border-border bg-surface p-5 md:p-6">
-        <div className="mb-4 flex flex-col gap-1">
-          <h2 className="font-display text-lg font-semibold text-foreground">
-            Dados do ERP
-          </h2>
-          <p className="text-sm text-muted">
-            Informações sincronizadas do IXC (somente leitura).
-          </p>
+      {/* Section 3: IXC Soft ERP Technical Attributes */}
+      <DetailSectionCard
+        title="Dados do ERP (IXC Soft)"
+        subtitle="Informações operacionais obtidas via integração de dados."
+        icon={<LuBuilding2 className="size-4" />}
+        badge={
+          <Chip size="sm" variant="dot" color="primary">
+            Sincronizado
+          </Chip>
+        }
+      >
+        <div className="mb-5 flex items-center gap-3 rounded-xl border border-border/60 bg-background/50 p-3.5 text-xs text-muted">
+          <LuRefreshCw className="size-4 shrink-0 text-accent" />
+          <span>
+            Estes campos pertencem ao cadastro do IXC Soft e não podem ser
+            editados manualmente no GigaHub.
+          </span>
         </div>
-        <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+
+        <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {readonlyFields.map((field) => (
-            <div key={field.label} className="flex flex-col gap-1">
-              <dt className="text-xs font-medium uppercase tracking-wide text-muted">
-                {field.label}
-              </dt>
-              <dd className="text-sm text-foreground">{field.value}</dd>
+            <div
+              key={field.label}
+              className="flex items-start gap-3 rounded-xl border border-border/50 bg-background/40 p-3.5"
+            >
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/40 bg-surface text-muted">
+                {field.icon}
+              </span>
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <dt className="text-xs font-medium uppercase tracking-wider text-muted">
+                  {field.label}
+                </dt>
+                <dd className="truncate text-sm font-semibold text-foreground">
+                  {field.value}
+                </dd>
+              </div>
             </div>
           ))}
         </dl>
-      </section>
+      </DetailSectionCard>
     </div>
   );
 };
+

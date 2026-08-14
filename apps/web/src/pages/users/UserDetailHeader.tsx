@@ -8,7 +8,17 @@ import {
   Dropdown,
   Label,
 } from '@heroui/react';
-import { LuArrowLeft, LuCamera, LuMail, LuShield, LuTrash2 } from 'react-icons/lu';
+import {
+  LuArrowLeft,
+  LuBriefcase,
+  LuCamera,
+  LuCopy,
+  LuMail,
+  LuShield,
+  LuTrash2,
+  LuUserX,
+} from 'react-icons/lu';
+import { toast } from '../../shared/ui/toast';
 
 export interface UserDetailHeaderProps {
   name: string;
@@ -18,6 +28,7 @@ export interface UserDetailHeaderProps {
   jobTitle?: string;
   roleName?: string;
   idErp?: string;
+  userId?: string;
   backTo: string;
   canUpdate: boolean;
   canInactivate: boolean;
@@ -32,13 +43,19 @@ export interface UserDetailHeaderProps {
 
 function userInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
+  const first = parts[0];
+  const last = parts[parts.length - 1];
+
+  if (!first) {
     return '?';
   }
   if (parts.length === 1) {
-    return parts[0]!.substring(0, 2).toUpperCase();
+    return first.substring(0, 2).toUpperCase();
   }
-  return `${parts[0]![0]}${parts[parts.length - 1]![0]}`.toUpperCase();
+  if (last) {
+    return `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
+  }
+  return first.substring(0, 2).toUpperCase();
 }
 
 export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
@@ -49,6 +66,7 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
   jobTitle,
   roleName,
   idErp,
+  userId,
   backTo,
   canUpdate,
   canInactivate,
@@ -63,32 +81,71 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isActive = status === 'active';
 
+  const handleCopy = (text: string, label: string) => {
+    void navigator.clipboard.writeText(text);
+    toast.success(`${label} copiado!`);
+  };
+
   return (
-    <header className="overflow-hidden rounded-2xl border border-border bg-surface">
-      <div className="h-1.5 w-full bg-accent" aria-hidden />
-
-      <div className="flex flex-col gap-5 p-5 md:p-6">
-        <Link
-          to={backTo}
-          className="inline-flex w-fit items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+    <header className="flex flex-col gap-4">
+      {/* Breadcrumb & Navigation */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+        <nav
+          aria-label="Navegação de migalhas"
+          className="flex items-center gap-2 text-xs font-medium text-muted"
         >
-          <LuArrowLeft className="size-4" />
-          Usuários
-        </Link>
+          <Link
+            to={backTo}
+            className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+          >
+            <LuArrowLeft className="size-3.5" />
+            <span>Usuários</span>
+          </Link>
+          <span className="text-border">/</span>
+          <span className="max-w-48 truncate font-semibold text-foreground md:max-w-xs">
+            {name}
+          </span>
+        </nav>
 
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-          <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-start">
+        <span className="text-xs text-muted">
+          {canUpdate ? 'Modo de edição ativo' : 'Somente leitura'}
+        </span>
+      </div>
+
+      {/* Hero Card Container */}
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-surface shadow-xs">
+        {/* Ambient Gradient Overlay */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-accent/10 via-transparent to-accent/5"
+          aria-hidden
+        />
+        <div className="h-1.5 w-full bg-accent" aria-hidden />
+
+        <div className="relative flex flex-col gap-6 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="flex min-w-0 flex-1 flex-col gap-5 sm:flex-row sm:items-start">
+            {/* Avatar & Photo Upload Controls */}
             <div className="group relative shrink-0 self-start">
-              <Avatar
-                size="lg"
-                color="accent"
-                className="size-24 text-xl ring-2 ring-border ring-offset-2 ring-offset-surface"
-              >
-                {avatarUrl ? (
-                  <Avatar.Image alt={name} src={avatarUrl} />
-                ) : null}
-                <Avatar.Fallback>{userInitials(name)}</Avatar.Fallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar
+                  size="lg"
+                  color="accent"
+                  className={`size-24 text-xl ring-4 ring-offset-2 ring-offset-surface ${
+                    isActive ? 'ring-emerald-500/30' : 'ring-danger/30'
+                  }`}
+                >
+                  {avatarUrl ? (
+                    <Avatar.Image alt={name} src={avatarUrl} />
+                  ) : null}
+                  <Avatar.Fallback>{userInitials(name)}</Avatar.Fallback>
+                </Avatar>
+
+                <span
+                  className={`absolute bottom-1 left-1 size-4 rounded-full border-2 border-surface ${
+                    isActive ? 'bg-emerald-500' : 'bg-danger'
+                  }`}
+                  title={isActive ? 'Usuário Ativo' : 'Usuário Inativo'}
+                />
+              </div>
 
               <input
                 ref={fileInputRef}
@@ -111,7 +168,7 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
                       size="sm"
                       variant="secondary"
                       isIconOnly
-                      aria-label="Gerenciar foto"
+                      aria-label="Gerenciar foto de perfil"
                       isPending={uploadingAvatar}
                       className="absolute -bottom-1 -right-1 size-9 min-w-9 rounded-full border border-border shadow-sm"
                     >
@@ -149,7 +206,7 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
                     size="sm"
                     variant="secondary"
                     isIconOnly
-                    aria-label="Trocar foto"
+                    aria-label="Trocar foto de perfil"
                     isPending={uploadingAvatar}
                     className="absolute -bottom-1 -right-1 size-9 min-w-9 rounded-full border border-border shadow-sm"
                     onPress={() => fileInputRef.current?.click()}
@@ -160,6 +217,7 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
               ) : null}
             </div>
 
+            {/* Name, Chips & Key Meta */}
             <div className="flex min-w-0 flex-1 flex-col gap-3">
               <div className="flex flex-wrap items-center gap-2.5">
                 <h1 className="font-display text-2xl font-bold tracking-tight text-foreground md:text-3xl">
@@ -169,45 +227,87 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
                   size="sm"
                   color={isActive ? 'success' : 'danger'}
                   variant="soft"
+                  className="font-medium"
                 >
                   {isActive ? 'Ativo' : 'Inativo'}
                 </Chip>
+
                 {roleName ? (
-                  <Chip size="sm" variant="soft" color="accent">
+                  <Chip
+                    size="sm"
+                    variant="soft"
+                    color="accent"
+                    className="font-medium"
+                  >
+                    <LuShield className="mr-1 inline size-3" />
                     {roleName}
+                  </Chip>
+                ) : null}
+
+                {idErp ? (
+                  <Chip size="sm" variant="dot" color="primary">
+                    IXC #{idErp}
                   </Chip>
                 ) : null}
               </div>
 
-              <div className="flex flex-col gap-1.5 text-sm text-muted">
-                <div className="flex min-w-0 items-center gap-2">
-                  <LuMail className="size-3.5 shrink-0" />
-                  <span className="truncate text-foreground/80">{email}</span>
+              {/* Quick Info & 1-Click Copy Toolbar */}
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted">
+                <div className="flex items-center gap-1.5">
+                  <LuMail className="size-4 shrink-0 text-muted" />
+                  <span className="font-medium text-foreground/90">
+                    {email}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    isIconOnly
+                    aria-label="Copiar e-mail"
+                    className="size-6 min-w-6 text-muted hover:text-foreground"
+                    onPress={() => handleCopy(email, 'E-mail')}
+                  >
+                    <LuCopy className="size-3.5" />
+                  </Button>
                 </div>
+
                 {jobTitle ? (
-                  <div className="flex min-w-0 items-center gap-2">
-                    <LuShield className="size-3.5 shrink-0" />
-                    <span className="truncate">{jobTitle}</span>
-                    {idErp ? (
-                      <span className="truncate text-xs">· {idErp}</span>
-                    ) : null}
+                  <div className="flex items-center gap-1.5">
+                    <LuBriefcase className="size-4 shrink-0 text-muted" />
+                    <span>{jobTitle}</span>
                   </div>
-                ) : idErp ? (
-                  <p className="text-xs">{idErp}</p>
-                ) : (
-                  <p className="text-xs">Usuário local</p>
-                )}
+                ) : null}
+
+                {userId ? (
+                  <div className="flex items-center gap-1 text-xs text-muted">
+                    <span>ID:</span>
+                    <span className="font-mono text-muted">{userId.slice(0, 8)}…</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      isIconOnly
+                      aria-label="Copiar ID do usuário"
+                      className="size-6 min-w-6 text-muted hover:text-foreground"
+                      onPress={() => handleCopy(userId, 'ID do usuário')}
+                    >
+                      <LuCopy className="size-3" />
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
 
+          {/* Quick Action Toolbar */}
           {canInactivate && isActive ? (
-            <div className="flex shrink-0 flex-wrap gap-2 lg:justify-end">
+            <div className="flex shrink-0 items-center gap-2 self-start">
               <AlertDialog
                 isOpen={confirmOpen}
                 onOpenChange={onConfirmOpenChange}
               >
-                <Button variant="danger">Inativar usuário</Button>
+                <Button variant="danger" className="gap-1.5 font-medium">
+                  <LuUserX className="size-4" />
+                  Inativar usuário
+                </Button>
                 <AlertDialog.Backdrop>
                   <AlertDialog.Container>
                     <AlertDialog.Dialog className="sm:max-w-105">
@@ -252,3 +352,4 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
     </header>
   );
 };
+
