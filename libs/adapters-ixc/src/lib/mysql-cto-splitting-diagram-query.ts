@@ -43,6 +43,7 @@ interface FusaoRow extends RowDataPacket {
   orig_split_in: number | null;
   orig_split_out: number | null;
   orig_cor: string | null;
+  orig_cabo_fibras: number | null;
 
   dest_elem_id: number | null;
   dest_elem_nome: string | null;
@@ -53,6 +54,7 @@ interface FusaoRow extends RowDataPacket {
   dest_split_in: number | null;
   dest_split_out: number | null;
   dest_cor: string | null;
+  dest_cabo_fibras: number | null;
 }
 
 const FIBER_COLOR_SEQUENCE = [
@@ -110,10 +112,12 @@ export class MysqlCtoSplittingDiagramQuery implements CtoSplittingDiagramQuery {
               t_orig.nome_tipo as orig_tipo_nome, t_orig.splitter_proporcao as orig_prop,
               t_orig.splitter_tipo as orig_split_tipo, t_orig.splitter_numero_entradas as orig_split_in,
               t_orig.splitter_numero_saidas as orig_split_out, t_orig.cor_ativa as orig_cor,
+              t_orig.cabo_numero_fibras as orig_cabo_fibras,
               ed.id as dest_elem_id, ed.descricao as dest_elem_nome, ed.tipo as dest_elem_tipo,
               t_dest.nome_tipo as dest_tipo_nome, t_dest.splitter_proporcao as dest_prop,
               t_dest.splitter_tipo as dest_split_tipo, t_dest.splitter_numero_entradas as dest_split_in,
-              t_dest.splitter_numero_saidas as dest_split_out, t_dest.cor_ativa as dest_cor
+              t_dest.splitter_numero_saidas as dest_split_out, t_dest.cor_ativa as dest_cor,
+              t_dest.cabo_numero_fibras as dest_cabo_fibras
        FROM df_fusao f
        LEFT JOIN df_elemento eo ON eo.id = f.id_elemento_origem
        LEFT JOIN df_tipo_elemento t_orig ON t_orig.id = eo.id_tipo_elemento
@@ -127,6 +131,11 @@ export class MysqlCtoSplittingDiagramQuery implements CtoSplittingDiagramQuery {
     const nodeMap = new Map<string, CtoDiagramNodeReadModel>();
     const connections: CtoDiagramConnectionReadModel[] = [];
 
+    // Track used ports on cables to compute pass-through fibers
+    const usedCableInPorts = new Map<number, Set<number>>();
+    const usedCableOutPorts = new Map<number, Set<number>>();
+    const cableFiberCounts = new Map<number, number>();
+
     for (const f of fusions) {
       // 1. Process Source Node
       const isSourceCable = f.tipo_elemento_origem === 'cabo';
@@ -138,6 +147,22 @@ export class MysqlCtoSplittingDiagramQuery implements CtoSplittingDiagramQuery {
         sourceNodeId = isSourceOut
           ? `cable_out_${f.id_elemento_origem}`
           : `cable_in_${f.id_elemento_origem}`;
+
+        if (isSourceIn) {
+          if (!usedCableInPorts.has(f.id_elemento_origem)) {
+            usedCableInPorts.set(f.id_elemento_origem, new Set());
+          }
+          usedCableInPorts.get(f.id_elemento_origem)!.add(f.porta_elemento_origem || 1);
+        } else if (isSourceOut) {
+          if (!usedCableOutPorts.has(f.id_elemento_origem)) {
+            usedCableOutPorts.set(f.id_elemento_origem, new Set());
+          }
+          usedCableOutPorts.get(f.id_elemento_origem)!.add(f.porta_elemento_origem || 1);
+        }
+
+        if (f.orig_cabo_fibras) {
+          cableFiberCounts.set(f.id_elemento_origem, f.orig_cabo_fibras);
+        }
       } else {
         sourceNodeId = `splitter_${f.id_elemento_origem}`;
       }
@@ -151,7 +176,14 @@ export class MysqlCtoSplittingDiagramQuery implements CtoSplittingDiagramQuery {
             : isSourceIn
             ? `Entrada - ${rawName}`
             : rawName;
-          const ports = [{ portNumber: f.porta_elemento_origem || 1, label: String(f.porta_elemento_origem || 1), colorHex: getFiberColor(f.porta_elemento_origem || 1) }];
+
+          const count = f.orig_cabo_fibras && f.orig_cabo_fibras > 0 ? f.orig_cabo_fibras : Math.max(1, f.porta_elemento_origem || 1);
+          const ports: CtoDiagramPortReadModel[] = Array.from({ length: count }, (_, i) => ({
+            portNumber: i + 1,
+            label: String(i + 1),
+            colorHex: getFiberColor(i + 1),
+          }));
+
           nodeMap.set(sourceNodeId, {
             id: sourceNodeId,
             elementId: String(f.id_elemento_origem),
@@ -200,6 +232,22 @@ export class MysqlCtoSplittingDiagramQuery implements CtoSplittingDiagramQuery {
         destNodeId = isDestOut
           ? `cable_out_${f.id_elemento_destino}`
           : `cable_in_${f.id_elemento_destino}`;
+
+        if (isDestIn) {
+          if (!usedCableInPorts.has(f.id_elemento_destino)) {
+            usedCableInPorts.set(f.id_elemento_destino, new Set());
+          }
+          usedCableInPorts.get(f.id_elemento_destino)!.add(f.porta_elemento_destino || 1);
+        } else if (isDestOut) {
+          if (!usedCableOutPorts.has(f.id_elemento_destino)) {
+            usedCableOutPorts.set(f.id_elemento_destino, new Set());
+          }
+          usedCableOutPorts.get(f.id_elemento_destino)!.add(f.porta_elemento_destino || 1);
+        }
+
+        if (f.dest_cabo_fibras) {
+          cableFiberCounts.set(f.id_elemento_destino, f.dest_cabo_fibras);
+        }
       } else {
         destNodeId = `splitter_${f.id_elemento_destino}`;
       }
@@ -213,7 +261,14 @@ export class MysqlCtoSplittingDiagramQuery implements CtoSplittingDiagramQuery {
             : isDestIn
             ? `Entrada - ${rawName}`
             : rawName;
-          const ports = [{ portNumber: f.porta_elemento_destino || 1, label: String(f.porta_elemento_destino || 1), colorHex: getFiberColor(f.porta_elemento_destino || 1) }];
+
+          const count = f.dest_cabo_fibras && f.dest_cabo_fibras > 0 ? f.dest_cabo_fibras : Math.max(1, f.porta_elemento_destino || 1);
+          const ports: CtoDiagramPortReadModel[] = Array.from({ length: count }, (_, i) => ({
+            portNumber: i + 1,
+            label: String(i + 1),
+            colorHex: getFiberColor(i + 1),
+          }));
+
           nodeMap.set(destNodeId, {
             id: destNodeId,
             elementId: String(f.id_elemento_destino),
@@ -255,7 +310,6 @@ export class MysqlCtoSplittingDiagramQuery implements CtoSplittingDiagramQuery {
       // 3. Determine Connection Line Color
       let fiberColorHex = getFiberColor(f.porta_elemento_origem || 1);
       if (f.tipo_elemento_origem === 'splitter' && f.porta_elemento_origem === 2) {
-        // Output 2 of unbalanced splitter (e.g. 10% leg going to 1/8) is yellow in standard diagrams
         fiberColorHex = '#ffff00';
       }
 
@@ -268,6 +322,32 @@ export class MysqlCtoSplittingDiagramQuery implements CtoSplittingDiagramQuery {
         fiberColorHex,
         trayNumber: f.bandeja || 1,
       });
+    }
+
+    // 4. Generate Pass-through Fibers for Cables that enter and leave the box
+    for (const [cableId, fiberCount] of cableFiberCounts.entries()) {
+      const inNodeId = `cable_in_${cableId}`;
+      const outNodeId = `cable_out_${cableId}`;
+
+      if (nodeMap.has(inNodeId) && nodeMap.has(outNodeId)) {
+        const inUsed = usedCableInPorts.get(cableId) || new Set();
+        const outUsed = usedCableOutPorts.get(cableId) || new Set();
+
+        for (let p = 1; p <= fiberCount; p++) {
+          if (!inUsed.has(p) && !outUsed.has(p)) {
+            connections.push({
+              id: `passthrough_${cableId}_${p}`,
+              sourceNodeId: inNodeId,
+              sourcePortNumber: p,
+              targetNodeId: outNodeId,
+              targetPortNumber: p,
+              fiberColorHex: getFiberColor(p),
+              trayNumber: 1,
+              isPassThrough: true,
+            });
+          }
+        }
+      }
     }
 
     return {

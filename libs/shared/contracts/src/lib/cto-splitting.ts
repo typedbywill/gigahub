@@ -38,9 +38,11 @@ export const ctoDiagramConnectionDtoSchema = z.object({
   targetPortNumber: z.number().int().positive(),
   fiberColorHex: z.string(),
   trayNumber: z.number().int().nonnegative().optional(),
+  isPassThrough: z.boolean().optional(),
 });
 
 export type CtoDiagramConnectionDto = z.infer<
+
   typeof ctoDiagramConnectionDtoSchema
 >;
 

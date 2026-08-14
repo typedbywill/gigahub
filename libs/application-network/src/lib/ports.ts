@@ -85,7 +85,9 @@ export interface CtoDiagramConnectionReadModel {
   targetPortNumber: number;
   fiberColorHex: string;
   trayNumber?: number;
+  isPassThrough?: boolean;
 }
+
 
 export interface CtoSplittingDiagramReadModel {
   fatId: string;
