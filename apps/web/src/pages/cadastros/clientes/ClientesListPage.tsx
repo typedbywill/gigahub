@@ -187,11 +187,14 @@ export const ClientesListPage: React.FC = () => {
   const columns: DataTableColumn<CustomerSearchHitDto>[] = useMemo(
     () => [
       {
-        key: 'name',
-        title: 'Cliente / Razão Social',
-        render: (cliente) => {
+        id: 'name',
+        header: 'Cliente / Razão Social',
+        isRowHeader: true,
+        cell: (cliente) => {
           const avatarColor = getAvatarColor(cliente.idErp || cliente.name);
-          const detailUrl = routes.cadastrosClienteVisaoGeral(cliente.idErp || cliente.id);
+          const detailUrl = routes.cadastrosClienteVisaoGeral(
+            cliente.idErp || cliente.id,
+          );
 
           return (
             <Link
@@ -219,20 +222,18 @@ export const ClientesListPage: React.FC = () => {
         },
       },
       {
-        key: 'idErp',
-        title: 'ID ERP (IXC)',
-        width: 140,
-        render: (cliente) => (
+        id: 'idErp',
+        header: 'ID ERP (IXC)',
+        cell: (cliente) => (
           <span className="font-mono text-xs font-semibold text-foreground">
             #{cliente.idErp}
           </span>
         ),
       },
       {
-        key: 'location',
-        title: 'Localização',
-        width: 200,
-        render: (cliente) => {
+        id: 'location',
+        header: 'Localização',
+        cell: (cliente) => {
           if (!cliente.location) {
             return <span className="text-xs text-muted">-</span>;
           }
@@ -240,18 +241,17 @@ export const ClientesListPage: React.FC = () => {
             <div className="flex items-center gap-1 font-mono text-xs text-muted">
               <LuMapPin className="size-3.5 text-accent shrink-0" />
               <span>
-                {cliente.location.latitude.toFixed(4)}, {cliente.location.longitude.toFixed(4)}
+                {cliente.location.latitude.toFixed(4)},{' '}
+                {cliente.location.longitude.toFixed(4)}
               </span>
             </div>
           );
         },
       },
       {
-        key: 'actions',
-        title: 'Ações',
-        width: 100,
-        align: 'right',
-        render: (cliente) => <ClienteActionsCell cliente={cliente} />,
+        id: 'actions',
+        header: '',
+        cell: (cliente) => <ClienteActionsCell cliente={cliente} />,
       },
     ],
     [],
@@ -267,9 +267,11 @@ export const ClientesListPage: React.FC = () => {
 
       <div className="mt-6">
         <DataTable
-          data={items}
+          ariaLabel="Lista de Clientes"
+          items={items}
           columns={columns}
-          loading={loading}
+          getRowId={(cliente) => cliente.idErp || cliente.id}
+          isLoading={loading}
           searchPlaceholder="Buscar por nome, CPF, CNPJ ou ID ERP… (pressione / para focar)"
           searchValue={searchInput}
           onSearchChange={(value) => {

@@ -52,7 +52,7 @@ export function getCustomerConsultationRequest(
   signal?: AbortSignal,
 ): Promise<CustomerConsultationResponseDto> {
   const query: Record<string, string | string[] | number | boolean | undefined> = {
-    include: params.include,
+    include: Array.isArray(params.include) ? params.include.join(',') : params.include,
     contractId: params.contractId,
     fiberId: params.fiberId,
     contractsLimit: params.contractsLimit,

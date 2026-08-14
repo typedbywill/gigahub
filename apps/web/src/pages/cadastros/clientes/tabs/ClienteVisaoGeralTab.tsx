@@ -258,6 +258,8 @@ export const ClienteVisaoGeralTab: React.FC = () => {
             <div className="lg:col-span-7">
               <ClienteMapCard
                 location={address?.location}
+                customerId={cliente.idErp || cliente.id}
+                customerName={cliente.name}
                 addressLabel={addressFormatted}
               />
             </div>

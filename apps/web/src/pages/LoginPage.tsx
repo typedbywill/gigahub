@@ -15,6 +15,8 @@ import {
   LuLoaderCircle,
 } from 'react-icons/lu';
 import { useAuthStore } from '../shared/stores/auth.store';
+import { useThemeStore } from '../shared/stores/theme.store';
+import { ThemeToggle } from '../shared/ui/ThemeToggle';
 import { ApiClientError } from '../shared/api/auth.api';
 import { safeReturnPath } from '../shared/lib/safe-return-path';
 import { LoginBrandPanel } from './login/LoginBrandPanel';
@@ -25,13 +27,15 @@ import {
 } from './login/remember-email';
 
 const fieldClassName =
-  'rounded-xl border border-white/15 bg-white/5 text-white shadow-none placeholder:text-white/35';
+  'h-10 rounded-xl border border-border bg-background text-foreground shadow-none placeholder:text-muted focus-within:border-foreground/40';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const login = useAuthStore((s) => s.login);
+  const theme = useThemeStore((s) => s.theme);
+  const isDark = theme === 'dark';
   const returnTo = safeReturnPath(
     (location.state as { from?: string } | null)?.from,
   );
@@ -78,27 +82,27 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#0b0b0b] text-white">
+    <div className="flex min-h-screen bg-background text-foreground transition-colors duration-200">
       <section className="relative mx-auto flex w-full max-w-md flex-col px-6 py-8 sm:px-8 lg:mx-0 lg:max-w-none lg:w-[48%] lg:px-12 lg:py-10 xl:px-16">
-        <header className="flex items-center justify-center gap-2.5 lg:justify-start">
-          <img
-            src="/brand/giga-logo-white.png"
-            alt=""
-            className="size-8 object-contain"
-          />
-          <span className="font-display text-base font-semibold tracking-tight">
-            GigaHub
-          </span>
+        <header className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <img
+              src={isDark ? '/brand/giga-logo-white.png' : '/brand/giga-logo.png'}
+              alt="GigaHub Logo"
+              className="size-8 object-contain"
+            />
+            <span className="font-display text-base font-semibold tracking-tight text-foreground">
+              GigaHub
+            </span>
+          </div>
+          <ThemeToggle />
         </header>
 
         <main className="flex flex-1 flex-col items-center justify-center py-10 lg:items-stretch">
           <div className="w-full max-w-md">
-            <h1 className="font-display text-center text-3xl font-bold tracking-tight sm:text-4xl lg:text-left">
+            <h1 className="font-display text-center text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-left">
               Bem-vindo de volta
             </h1>
-            {/* <p className="mt-2 text-center text-sm text-white/55 sm:text-base lg:text-left">
-              Acesse suas OS, rotas e o que precisa no dia a dia.
-            </p> */}
 
             <form
               className="mt-10 flex flex-col gap-5"
@@ -113,7 +117,7 @@ export const LoginPage: React.FC = () => {
                 onChange={setEmail}
                 className="gap-1.5"
               >
-                <Label className="text-sm text-white/60">E-mail</Label>
+                <Label className="text-sm font-medium text-foreground/75">E-mail</Label>
                 <Input
                   fullWidth
                   autoComplete="username"
@@ -131,20 +135,20 @@ export const LoginPage: React.FC = () => {
                 onChange={setPassword}
                 className="gap-1.5"
               >
-                <Label className="text-sm text-white/60">Senha</Label>
+                <Label className="text-sm font-medium text-foreground/75">Senha</Label>
                 <InputGroup
                   fullWidth
-                  className={`h-10 ${fieldClassName}`}
+                  className={fieldClassName}
                 >
                   <InputGroup.Input
                     autoComplete="current-password"
                     placeholder="Digite sua senha"
-                    className="bg-transparent text-white placeholder:text-white/35"
+                    className="bg-transparent text-foreground placeholder:text-muted"
                   />
                   <InputGroup.Suffix>
                     <button
                       type="button"
-                      className="flex items-center justify-center text-white/45 hover:text-white"
+                      className="flex items-center justify-center text-muted hover:text-foreground transition-colors"
                       aria-label={
                         showPassword ? 'Ocultar senha' : 'Mostrar senha'
                       }
@@ -164,10 +168,10 @@ export const LoginPage: React.FC = () => {
                 name="remember"
                 isSelected={rememberMe}
                 onChange={setRememberMe}
-                className="text-sm text-white/70"
+                className="text-sm text-foreground/80"
               >
                 <Checkbox.Content>
-                  <Checkbox.Control className="border-white/30">
+                  <Checkbox.Control className="border-border">
                     <Checkbox.Indicator />
                   </Checkbox.Control>
                   Lembrar-me
@@ -175,15 +179,14 @@ export const LoginPage: React.FC = () => {
               </Checkbox>
 
               {error ? (
-                <p className="text-sm text-red-400" role="alert">
+                <p className="text-sm text-red-500 dark:text-red-400" role="alert">
                   {error}
                 </p>
               ) : null}
 
               <Button
                 type="submit"
-                variant="secondary"
-                className="mt-1 h-12 w-full rounded-xl border-0 bg-white font-semibold text-black hover:bg-white/90"
+                className="mt-1 h-12 w-full rounded-xl border-0 bg-accent font-semibold text-accent-foreground hover:opacity-90 transition-opacity"
                 isDisabled={submitting}
               >
                 {submitting ? (
@@ -202,7 +205,7 @@ export const LoginPage: React.FC = () => {
           </div>
         </main>
 
-        <footer className="text-center text-xs text-white/40 lg:text-left">
+        <footer className="text-center text-xs text-muted lg:text-left">
           Use o e-mail e a senha da sua conta GigaNet.
         </footer>
       </section>

@@ -3,7 +3,10 @@ import React from 'react';
 export type StatusBadgeVariant =
   | 'active'
   | 'inactive'
+  | 'success'
+  | 'danger'
   | 'warning'
+  | 'info'
   | 'erp'
   | 'security'
   | 'accent'
@@ -23,6 +26,18 @@ const BADGE_STYLES: Record<
       'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-medium',
     dotColor: 'bg-emerald-500',
   },
+  success: {
+    chipColor: 'success',
+    className:
+      'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 font-medium',
+    dotColor: 'bg-emerald-500',
+  },
+  danger: {
+    chipColor: 'danger',
+    className:
+      'bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/20 font-medium',
+    dotColor: 'bg-rose-500',
+  },
   inactive: {
     chipColor: 'default',
     className:
@@ -34,6 +49,12 @@ const BADGE_STYLES: Record<
     className:
       'bg-amber-500/10 text-amber-800 dark:text-amber-300 border border-amber-500/20 font-medium',
     dotColor: 'bg-amber-500',
+  },
+  info: {
+    chipColor: 'primary',
+    className:
+      'bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20 font-medium',
+    dotColor: 'bg-sky-500',
   },
   erp: {
     chipColor: 'primary',
@@ -78,7 +99,7 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({
   size = 'sm',
   className,
 }) => {
-  const config = BADGE_STYLES[variant];
+  const config = BADGE_STYLES[variant] ?? BADGE_STYLES.neutral;
 
   return (
     <span
