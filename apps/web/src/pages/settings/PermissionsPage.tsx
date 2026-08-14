@@ -303,9 +303,6 @@ export const PermissionsPage: React.FC = () => {
             <h1 className="font-display truncate text-xl font-bold text-foreground md:text-2xl">
               Permissões
             </h1>
-            <p className="truncate text-sm text-muted">
-              Funções do produto e o conjunto de permissões de cada uma.
-            </p>
           </div>
         }
         columns={columns}

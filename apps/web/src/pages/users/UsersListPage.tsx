@@ -284,7 +284,7 @@ export const UsersListPage: React.FC = () => {
       {
         id: 'erp',
         header: 'ERP',
-        cell: (row) => (row.idErp ? `IXC #${row.idErp}` : 'Local'),
+        cell: (row) => (row.idErp ? row.idErp : 'Local'),
       },
       {
         id: 'actions',
@@ -329,7 +329,7 @@ export const UsersListPage: React.FC = () => {
           id: 'erp',
           label: 'ERP',
           value: (row: UserListItemDto) =>
-            row.idErp ? `IXC #${row.idErp}` : 'Local',
+            row.idErp ? row.idErp : 'Local',
         },
       ],
     }),

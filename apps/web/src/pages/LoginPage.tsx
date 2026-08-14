@@ -96,9 +96,9 @@ export const LoginPage: React.FC = () => {
             <h1 className="font-display text-center text-3xl font-bold tracking-tight sm:text-4xl lg:text-left">
               Bem-vindo de volta
             </h1>
-            <p className="mt-2 text-center text-sm text-white/55 sm:text-base lg:text-left">
+            {/* <p className="mt-2 text-center text-sm text-white/55 sm:text-base lg:text-left">
               Acesse suas OS, rotas e o que precisa no dia a dia.
-            </p>
+            </p> */}
 
             <form
               className="mt-10 flex flex-col gap-5"

@@ -21,11 +21,13 @@ RUN corepack enable && corepack prepare pnpm@11.10.0 --activate \
   && apk add --no-cache python3 make g++
 COPY --from=build /app/dist/apps/api/package.json ./
 COPY --from=build /app/dist/apps/api/pnpm-lock.yaml ./
+# webpack emits `require("tslib")`; ensure it is present even if generatePackageJson omits it.
+RUN node -e "const fs=require('fs');const p=JSON.parse(fs.readFileSync('package.json','utf8'));p.dependencies=p.dependencies||{};if(!p.dependencies.tslib)p.dependencies.tslib='2.8.1';fs.writeFileSync('package.json',JSON.stringify(p,null,2));"
 # Standalone install has no root pnpm-workspace.yaml — allow argon2 native build.
 RUN printf '%s\n' 'allowBuilds:' '  argon2: true' > pnpm-workspace.yaml
 RUN --mount=type=cache,id=gigahub-pnpm-prod,target=/pnpm/store \
   pnpm config set store-dir /pnpm/store \
-  && pnpm install --frozen-lockfile --prod
+  && pnpm install --no-frozen-lockfile --prod
 
 FROM node:22-alpine AS runner
 WORKDIR /app

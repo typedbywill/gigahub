@@ -146,11 +146,11 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
                     <LuShield className="size-3.5 shrink-0" />
                     <span className="truncate">{jobTitle}</span>
                     {idErp ? (
-                      <span className="truncate text-xs">· IXC #{idErp}</span>
+                      <span className="truncate text-xs">· {idErp}</span>
                     ) : null}
                   </div>
                 ) : idErp ? (
-                  <p className="text-xs">IXC #{idErp}</p>
+                  <p className="text-xs">{idErp}</p>
                 ) : (
                   <p className="text-xs">Usuário local</p>
                 )}
