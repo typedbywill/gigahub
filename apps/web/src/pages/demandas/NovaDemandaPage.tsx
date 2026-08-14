@@ -70,7 +70,9 @@ export const NovaDemandaPage: React.FC = () => {
           setSelectedQueueId(first.defaultQueueId ?? (qList[0]?.id ?? ''));
         }
       })
-      .catch(() => {})
+      .catch((_err: unknown) => {
+        // Silently ignore abort or load failure
+      })
       .finally(() => setIsLoading(false));
 
     return () => controller.abort();

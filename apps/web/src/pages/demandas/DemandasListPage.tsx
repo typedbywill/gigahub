@@ -8,7 +8,6 @@ import React, {
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button, Dropdown, Label } from '@heroui/react';
 import {
-  LuArrowRight,
   LuClock,
   LuEllipsisVertical,
   LuEye,
@@ -42,6 +41,10 @@ import { routes } from '../../shared/routes';
 import { Permissions } from '../../shared/permissions';
 import { StatusBadge, type StatusBadgeVariant } from '../../shared/ui/StatusBadge';
 import { toast } from '../../shared/ui/toast';
+import {
+  PageContainer,
+  PageHeader,
+} from '../../shared/components/PageHeader';
 import {
   demandListViewHref,
   parseDemandListSearch,
@@ -111,7 +114,9 @@ export const DemandasListPage: React.FC<DemandasListPageProps> = ({ view }) => {
         setSubjectsMap(new Map(subs.map((s) => [s.id, s])));
         setQueuesMap(new Map(queues.map((q) => [q.id, q])));
       })
-      .catch(() => {});
+      .catch((_err: unknown) => {
+        // Silently ignore abort or load failure
+      });
 
     return () => controller.abort();
   }, [accessToken]);
@@ -341,34 +346,27 @@ export const DemandasListPage: React.FC<DemandasListPageProps> = ({ view }) => {
     );
 
   return (
-    <div className="p-4 md:p-6 flex flex-col gap-4 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-accent/10 border border-accent/20">
-            {viewIcon}
-          </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
-              {viewTitle}
-            </h1>
-            <p className="text-xs md:text-sm text-muted">
-              Gerencie chamados, solicitações internas e atendimentos
-            </p>
-          </div>
-        </div>
-
-        {canOpen ? (
-          <Button
-            variant="primary"
-            onPress={() => navigate(routes.demandasNova)}
-            className="shrink-0"
-          >
-            <LuPlus className="size-4" />
-            Nova Demanda
-          </Button>
-        ) : null}
-      </div>
-
+    <PageContainer
+      header={
+        <PageHeader
+          icon={viewIcon}
+          title={viewTitle}
+          description="Gerencie chamados, solicitações internas e atendimentos"
+          actions={
+            canOpen ? (
+              <Button
+                variant="primary"
+                onPress={() => navigate(routes.demandasNova)}
+                className="shrink-0"
+              >
+                <LuPlus className="size-4" />
+                Nova Demanda
+              </Button>
+            ) : null
+          }
+        />
+      }
+    >
       <DataTable
         ariaLabel="Lista de Demandas"
         columns={columns}
@@ -389,6 +387,6 @@ export const DemandasListPage: React.FC<DemandasListPageProps> = ({ view }) => {
           onPageChange: (page) => updateSearch({ page }),
         }}
       />
-    </div>
+    </PageContainer>
   );
 };

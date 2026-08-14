@@ -24,6 +24,10 @@ import {
 import { routes } from '../../shared/routes';
 import { StatusBadge } from '../../shared/ui/StatusBadge';
 import { toast } from '../../shared/ui/toast';
+import {
+  PageContainer,
+  PageHeader,
+} from '../../shared/components/PageHeader';
 
 function slugify(value: string): string {
   return value
@@ -75,24 +79,27 @@ export const AssuntosPage: React.FC = () => {
     void loadData();
   }, [loadData]);
 
-  const handleToggleActive = async (sub: DemandSubjectDto) => {
-    if (!accessToken) return;
-    try {
-      await updateSubjectRequest(accessToken, sub.id, {
-        isActive: !sub.isActive,
-      });
-      toast.success(
-        sub.isActive
-          ? 'Assunto desativado com sucesso!'
-          : 'Assunto ativado com sucesso!',
-      );
-      void loadData();
-    } catch (err) {
-      if (err instanceof ApiClientError) {
-        toast.danger('Erro ao alterar status', { description: err.message });
+  const handleToggleActive = useCallback(
+    async (sub: DemandSubjectDto) => {
+      if (!accessToken) return;
+      try {
+        await updateSubjectRequest(accessToken, sub.id, {
+          isActive: !sub.isActive,
+        });
+        toast.success(
+          sub.isActive
+            ? 'Assunto desativado com sucesso!'
+            : 'Assunto ativado com sucesso!',
+        );
+        void loadData();
+      } catch (err) {
+        if (err instanceof ApiClientError) {
+          toast.danger('Erro ao alterar status', { description: err.message });
+        }
       }
-    }
-  };
+    },
+    [accessToken, loadData],
+  );
 
   const handleCreateSubject = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -236,41 +243,34 @@ export const AssuntosPage: React.FC = () => {
         ),
       },
     ];
-  }, [navigate, queues]);
+  }, [handleToggleActive, navigate, queues]);
 
   return (
-    <div className="p-4 md:p-6 flex flex-col gap-4 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-accent/10 border border-accent/20">
-            <LuFolderGit2 className="size-6 text-accent" />
-          </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-foreground">
-              Assuntos e Parâmetros de Demandas
-            </h1>
-            <p className="text-xs md:text-sm text-muted">
-              Configure os tipos de solicitações e os campos customizados que cada assunto exige
-            </p>
-          </div>
-        </div>
-
-        <Button
-          variant="primary"
-          onPress={() => {
-            setNameInput('');
-            setSlugInput('');
-            setDescInput('');
-            setDefaultQueueInput(queues[0]?.id ?? '');
-            setCreateModalOpen(true);
-          }}
-          className="shrink-0"
-        >
-          <LuPlus className="size-4" />
-          Novo Assunto
-        </Button>
-      </div>
-
+    <PageContainer
+      header={
+        <PageHeader
+          icon={<LuFolderGit2 className="size-6" />}
+          title="Assuntos e Parâmetros de Demandas"
+          description="Configure os tipos de solicitações e os campos customizados que cada assunto exige"
+          actions={
+            <Button
+              variant="primary"
+              onPress={() => {
+                setNameInput('');
+                setSlugInput('');
+                setDescInput('');
+                setDefaultQueueInput(queues[0]?.id ?? '');
+                setCreateModalOpen(true);
+              }}
+              className="shrink-0"
+            >
+              <LuPlus className="size-4" />
+              Novo Assunto
+            </Button>
+          }
+        />
+      }
+    >
       <DataTable
         ariaLabel="Lista de Assuntos"
         columns={columns}
@@ -380,6 +380,6 @@ export const AssuntosPage: React.FC = () => {
           </div>
         </div>
       ) : null}
-    </div>
+    </PageContainer>
   );
 };

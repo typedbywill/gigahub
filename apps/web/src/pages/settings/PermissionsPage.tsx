@@ -28,6 +28,10 @@ import {
 } from '../../shared/api/roles.api';
 import { routes } from '../../shared/routes';
 import { StatusBadge } from '../../shared/ui/StatusBadge';
+import {
+  PageContainer,
+  PageHeader,
+} from '../../shared/components/PageHeader';
 
 function slugify(value: string): string {
   return value
@@ -83,7 +87,6 @@ export const PermissionsPage: React.FC = () => {
   const [items, setItems] = useState<RoleListItemDto[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [pageSize, setPageSize] = useState(0);
   const [search, setSearch] = useState('');
 
   const [createOpen, setCreateOpen] = useState(false);
@@ -126,14 +129,6 @@ export const PermissionsPage: React.FC = () => {
 
     return () => controller.abort();
   }, [accessToken]);
-
-  const handlePageSizeChange = useCallback((next: number) => {
-    setPageSize((prev) => (prev === next ? prev : next));
-  }, []);
-
-  const applySearch = useCallback((value: string) => {
-    setSearch(value.trim());
-  }, []);
 
   const resetCreateForm = useCallback(() => {
     setCreateName('');
@@ -281,15 +276,33 @@ export const PermissionsPage: React.FC = () => {
     [filteredItems],
   );
 
-  const visibleItems = useMemo(() => {
-    if (pageSize < 1) {
-      return filteredItems;
-    }
-    return filteredItems.slice(0, pageSize);
-  }, [filteredItems, pageSize]);
-
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] flex-col gap-3 overflow-hidden p-4 md:h-dvh md:gap-4 md:p-6 lg:p-8">
+    <PageContainer
+      header={
+        <PageHeader
+          icon={<LuShield className="size-6" />}
+          title="Funções e Permissões"
+          description="Gerencie os níveis de acesso e permissões atribuídas aos usuários"
+          badge={
+            items.length > 0 ? (
+              <span className="hidden rounded-full bg-muted/15 px-2.5 py-0.5 text-xs font-semibold text-muted sm:inline-block">
+                {filteredItems.length}
+              </span>
+            ) : null
+          }
+          actions={
+            <Button
+              variant="primary"
+              onPress={openCreate}
+              className="shrink-0"
+            >
+              <LuPlus className="size-4" />
+              Criar Função
+            </Button>
+          }
+        />
+      }
+    >
       {error ? (
         <p className="shrink-0 text-sm text-danger" role="alert">
           {error}
@@ -297,23 +310,9 @@ export const PermissionsPage: React.FC = () => {
       ) : null}
 
       <DataTable
-        className="min-h-0 flex-1"
-        fillHeight
-        estimatedRowHeight={48}
-        onPageSizeChange={handlePageSizeChange}
         ariaLabel="Lista de funções e permissões"
-        leading={
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-display truncate text-xl font-bold text-foreground md:text-2xl">
-              Permissões
-            </h1>
-            <span className="hidden rounded-full bg-muted/15 px-2.5 py-0.5 text-xs font-semibold text-muted sm:inline-block">
-              {filteredItems.length}
-            </span>
-          </div>
-        }
         columns={columns}
-        items={visibleItems}
+        items={filteredItems}
         getRowId={getRowId}
         isLoading={loading}
         emptyMessage={
@@ -321,16 +320,11 @@ export const PermissionsPage: React.FC = () => {
             ? 'Nenhuma função encontrada com essa busca.'
             : 'Nenhuma função cadastrada.'
         }
-        onSearchSubmit={applySearch}
-        onSearchClear={() => applySearch('')}
-        searchPlaceholder="Buscar por nome, slug ou permissão…"
+        searchValue={search}
+        onSearchChange={setSearch}
+        onSearchClear={() => setSearch('')}
+        searchPlaceholder="Buscar por função ou permissão..."
         exportConfig={exportConfig}
-        toolbarEnd={
-          <Button size="sm" onPress={openCreate}>
-            <LuPlus className="size-4" />
-            Criar função
-          </Button>
-        }
         onRowAction={(key) => {
           navigate(routes.permissao(String(key)), {
             state: { from: routes.permissoes },
@@ -409,6 +403,6 @@ export const PermissionsPage: React.FC = () => {
           </Modal.Container>
         </Modal.Backdrop>
       </Modal>
-    </div>
+    </PageContainer>
   );
 };

@@ -11,6 +11,7 @@ import {
   LuBuilding2,
   LuEllipsisVertical,
   LuEye,
+  LuUsers,
   LuUserX,
 } from 'react-icons/lu';
 import type { UserListItemDto } from '@gigahub/shared/contracts';
@@ -19,6 +20,10 @@ import {
   type DataTableColumn,
   type DataTablePreset,
 } from '../../shared/components/DataTable';
+import {
+  PageContainer,
+  PageHeader,
+} from '../../shared/components/PageHeader';
 import { useAuthStore } from '../../shared/stores/auth.store';
 import { ApiClientError } from '../../shared/api/auth.api';
 import {
@@ -125,8 +130,7 @@ export const UsersListPage: React.FC = () => {
 
   const [items, setItems] = useState<UserListItemDto[]>([]);
   const [total, setTotal] = useState(0);
-  /** 0 until DataTable measures available height. */
-  const [pageSize, setPageSize] = useState(0);
+  const [pageSize] = useState(20);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingInactivate, setPendingInactivate] =
@@ -144,7 +148,7 @@ export const UsersListPage: React.FC = () => {
   );
 
   useEffect(() => {
-    if (!accessToken || pageSize < 1) {
+    if (!accessToken) {
       return;
     }
 
@@ -204,10 +208,6 @@ export const UsersListPage: React.FC = () => {
     },
     [patchListState],
   );
-
-  const handlePageSizeChange = useCallback((next: number) => {
-    setPageSize((prev) => (prev === next ? prev : next));
-  }, []);
 
   const handlePageChange = useCallback(
     (next: number) => {
@@ -413,7 +413,22 @@ export const UsersListPage: React.FC = () => {
   };
 
   return (
-    <div className="flex h-[calc(100dvh-3.5rem)] flex-col gap-3 overflow-hidden p-4 md:h-dvh md:gap-4 md:p-6 lg:p-8">
+    <PageContainer
+      header={
+        <PageHeader
+          icon={<LuUsers className="size-6" />}
+          title="Usuários"
+          description="Gerencie os usuários do sistema, cargos e integrações com o ERP"
+          badge={
+            total > 0 ? (
+              <span className="hidden rounded-full bg-muted/15 px-2.5 py-0.5 text-xs font-semibold text-muted sm:inline-block">
+                {total}
+              </span>
+            ) : null
+          }
+        />
+      }
+    >
       {error ? (
         <p className="shrink-0 text-sm text-danger" role="alert">
           {error}
@@ -421,21 +436,7 @@ export const UsersListPage: React.FC = () => {
       ) : null}
 
       <DataTable
-        className="min-h-0 flex-1"
-        fillHeight
-        estimatedRowHeight={52}
-        onPageSizeChange={handlePageSizeChange}
         ariaLabel="Lista de usuários"
-        leading={
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-display truncate text-xl font-bold text-foreground md:text-2xl">
-              Usuários
-            </h1>
-            <span className="hidden rounded-full bg-muted/15 px-2.5 py-0.5 text-xs font-semibold text-muted sm:inline-block">
-              {total}
-            </span>
-          </div>
-        }
         columns={columns}
         items={items}
         getRowId={getRowId}
@@ -495,6 +496,6 @@ export const UsersListPage: React.FC = () => {
           </AlertDialog.Container>
         </AlertDialog.Backdrop>
       </AlertDialog>
-    </div>
+    </PageContainer>
   );
 };
