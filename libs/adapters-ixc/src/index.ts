@@ -12,7 +12,9 @@ export {
   IXC_FIBER_CABLE_ELEMENT_TIPO,
 } from './lib/mysql-fiber-cable-nearby-query';
 export { MysqlProjectNetworkSearchQuery } from './lib/mysql-project-network-search-query';
+export { MysqlCtoSplittingDiagramQuery } from './lib/mysql-cto-splitting-diagram-query';
 export { MysqlCustomerSearchQuery } from './lib/mysql-customer-search-query';
+
 export { MysqlCustomerQueryAdapter } from './lib/mysql-customer-query.adapter';
 export { TcpCustomerRemoteAccessAdapter } from './lib/tcp-customer-remote-access.adapter';
 export { NullCustomerSignalReaderAdapter } from './lib/null-customer-signal-reader.adapter';

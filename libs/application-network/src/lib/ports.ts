@@ -60,6 +60,44 @@ export interface ProjectNetworkSearchQuery {
   }): Promise<ProjectNetworkSearchHitReadModel[]>;
 }
 
+export interface CtoDiagramPortReadModel {
+
+  portNumber: number;
+  label?: string;
+  colorHex?: string;
+}
+
+export interface CtoDiagramNodeReadModel {
+  id: string;
+  elementId?: string;
+  name: string;
+  kind: 'cable_in' | 'cable_out' | 'splitter_balanced' | 'splitter_unbalanced' | 'splitter';
+  portsIn: ReadonlyArray<CtoDiagramPortReadModel>;
+  portsOut: ReadonlyArray<CtoDiagramPortReadModel>;
+  ratio?: string;
+}
+
+export interface CtoDiagramConnectionReadModel {
+  id: string;
+  sourceNodeId: string;
+  sourcePortNumber: number;
+  targetNodeId: string;
+  targetPortNumber: number;
+  fiberColorHex: string;
+  trayNumber?: number;
+}
+
+export interface CtoSplittingDiagramReadModel {
+  fatId: string;
+  fatName: string;
+  nodes: ReadonlyArray<CtoDiagramNodeReadModel>;
+  connections: ReadonlyArray<CtoDiagramConnectionReadModel>;
+}
+
+export interface CtoSplittingDiagramQuery {
+  findByFatId(fatId: string): Promise<CtoSplittingDiagramReadModel | null>;
+}
+
 export class ApplicationError extends Error {
   constructor(
     readonly code: string,
@@ -74,5 +112,7 @@ export class ApplicationError extends Error {
 export const ApplicationErrorCodes = {
   InvalidNearbyQuery: 'INVALID_NEARBY_QUERY',
   InvalidSearchQuery: 'INVALID_SEARCH_QUERY',
+  FatNotFound: 'FAT_NOT_FOUND',
   Unauthorized: 'UNAUTHORIZED',
 } as const;
+

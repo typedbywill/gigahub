@@ -51,9 +51,11 @@ export type ProjectMapProps = {
   selectedCustomerData?: { subtitle?: string; document?: string } | null;
   customerPin: CustomerMapPin | null;
   onSelectElement: (selected: MapSelectedRef | null) => void;
+  onOpenSplitting?: (fatId: string) => void;
   onMoveEnd: () => void;
   onResize?: () => void;
 };
+
 
 function fatsToGeoJson(
   fats: NearbyFiberAccessTerminalDto[],
@@ -123,9 +125,11 @@ export const ProjectMap: React.FC<ProjectMapProps> = ({
   selectedCustomerData,
   customerPin,
   onSelectElement,
+  onOpenSplitting,
   onMoveEnd,
   onResize,
 }) => {
+
   const [cursor, setCursor] = useState<string>('default');
 
   const selectedId =
@@ -368,7 +372,9 @@ export const ProjectMap: React.FC<ProjectMapProps> = ({
           <NetworkElementPopup
             element={{ kind: 'fat', data: selectedFat }}
             onClose={() => onSelectElement(null)}
+            onOpenSplitting={onOpenSplitting}
           />
+
         </Popup>
       ) : null}
 

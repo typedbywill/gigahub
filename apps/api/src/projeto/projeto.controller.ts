@@ -2,6 +2,8 @@ import {
   BadRequestException,
   Controller,
   Get,
+  NotFoundException,
+  Param,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -11,6 +13,7 @@ import {
   ListNearbyFiberAccessTerminalsUseCase,
   ListNearbyFiberCablesUseCase,
   SearchProjectNetworkUseCase,
+  GetCtoSplittingDiagramUseCase,
 } from '@gigahub/application-network';
 import {
   nearbyProjectQueryDtoSchema,
@@ -18,14 +21,16 @@ import {
   type NearbyFiberAccessTerminalsResponseDto,
   type NearbyFiberCablesResponseDto,
   type SearchProjectNetworkResponseDto,
+  type CtoSplittingDiagramResponseDto,
 } from '@gigahub/shared/contracts';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 
 /**
- * Project FTTH map layers (nearby by lat/lng) and global search.
+ * Project FTTH map layers (nearby by lat/lng), global search, and CTO splitting diagram.
  *
  * Implemented:
  * - GET /projeto/fat
+ * - GET /projeto/fat/:id/splitagem
  * - GET /projeto/cabos
  * - GET /projeto/busca
  *
@@ -40,7 +45,50 @@ export class ProjetoController {
     private readonly listNearbyFats: ListNearbyFiberAccessTerminalsUseCase,
     private readonly listNearbyCables: ListNearbyFiberCablesUseCase,
     private readonly searchProjectNetwork: SearchProjectNetworkUseCase,
+    private readonly getCtoSplittingDiagram: GetCtoSplittingDiagramUseCase,
   ) {}
+
+  @Get('fat/:id/splitagem')
+  async getFatSplittingDiagram(
+    @Param('id') id: string,
+  ): Promise<CtoSplittingDiagramResponseDto> {
+    try {
+      const result = await this.getCtoSplittingDiagram.execute({ fatId: id });
+      return {
+        fatId: result.fatId,
+        fatName: result.fatName,
+        nodes: result.nodes.map((node) => ({
+          id: node.id,
+          elementId: node.elementId,
+          name: node.name,
+          kind: node.kind,
+          portsIn: node.portsIn.map((p) => ({
+            portNumber: p.portNumber,
+            label: p.label,
+            colorHex: p.colorHex,
+          })),
+          portsOut: node.portsOut.map((p) => ({
+            portNumber: p.portNumber,
+            label: p.label,
+            colorHex: p.colorHex,
+          })),
+          ratio: node.ratio,
+        })),
+        connections: result.connections.map((c) => ({
+          id: c.id,
+          sourceNodeId: c.sourceNodeId,
+          sourcePortNumber: c.sourcePortNumber,
+          targetNodeId: c.targetNodeId,
+          targetPortNumber: c.targetPortNumber,
+          fiberColorHex: c.fiberColorHex,
+          trayNumber: c.trayNumber,
+        })),
+      };
+    } catch (error) {
+      this.rethrowProjectError(error);
+    }
+  }
+
 
   @Get('fat')
   async listNearbyFiberAccessTerminals(
@@ -168,6 +216,13 @@ export class ProjetoController {
 
   private rethrowProjectError(error: unknown): never {
     if (error instanceof ApplicationError) {
+      if (error.code === ApplicationErrorCodes.FatNotFound) {
+        throw new NotFoundException({
+          error: error.code,
+          message: error.message,
+          details: error.details,
+        });
+      }
       if (
         error.code === ApplicationErrorCodes.InvalidNearbyQuery ||
         error.code === ApplicationErrorCodes.InvalidSearchQuery
@@ -182,3 +237,4 @@ export class ProjetoController {
     throw error;
   }
 }
+

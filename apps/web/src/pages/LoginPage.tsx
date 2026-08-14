@@ -15,6 +15,7 @@ import {
   LuLoaderCircle,
 } from 'react-icons/lu';
 import { useAuthStore } from '../shared/stores/auth.store';
+import { useSystemPermissionsStore } from '../shared/stores/system-permissions.store';
 import { useThemeStore } from '../shared/stores/theme.store';
 import { ThemeToggle } from '../shared/ui/ThemeToggle';
 import { ApiClientError } from '../shared/api/auth.api';
@@ -60,6 +61,7 @@ export const LoginPage: React.FC = () => {
     try {
       const trimmedEmail = email.trim();
       await login(trimmedEmail, password);
+      useSystemPermissionsStore.getState().setPromptOnNextAuth();
       if (rememberMe) {
         writeRememberedEmail(trimmedEmail);
       } else {

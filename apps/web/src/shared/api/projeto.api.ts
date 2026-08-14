@@ -2,6 +2,7 @@ import type {
   NearbyFiberAccessTerminalsResponseDto,
   NearbyFiberCablesResponseDto,
   SearchProjectNetworkResponseDto,
+  CtoSplittingDiagramResponseDto,
 } from '@gigahub/shared/contracts';
 import { apiFetch } from './http';
 
@@ -64,3 +65,18 @@ export function searchProjectNetworkRequest(
     },
   });
 }
+
+export function getCtoSplittingDiagramRequest(
+  accessToken: string,
+  fatId: string,
+  signal?: AbortSignal,
+): Promise<CtoSplittingDiagramResponseDto> {
+  return apiFetch<CtoSplittingDiagramResponseDto>(
+    `/api/v1/projeto/fat/${encodeURIComponent(fatId)}/splitagem`,
+    {
+      accessToken,
+      signal,
+    },
+  );
+}
+

@@ -32,12 +32,15 @@ export type SelectedElementData =
 export type NetworkElementPopupProps = {
   element: SelectedElementData;
   onClose: () => void;
+  onOpenSplitting?: (fatId: string) => void;
 };
 
 export const NetworkElementPopup: React.FC<NetworkElementPopupProps> = ({
   element,
   onClose,
+  onOpenSplitting,
 }) => {
+
   const [copied, setCopied] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
 
@@ -261,12 +264,19 @@ export const NetworkElementPopup: React.FC<NetworkElementPopupProps> = ({
                 size="sm"
                 variant="secondary"
                 className="flex items-center justify-center gap-1.5 font-medium shadow-xs hover:bg-default"
-                onPress={() => handleButtonPlaceholder('Splitagem')}
+                onPress={() => {
+                  if (element.kind === 'fat' && onOpenSplitting) {
+                    onOpenSplitting(element.data.idErp || element.data.id);
+                  } else {
+                    handleButtonPlaceholder('Splitagem');
+                  }
+                }}
                 aria-label="Ver splitagem da CTO"
               >
                 <LuGitFork className="size-3.5 text-sky-500 dark:text-sky-400" />
                 <span>Splitagem</span>
               </Button>
+
 
               <Button
                 size="sm"

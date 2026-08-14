@@ -11,10 +11,15 @@ import {
   TextField,
 } from '@heroui/react';
 import {
+  LuBell,
   LuBuilding2,
   LuCamera,
   LuChevronDown,
+  LuCircleAlert,
+  LuCircleCheck,
+  LuClock,
   LuKeyRound,
+  LuMapPin,
   LuShield,
   LuTrash2,
   LuUserRound,
@@ -28,6 +33,7 @@ import {
 } from '../../shared/api/users.api';
 import { routes } from '../../shared/routes';
 import { useAuthStore } from '../../shared/stores/auth.store';
+import { useSystemPermissionsStore } from '../../shared/stores/system-permissions.store';
 import { toast } from '../../shared/ui/toast';
 import { StatusBadge } from '../../shared/ui/StatusBadge';
 
@@ -164,6 +170,8 @@ export const PerfilPage: React.FC = () => {
   const authUser = useAuthStore((s) => s.user);
   const patchCurrentUser = useAuthStore((s) => s.patchCurrentUser);
   const logout = useAuthStore((s) => s.logout);
+  const permissions = useSystemPermissionsStore((s) => s.permissions);
+  const openPermissionsModal = useSystemPermissionsStore((s) => s.openModal);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [user, setUser] = useState<UserDetailDto | null>(null);
@@ -475,6 +483,62 @@ export const PerfilPage: React.FC = () => {
                 />
               ))}
             </dl>
+          </ProfilePanel>
+
+          <ProfilePanel
+            title="Permissões do Sistema e Navegador"
+            icon={<LuShield className="size-4" />}
+          >
+            <div className="flex flex-col gap-3.5">
+              <p className="text-xs text-muted leading-relaxed">
+                Acessos necessários para localização no mapa de rede, notificações de chamados na fila e alertas sonoros em tempo real.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-0.5">
+                {Object.values(permissions).map((perm) => (
+                  <div
+                    key={perm.key}
+                    className="flex items-center justify-between gap-2 rounded-xl border border-border/80 bg-surface-secondary/40 px-3 py-2 text-xs"
+                  >
+                    <span className="min-w-0 flex-1 truncate font-medium text-foreground">
+                      {perm.name}
+                    </span>
+                    {perm.status === 'granted' ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                        <LuCircleCheck className="size-3" />
+                        Ativo
+                      </span>
+                    ) : perm.status === 'denied' ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-red-600 dark:text-red-400">
+                        <LuCircleAlert className="size-3" />
+                        Bloqueado
+                      </span>
+                    ) : perm.status === 'unsupported' ? (
+                      <span className="shrink-0 text-[11px] text-muted">
+                        Indisponível
+                      </span>
+                    ) : (
+                      <span className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                        <LuClock className="size-3" />
+                        Pendente
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="pt-1">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onPress={openPermissionsModal}
+                  className="rounded-xl text-xs font-medium"
+                >
+                  <LuShield className="size-3.5" />
+                  Gerenciar Permissões
+                </Button>
+              </div>
+            </div>
           </ProfilePanel>
 
           {ixcFields.length > 0 ? (

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { io, type Socket } from 'socket.io-client';
 import { getDemandCountsRequest, type DemandCountsResponse } from '../api/demandas.api';
+import { playNotificationChime } from '../lib/sound-alerts';
 
 interface DemandCountsState {
   counts: DemandCountsResponse;
@@ -29,18 +30,31 @@ export const useDemandCountsStore = create<DemandCountsState>((set, get) => ({
         transports: ['websocket', 'polling'],
       });
 
-      const handleInvalidated = () => {
+      const handleInvalidated = (notify = false) => {
         void get().fetchCounts(accessToken);
+        if (notify) {
+          playNotificationChime();
+          if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+            try {
+              new Notification('GigaHub — Atualização de Demanda', {
+                body: 'Há novas demandas ou atualizações na sua fila.',
+                icon: '/brand/giga-logo.png',
+              });
+            } catch {
+              // Ignore notification errors
+            }
+          }
+        }
       };
 
-      socket.on('demand:invalidated', handleInvalidated);
-      socket.on('demand.opened', handleInvalidated);
-      socket.on('demand.claimed', handleInvalidated);
-      socket.on('demand.assigned', handleInvalidated);
-      socket.on('demand.transferred', handleInvalidated);
-      socket.on('demand.resolved', handleInvalidated);
-      socket.on('demand.closed', handleInvalidated);
-      socket.on('demand.reopened', handleInvalidated);
+      socket.on('demand:invalidated', () => handleInvalidated(false));
+      socket.on('demand.opened', () => handleInvalidated(true));
+      socket.on('demand.claimed', () => handleInvalidated(false));
+      socket.on('demand.assigned', () => handleInvalidated(true));
+      socket.on('demand.transferred', () => handleInvalidated(true));
+      socket.on('demand.resolved', () => handleInvalidated(false));
+      socket.on('demand.closed', () => handleInvalidated(false));
+      socket.on('demand.reopened', () => handleInvalidated(true));
     } catch {
       // Ignored if socket fails
     }

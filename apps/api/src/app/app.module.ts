@@ -11,6 +11,7 @@ import { ClientesModule } from '../clientes/clientes.module';
 import { IxcModule } from '../ixc/ixc.module';
 import { ProjetoModule } from '../projeto/projeto.module';
 import { DemandModule } from '../demand/demand.module';
+import { SearchModule } from '../search/search.module';
 
 @Module({
   imports: [
@@ -45,6 +46,7 @@ import { DemandModule } from '../demand/demand.module';
     ProjetoModule,
     ClientesModule,
     DemandModule,
+    SearchModule,
   ],
 })
 export class AppModule {}

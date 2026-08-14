@@ -140,5 +140,6 @@ function ixcNotConfiguredError(): never {
       ],
     },
   ],
+  exports: [SearchCustomersUseCase],
 })
 export class ClientesModule {}

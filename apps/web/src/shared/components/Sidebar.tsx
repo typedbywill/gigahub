@@ -5,6 +5,7 @@ import {
   LuChevronDown,
   LuChevronRight,
   LuPanelLeftClose,
+  LuSearch,
   LuX,
 } from 'react-icons/lu';
 import { useSidebarStore } from '../stores/sidebar.store';
@@ -28,6 +29,7 @@ export type SidebarProps = {
   onToggleCollapse?: () => void;
   onNavigate?: () => void;
   onCloseMobile?: () => void;
+  onSearchClick?: () => void;
   showMobileClose?: boolean;
   className?: string;
 };
@@ -305,6 +307,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onToggleCollapse,
   onNavigate,
   onCloseMobile,
+  onSearchClick,
   showMobileClose = false,
   className,
 }) => {
@@ -350,6 +353,34 @@ export const Sidebar: React.FC<SidebarProps> = ({
             ) : null}
           </div>
         </div>
+
+        {/* Search trigger */}
+        {onSearchClick ? (
+          collapsed ? (
+            <button
+              type="button"
+              aria-label="Pesquisar (Ctrl+K)"
+              title="Pesquisar (Ctrl+K)"
+              className="flex w-full items-center justify-center rounded-lg p-2.5 text-muted transition hover:bg-default hover:text-foreground"
+              onClick={onSearchClick}
+            >
+              <LuSearch className="size-4" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              aria-label="Pesquisar (Ctrl+K)"
+              className="flex w-full items-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-left text-sm text-muted transition hover:border-foreground/20 hover:text-foreground"
+              onClick={onSearchClick}
+            >
+              <LuSearch className="size-4 shrink-0" aria-hidden />
+              <span className="min-w-0 flex-1 truncate">Pesquisar…</span>
+              <kbd className="ml-auto rounded border border-border bg-surface px-1.5 py-px font-mono text-[10px]">
+                ⌘K
+              </kbd>
+            </button>
+          )
+        ) : null}
 
         <SidebarNavList
           items={topItems}

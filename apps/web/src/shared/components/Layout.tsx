@@ -6,7 +6,6 @@ import {
   LuContact,
   LuFileText,
   LuFolderGit2,
-  LuIdCard,
   LuInbox,
   LuLayers,
   LuLogOut,
@@ -18,7 +17,6 @@ import {
   LuSettings,
   LuShield,
   LuSun,
-  LuUser,
   LuUserCheck,
   LuUsers,
 } from 'react-icons/lu';
@@ -30,7 +28,11 @@ import { useSidebarStore } from '../stores/sidebar.store';
 import { useThemeStore } from '../stores/theme.store';
 import { useDemandCountsStore } from '../stores/demand-counts.store';
 import { getAvatarColor } from '../lib/avatar-color';
+import { useCommandPalette } from '../hooks/use-command-palette';
 import { Sidebar, type SidebarNavItem } from './Sidebar';
+import { CommandPalette } from './CommandPalette';
+import { SystemPermissionsModal } from './SystemPermissionsModal';
+import { useSystemPermissionsStore } from '../stores/system-permissions.store';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -59,6 +61,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const isMobile = useMediaQuery('(max-width: 767px)');
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { open: paletteOpen, close: closePalette, openPalette } = useCommandPalette();
+
+  const triggerAuthCheck = useSystemPermissionsStore((s) => s.triggerAuthCheck);
+
+  useEffect(() => {
+    triggerAuthCheck();
+  }, [triggerAuthCheck]);
 
   useEffect(() => {
     if (!isMobile) {
@@ -327,6 +336,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         onToggleCollapse={toggleCollapsed}
         onNavigate={isMobile ? closeMobile : undefined}
         onCloseMobile={closeMobile}
+        onSearchClick={openPalette}
         showMobileClose={isMobile}
         className={`z-50 ${
           isMobile
@@ -340,6 +350,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <main className="min-h-screen flex-1 overflow-auto pt-14 md:pt-0">
         {children}
       </main>
+
+      <CommandPalette open={paletteOpen} onClose={closePalette} />
+      <SystemPermissionsModal />
     </div>
   );
 };

@@ -265,5 +265,6 @@ import { UuidDemandIdGenerator } from './uuid-id-generator';
       inject: [MongoDemandQueueRepository, ResolveEffectiveAccess],
     },
   ],
+  exports: [ListDemandsUseCase],
 })
 export class DemandModule {}

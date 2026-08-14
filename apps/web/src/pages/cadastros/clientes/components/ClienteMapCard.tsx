@@ -41,6 +41,21 @@ export const ClienteMapCard: React.FC<ClienteMapCardProps> = ({
   const isDark = theme === 'dark';
   const mapboxToken = resolveMapboxToken();
 
+  const redeProjetoUrl = useMemo(() => {
+    if (!location) return '';
+    const params = new URLSearchParams();
+    params.set('lat', location.latitude.toFixed(6));
+    params.set('lng', location.longitude.toFixed(6));
+    params.set('z', '17');
+    if (customerId) {
+      params.set('sel', `customer:${customerId}`);
+    }
+    if (customerName) {
+      params.set('q', customerName);
+    }
+    return `${routes.redeProjeto}?${params.toString()}`;
+  }, [location, customerId, customerName]);
+
   if (!location || (location.latitude === 0 && location.longitude === 0)) {
     return (
       <div
@@ -62,19 +77,6 @@ export const ClienteMapCard: React.FC<ClienteMapCardProps> = ({
   const appleMapsUrl = `https://maps.apple.com/?ll=${latitude},${longitude}&q=${encodeURIComponent(customerName || 'Cliente')}`;
   const osmUrl = `https://www.openstreetmap.org/?mlat=${latitude}&mlon=${longitude}#map=17/${latitude}/${longitude}`;
 
-  const redeProjetoUrl = useMemo(() => {
-    const params = new URLSearchParams();
-    params.set('lat', latitude.toFixed(6));
-    params.set('lng', longitude.toFixed(6));
-    params.set('z', '17');
-    if (customerId) {
-      params.set('sel', `customer:${customerId}`);
-    }
-    if (customerName) {
-      params.set('q', customerName);
-    }
-    return `${routes.redeProjeto}?${params.toString()}`;
-  }, [latitude, longitude, customerId, customerName]);
 
   return (
     <div

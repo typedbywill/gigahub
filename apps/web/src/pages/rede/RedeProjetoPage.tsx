@@ -41,7 +41,9 @@ import {
 } from './map-search-params';
 import type { MapBaseStyleId } from './map-styles';
 import { ProjectMap, type CustomerMapPin } from './ProjectMap';
+import { CtoSplittingModal } from './CtoSplittingModal';
 import {
+
   DEFAULT_NEARBY_RADIUS_METERS,
   FALLBACK_MAP_CENTER,
   radiusFromBoundsMeters,
@@ -130,8 +132,10 @@ export const RedeProjetoPage: React.FC = () => {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [customerPin, setCustomerPin] = useState<CustomerMapPin | null>(null);
+  const [splittingFatId, setSplittingFatId] = useState<string | null>(null);
 
   const search = urlState.q;
+
   const layers = useMemo(() => layersFromUrl(urlState), [urlState]);
   const selectedKey = urlState.selected
     ? `${urlState.selected.kind}:${urlState.selected.id}`
@@ -759,6 +763,7 @@ export const RedeProjetoPage: React.FC = () => {
           selectedCustomerData={selectedCustomerData}
           customerPin={customerPin}
           onSelectElement={handleSelectElement}
+          onOpenSplitting={(id) => setSplittingFatId(id)}
           onMoveEnd={scheduleFetchFromMap}
           onResize={scheduleFetchFromMap}
         />
@@ -791,6 +796,14 @@ export const RedeProjetoPage: React.FC = () => {
           onActiveTabChange={handleActiveTabChange}
         />
       </div>
+
+      {splittingFatId ? (
+        <CtoSplittingModal
+          fatId={splittingFatId}
+          onClose={() => setSplittingFatId(null)}
+        />
+      ) : null}
     </div>
   );
 };
+

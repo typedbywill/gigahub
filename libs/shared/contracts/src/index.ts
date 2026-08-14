@@ -143,3 +143,28 @@ export {
   type SearchProjectNetworkHitDto,
   type SearchProjectNetworkResponseDto,
 } from './lib/project-network';
+export {
+  globalSearchQueryDtoSchema,
+  globalSearchCategorySchema,
+  globalSearchHitDtoSchema,
+  globalSearchGroupDtoSchema,
+  globalSearchResponseDtoSchema,
+  type GlobalSearchQueryDto,
+  type GlobalSearchCategory,
+  type GlobalSearchHitDto,
+  type GlobalSearchGroupDto,
+  type GlobalSearchResponseDto,
+} from './lib/global-search';
+export {
+  ctoNodeTypeDtoSchema,
+  ctoDiagramPortDtoSchema,
+  ctoDiagramNodeDtoSchema,
+  ctoDiagramConnectionDtoSchema,
+  ctoSplittingDiagramResponseDtoSchema,
+  type CtoNodeTypeDto,
+  type CtoDiagramPortDto,
+  type CtoDiagramNodeDto,
+  type CtoDiagramConnectionDto,
+  type CtoSplittingDiagramResponseDto,
+} from './lib/cto-splitting';
+

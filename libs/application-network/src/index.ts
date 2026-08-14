@@ -7,6 +7,11 @@ export {
   type FiberAccessTerminalNearbyQuery,
   type FiberCableNearbyQuery,
   type ProjectNetworkSearchQuery,
+  type CtoDiagramPortReadModel,
+  type CtoDiagramNodeReadModel,
+  type CtoDiagramConnectionReadModel,
+  type CtoSplittingDiagramReadModel,
+  type CtoSplittingDiagramQuery,
 } from './lib/ports';
 export {
   ListNearbyFiberAccessTerminalsUseCase,
@@ -23,3 +28,8 @@ export {
   type SearchProjectNetworkQuery as SearchProjectNetworkUseCaseQuery,
   type SearchProjectNetworkResult,
 } from './lib/search-project-network.use-case';
+export {
+  GetCtoSplittingDiagramUseCase,
+  type GetCtoSplittingDiagramInput,
+} from './lib/get-cto-splitting-diagram.use-case';
+
