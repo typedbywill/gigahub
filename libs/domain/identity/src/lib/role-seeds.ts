@@ -15,7 +15,7 @@ export const DEFAULT_ROLE_SEEDS: readonly RoleSeedDefinition[] = [
   {
     slug: 'tecnico',
     name: 'Técnico',
-    permissionIds: ['work-order:read', 'work-order:execute'],
+    permissionIds: ['work-order:read', 'work-order:execute', 'customer:read'],
   },
   {
     slug: 'supervisor',
@@ -28,6 +28,7 @@ export const DEFAULT_ROLE_SEEDS: readonly RoleSeedDefinition[] = [
       'care:ticket:assign',
       'telemetry:location:read',
       'users:read',
+      'customer:read',
     ],
   },
   {
@@ -46,6 +47,7 @@ export const DEFAULT_ROLE_SEEDS: readonly RoleSeedDefinition[] = [
       'work-order:read',
       'care:inbox:read',
       'telemetry:location:read',
+      'customer:read',
     ],
   },
 ] as const;

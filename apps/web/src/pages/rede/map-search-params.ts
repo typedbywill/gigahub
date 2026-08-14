@@ -6,7 +6,7 @@ import {
 } from './map-styles';
 
 export type MapSelectedRef = {
-  kind: 'fat' | 'cable';
+  kind: 'fat' | 'cable' | 'customer';
   id: string;
 };
 
@@ -55,7 +55,7 @@ function parseSelected(value: string | null): MapSelectedRef | null {
   }
   const kind = value.slice(0, sep);
   const id = value.slice(sep + 1).trim();
-  if ((kind !== 'fat' && kind !== 'cable') || !id) {
+  if ((kind !== 'fat' && kind !== 'cable' && kind !== 'customer') || !id) {
     return null;
   }
   return { kind, id };

@@ -5,6 +5,8 @@ import {
   Avatar,
   Button,
   Chip,
+  Dropdown,
+  Label,
 } from '@heroui/react';
 import { LuArrowLeft, LuCamera, LuMail, LuShield, LuTrash2 } from 'react-icons/lu';
 
@@ -103,17 +105,58 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
               />
 
               {canUpdate ? (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  isIconOnly
-                  aria-label="Trocar foto"
-                  isPending={uploadingAvatar}
-                  className="absolute -bottom-1 -right-1 size-9 min-w-9 rounded-full border border-border shadow-sm"
-                  onPress={() => fileInputRef.current?.click()}
-                >
-                  <LuCamera className="size-4" />
-                </Button>
+                avatarUrl ? (
+                  <Dropdown>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      isIconOnly
+                      aria-label="Gerenciar foto"
+                      isPending={uploadingAvatar}
+                      className="absolute -bottom-1 -right-1 size-9 min-w-9 rounded-full border border-border shadow-sm"
+                    >
+                      <LuCamera className="size-4" aria-hidden />
+                    </Button>
+                    <Dropdown.Popover placement="bottom end">
+                      <Dropdown.Menu
+                        onAction={(key) => {
+                          if (key === 'change') {
+                            fileInputRef.current?.click();
+                            return;
+                          }
+                          if (key === 'remove') {
+                            onRemoveAvatar();
+                          }
+                        }}
+                      >
+                        <Dropdown.Item id="change" textValue="Alterar foto">
+                          <LuCamera className="size-4 shrink-0 text-muted" />
+                          <Label>Alterar foto</Label>
+                        </Dropdown.Item>
+                        <Dropdown.Item
+                          id="remove"
+                          textValue="Remover foto"
+                          variant="danger"
+                        >
+                          <LuTrash2 className="size-4 shrink-0 text-danger" />
+                          <Label>Remover foto</Label>
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown.Popover>
+                  </Dropdown>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    isIconOnly
+                    aria-label="Trocar foto"
+                    isPending={uploadingAvatar}
+                    className="absolute -bottom-1 -right-1 size-9 min-w-9 rounded-full border border-border shadow-sm"
+                    onPress={() => fileInputRef.current?.click()}
+                  >
+                    <LuCamera className="size-4" aria-hidden />
+                  </Button>
+                )
               ) : null}
             </div>
 
@@ -155,21 +198,6 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
                   <p className="text-xs">Usuário local</p>
                 )}
               </div>
-
-              {canUpdate && avatarUrl ? (
-                <div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    isDisabled={uploadingAvatar}
-                    className="text-muted"
-                    onPress={onRemoveAvatar}
-                  >
-                    <LuTrash2 className="size-4" />
-                    Remover foto
-                  </Button>
-                </div>
-              ) : null}
             </div>
           </div>
 

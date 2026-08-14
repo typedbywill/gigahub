@@ -41,7 +41,9 @@ export class SetUserAvatarUseCase {
   async execute(
     command: SetUserAvatarCommand,
   ): Promise<UpdateUserAvatarResponseDto> {
-    await this.access.assertCan(command.actorUserId, 'users:update');
+    if (command.actorUserId !== command.userId) {
+      await this.access.assertCan(command.actorUserId, 'users:update');
+    }
 
     const contentType = command.contentType.toLowerCase().split(';')[0]?.trim();
     if (!contentType || !ALLOWED_CONTENT_TYPES.has(contentType)) {
@@ -124,7 +126,9 @@ export class ClearUserAvatarUseCase {
   async execute(
     command: ClearUserAvatarCommand,
   ): Promise<UpdateUserAvatarResponseDto> {
-    await this.access.assertCan(command.actorUserId, 'users:update');
+    if (command.actorUserId !== command.userId) {
+      await this.access.assertCan(command.actorUserId, 'users:update');
+    }
 
     const user = await this.users.findById(userId(command.userId));
     if (!user) {

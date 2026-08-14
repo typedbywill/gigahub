@@ -17,6 +17,7 @@ import { PermissionsPage } from '../pages/settings/PermissionsPage';
 import { RoleDetailPage } from '../pages/settings/RoleDetailPage';
 import { UsersListPage } from '../pages/users/UsersListPage';
 import { UserDetailPage } from '../pages/users/UserDetailPage';
+import { PerfilPage } from '../pages/perfil/PerfilPage';
 import { routes } from '../shared/routes';
 import { Permissions } from '../shared/permissions';
 import { useAuthStore } from '../shared/stores/auth.store';
@@ -116,6 +117,7 @@ export function App() {
             <Route path={routes.home} element={<HomePage />} />
 
             <Route path={routes.redeProjeto} element={<RedeProjetoPage />} />
+            <Route path={routes.perfil} element={<PerfilPage />} />
 
             <Route
               path={routes.usuarios}
@@ -148,6 +150,11 @@ export function App() {
                   <RoleDetailPage />
                 </RequirePermission>
               }
+            />
+
+            <Route
+              path="/profile"
+              element={<AliasRedirect to={routes.perfil} />}
             />
 
             {/* Aliases curtos = /configuracoes/... */}

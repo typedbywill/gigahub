@@ -24,7 +24,10 @@ export async function apiFetch<T>(
     accessToken: string;
     body?: unknown;
     formData?: FormData;
-    query?: Record<string, string | number | boolean | undefined>;
+    query?: Record<
+      string,
+      string | number | boolean | string[] | undefined
+    >;
     signal?: AbortSignal;
   },
 ): Promise<T> {
@@ -32,6 +35,12 @@ export async function apiFetch<T>(
   if (options.query) {
     for (const [key, value] of Object.entries(options.query)) {
       if (value === undefined) {
+        continue;
+      }
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          url.searchParams.append(key, String(item));
+        }
         continue;
       }
       url.searchParams.set(key, String(value));

@@ -12,7 +12,7 @@ import {
   type SessionRepository,
   type UserRepository,
 } from './ports';
-import { toPublicUserDto } from './mappers';
+import { buildAvatarUrl, toPublicUserDto } from './mappers';
 import type { ResolveEffectiveAccess } from './resolve-effective-access';
 
 export interface ChangePasswordCommand {
@@ -69,7 +69,7 @@ export class ChangePasswordUseCase {
 
     await this.sessions.revokeAllForUser(user.id, this.clock.now());
     const permissionIds = await this.access.permissionIds(user.id);
-    return { user: toPublicUserDto(user, { permissionIds }) };
+    return { user: toPublicUserDto(user, { permissionIds, avatarUrl: buildAvatarUrl(user) }) };
   }
 
   private async changeErpPassword(

@@ -10,6 +10,7 @@ import {
   LuSettings,
   LuShield,
   LuSun,
+  LuUser,
   LuUsers,
 } from 'react-icons/lu';
 import { useMediaQuery } from '../hooks/use-media-query';
@@ -108,6 +109,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     const items: SidebarNavItem[] = [
       {
+        id: 'perfil',
+        label: 'Perfil',
+        icon: <LuUser />,
+        href: routes.perfil,
+      },
+      {
         id: 'theme',
         label: 'Alterar Tema',
         icon: isDark ? <LuSun /> : <LuMoon />,
@@ -128,23 +135,35 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   }, [canManageAccess, canReadUsers, isDark, toggleTheme]);
 
   const sidebarCollapsed = !isMobile && collapsed;
+  const closeMobile = () => setMobileOpen(false);
 
   const footer = user ? (
     <div
       className={`flex items-center gap-2 ${sidebarCollapsed ? 'flex-col px-0' : 'px-1'}`}
     >
-      <Avatar size="sm" color="accent" className="shrink-0">
-        {user.avatarUrl ? (
-          <Avatar.Image alt={user.name} src={user.avatarUrl} />
+      <Link
+        to={routes.perfil}
+        aria-label="Abrir meu perfil"
+        className={`flex min-w-0 items-center gap-2 rounded-lg transition-colors hover:bg-default ${sidebarCollapsed ? 'flex-col' : 'flex-1'}`}
+        onClick={isMobile ? closeMobile : undefined}
+      >
+        <Avatar size="sm" color="accent" className="shrink-0">
+          {user.avatarUrl ? (
+            <Avatar.Image
+              key={user.avatarUrl}
+              alt={user.name}
+              src={user.avatarUrl}
+            />
+          ) : null}
+          <Avatar.Fallback>{userInitials(user.name)}</Avatar.Fallback>
+        </Avatar>
+        {!sidebarCollapsed ? (
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium text-foreground">{user.name}</div>
+            <div className="truncate font-mono text-xs text-muted">{user.email}</div>
+          </div>
         ) : null}
-        <Avatar.Fallback>{userInitials(user.name)}</Avatar.Fallback>
-      </Avatar>
-      {!sidebarCollapsed ? (
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium text-foreground">{user.name}</div>
-          <div className="truncate font-mono text-xs text-muted">{user.email}</div>
-        </div>
-      ) : null}
+      </Link>
       <Button
         isIconOnly
         size="sm"
@@ -156,8 +175,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </Button>
     </div>
   ) : null;
-
-  const closeMobile = () => setMobileOpen(false);
 
   return (
     <div className="flex min-h-screen bg-background text-foreground">

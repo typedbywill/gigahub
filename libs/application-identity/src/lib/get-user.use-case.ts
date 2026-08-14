@@ -27,7 +27,9 @@ export class GetUserUseCase {
   ) {}
 
   async execute(command: GetUserCommand): Promise<UserDetailDto> {
-    await this.access.assertCan(command.actorUserId, 'users:read');
+    if (command.actorUserId !== command.userId) {
+      await this.access.assertCan(command.actorUserId, 'users:read');
+    }
 
     const user = await this.users.findById(userId(command.userId));
     if (!user) {

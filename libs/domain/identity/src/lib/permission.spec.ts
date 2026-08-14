@@ -61,6 +61,7 @@ describe('permission catalog', () => {
   it('exposes unique permission groups', () => {
     expect(PERMISSION_GROUPS).toEqual([
       'work-order',
+      'customer',
       'care',
       'finance',
       'telemetry',

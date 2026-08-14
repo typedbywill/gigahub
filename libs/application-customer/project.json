@@ -1,0 +1,8 @@
+{
+  "name": "application-customer",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/application-customer/src",
+  "projectType": "library",
+  "tags": ["type:application", "scope:customer-care"],
+  "targets": {}
+}

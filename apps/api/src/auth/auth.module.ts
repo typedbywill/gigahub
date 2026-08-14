@@ -8,6 +8,7 @@ import {
   CreateRoleUseCase,
   EnsureBootstrapAdminsUseCase,
   GetUserUseCase,
+  GetUserAvatarUseCase,
   InactivateUserUseCase,
   ListPermissionsUseCase,
   ListRolesUseCase,
@@ -47,6 +48,7 @@ import {
 import { JoseAccessTokenIssuer } from './crypto/jose-token.issuer';
 import { AuthController } from './auth.controller';
 import { UsersController } from './users.controller';
+import { UserAvatarController } from './user-avatar.controller';
 import { RolesController } from './roles.controller';
 import { PermissionsController } from './permissions.controller';
 import { AuthRolesBootstrapService } from './auth-roles-bootstrap.service';
@@ -71,6 +73,7 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
   controllers: [
     AuthController,
     UsersController,
+    UserAvatarController,
     RolesController,
     PermissionsController,
   ],
@@ -285,6 +288,15 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
       ],
     },
     {
+      provide: GetUserAvatarUseCase,
+      useFactory: (
+        users: MongoUserRepository,
+        storage: ObjectStoragePort,
+        bucket: string,
+      ) => new GetUserAvatarUseCase(users, storage, bucket),
+      inject: [MongoUserRepository, STORAGE_PORT, AVATAR_BUCKET],
+    },
+    {
       provide: InactivateUserUseCase,
       useFactory: (
         users: MongoUserRepository,
@@ -485,6 +497,6 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
       inject: [SyncUsersFromErpUseCase],
     },
   ],
-  exports: [AccessTokenGuard],
+  exports: [AccessTokenGuard, ResolveEffectiveAccess],
 })
 export class AuthModule {}

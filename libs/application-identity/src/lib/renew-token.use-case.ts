@@ -9,7 +9,7 @@ import {
   type TokenIssuer,
   type UserRepository,
 } from './ports';
-import { toPublicUserDto } from './mappers';
+import { toPublicUserDto, buildAvatarUrl } from './mappers';
 import type { ResolveEffectiveAccess } from './resolve-effective-access';
 
 export interface RenewTokenCommand {
@@ -103,7 +103,10 @@ export class RenewTokenUseCase {
     return {
       accessToken,
       refreshToken: nextRefresh,
-      user: toPublicUserDto(user, { permissionIds }),
+      user: toPublicUserDto(user, {
+        permissionIds,
+        avatarUrl: buildAvatarUrl(user),
+      }),
     };
   }
 }

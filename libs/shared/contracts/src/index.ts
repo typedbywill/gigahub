@@ -66,6 +66,22 @@ export {
   type CustomerDto,
 } from './lib/customer';
 export {
+  CUSTOMER_CONSULT_SECTIONS,
+  customerSearchQueryDtoSchema,
+  customerSearchHitDtoSchema,
+  customerSearchResponseDtoSchema,
+  customerConsultSectionSchema,
+  customerConsultationQueryDtoSchema,
+  customerConsultationResponseDtoSchema,
+  customerConsultationDataDtoSchema,
+  type CustomerConsultSection,
+  type CustomerSearchQueryDto,
+  type CustomerSearchHitDto,
+  type CustomerSearchResponseDto,
+  type CustomerConsultationQueryDto,
+  type CustomerConsultationResponseDto,
+} from './lib/customer-consultation';
+export {
   workOrderStatusSchema,
   workOrderDtoSchema,
   subjectDtoSchema,

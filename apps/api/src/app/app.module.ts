@@ -7,6 +7,8 @@ import { HealthModule } from '../health/health.module';
 import { StorageModule } from '../storage/storage.module';
 import { RealtimeModule } from '../realtime/realtime.module';
 import { AuthModule } from '../auth/auth.module';
+import { ClientesModule } from '../clientes/clientes.module';
+import { IxcModule } from '../ixc/ixc.module';
 import { ProjetoModule } from '../projeto/projeto.module';
 
 @Module({
@@ -38,7 +40,9 @@ import { ProjetoModule } from '../projeto/projeto.module';
     StorageModule,
     RealtimeModule,
     AuthModule,
+    IxcModule,
     ProjetoModule,
+    ClientesModule,
   ],
 })
 export class AppModule {}

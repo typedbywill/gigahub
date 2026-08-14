@@ -13,6 +13,7 @@ import type {
   NearbyFiberCableDto,
 } from '@gigahub/shared/contracts';
 import { ApiClientError } from '../../shared/api/auth.api';
+import { searchCustomersRequest } from '../../shared/api/clientes.api';
 import {
   listNearbyCablesRequest,
   listNearbyFatsRequest,
@@ -39,7 +40,7 @@ import {
   type MapUrlState,
 } from './map-search-params';
 import type { MapBaseStyleId } from './map-styles';
-import { ProjectMap } from './ProjectMap';
+import { ProjectMap, type CustomerMapPin } from './ProjectMap';
 import {
   DEFAULT_NEARBY_RADIUS_METERS,
   FALLBACK_MAP_CENTER,
@@ -127,10 +128,15 @@ export const RedeProjetoPage: React.FC = () => {
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [customerPin, setCustomerPin] = useState<CustomerMapPin | null>(null);
 
   const search = urlState.q;
   const layers = useMemo(() => layersFromUrl(urlState), [urlState]);
-  const selectedId = urlState.selected?.id ?? null;
+  const selectedKey = urlState.selected
+    ? `${urlState.selected.kind}:${urlState.selected.id}`
+    : null;
+  const selectedId =
+    urlState.selected?.kind === 'customer' ? null : (urlState.selected?.id ?? null);
   const collapsed = urlState.panelCollapsed;
   const mapStyle = urlState.mapStyle;
   const showFatLabels = urlState.showFatLabels;
@@ -359,29 +365,76 @@ export const RedeProjetoPage: React.FC = () => {
     searchTimerRef.current = setTimeout(() => {
       const controller = new AbortController();
       searchAbortRef.current = controller;
-      void searchProjectNetworkRequest(
-        accessToken,
-        { q, kind: 'all', limit: 40 },
-        controller.signal,
-      )
-        .then((res) => {
+      void Promise.allSettled([
+        searchProjectNetworkRequest(
+          accessToken,
+          { q, kind: 'all', limit: 40 },
+          controller.signal,
+        ),
+        searchCustomersRequest(
+          accessToken,
+          { q, limit: 10 },
+          controller.signal,
+        ),
+      ])
+        .then(([networkResult, customerResult]) => {
           if (controller.signal.aborted) {
             return;
           }
-          setHits(
-            res.items.map((item) => ({
-              id: item.id,
-              kind: item.kind,
-              name: item.name,
-              subtitle:
-                item.kind === 'fat'
-                  ? item.idErp
-                  : (item.cableTypeName ?? item.idErp),
-              latitude: item.location.latitude,
-              longitude: item.location.longitude,
-            })),
-          );
-          setSearchError(null);
+
+          const merged: MapSearchHit[] = [];
+          if (networkResult.status === 'fulfilled') {
+            merged.push(
+              ...networkResult.value.items.map((item) => ({
+                id: item.id,
+                kind: item.kind,
+                name: item.name,
+                subtitle:
+                  item.kind === 'fat'
+                    ? item.idErp
+                    : (item.cableTypeName ?? item.idErp),
+                latitude: item.location.latitude,
+                longitude: item.location.longitude,
+              })),
+            );
+          }
+
+          if (customerResult.status === 'fulfilled') {
+            merged.push(
+              ...customerResult.value.items
+                .filter((item) => item.location)
+                .map((item) => ({
+                  id: item.id,
+                  kind: 'customer' as const,
+                  name: item.name,
+                  subtitle: item.document ?? item.idErp,
+                  latitude: item.location!.latitude,
+                  longitude: item.location!.longitude,
+                })),
+            );
+          }
+
+          merged.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+          setHits(merged);
+
+          const errors: string[] = [];
+          if (networkResult.status === 'rejected') {
+            const err = networkResult.reason;
+            if (err instanceof ApiClientError) {
+              errors.push(err.message || 'Falha ao buscar rede.');
+            } else {
+              errors.push('Falha ao buscar rede.');
+            }
+          }
+          if (customerResult.status === 'rejected') {
+            const err = customerResult.reason;
+            if (!(err instanceof ApiClientError && err.status === 403)) {
+              if (err instanceof ApiClientError) {
+                errors.push(err.message || 'Falha ao buscar clientes.');
+              }
+            }
+          }
+          setSearchError(errors.length ? errors.join(' ') : null);
         })
         .catch((err) => {
           if (controller.signal.aborted) {
@@ -425,6 +478,12 @@ export const RedeProjetoPage: React.FC = () => {
 
   const flyToSelection = useCallback(
     (selected: MapSelectedRef) => {
+      if (selected.kind === 'customer') {
+        if (urlState.lat != null && urlState.lng != null) {
+          flyToPoint(urlState.lat, urlState.lng, 16);
+        }
+        return;
+      }
       if (selected.kind === 'fat') {
         const fat = fats.find((f) => f.id === selected.id);
         if (!fat) {
@@ -440,11 +499,40 @@ export const RedeProjetoPage: React.FC = () => {
       const target = cableFlyTarget(cable);
       flyToPoint(target.latitude, target.longitude, 15);
     },
-    [cables, fats, flyToPoint],
+    [cables, fats, flyToPoint, urlState.lat, urlState.lng],
   );
 
   useEffect(() => {
+    const selected = urlState.selected;
+    if (!selected || selected.kind !== 'customer') {
+      setCustomerPin(null);
+      return;
+    }
+    if (urlState.lat == null || urlState.lng == null) {
+      setCustomerPin(null);
+      return;
+    }
+    const hit = hits.find(
+      (item) => item.kind === 'customer' && item.id === selected.id,
+    );
+    setCustomerPin({
+      id: selected.id,
+      name: hit?.name ?? `Cliente ${selected.id}`,
+      latitude: urlState.lat,
+      longitude: urlState.lng,
+    });
+  }, [hits, urlState.lat, urlState.lng, urlState.selected]);
+
+  useEffect(() => {
     if (!urlState.selected || didFlyToSelectionRef.current) {
+      return;
+    }
+    if (urlState.selected.kind === 'customer') {
+      if (urlState.lat == null || urlState.lng == null) {
+        return;
+      }
+      didFlyToSelectionRef.current = true;
+      flyToSelection(urlState.selected);
       return;
     }
     if (fats.length === 0 && cables.length === 0) {
@@ -507,6 +595,17 @@ export const RedeProjetoPage: React.FC = () => {
 
   const handleSelectHit = useCallback(
     (hit: MapSearchHit) => {
+      if (hit.kind === 'customer') {
+        setCustomerPin({
+          id: hit.id,
+          name: hit.name,
+          latitude: hit.latitude,
+          longitude: hit.longitude,
+        });
+      } else {
+        setCustomerPin(null);
+      }
+
       const selected: MapSelectedRef = { kind: hit.kind, id: hit.id };
       didFlyToSelectionRef.current = true;
       patchUrlState({
@@ -520,7 +619,7 @@ export const RedeProjetoPage: React.FC = () => {
       flyToPoint(
         hit.latitude,
         hit.longitude,
-        hit.kind === 'fat' ? 16 : 15,
+        hit.kind === 'fat' ? 16 : hit.kind === 'customer' ? 16 : 15,
       );
       void fetchNearby(
         hit.latitude,
@@ -573,6 +672,7 @@ export const RedeProjetoPage: React.FC = () => {
           cables={cables}
           layers={layers}
           selectedId={selectedId}
+          customerPin={customerPin}
           onMoveEnd={scheduleFetchFromMap}
         />
       </div>
@@ -589,7 +689,7 @@ export const RedeProjetoPage: React.FC = () => {
           onShowFatLabelsChange={handleShowFatLabelsChange}
           hits={hits}
           onSelectHit={handleSelectHit}
-          selectedId={selectedId}
+          selectedKey={selectedKey}
           loading={loading}
           searching={searching}
           error={searchError ?? error}

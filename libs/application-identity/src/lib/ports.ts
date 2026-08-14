@@ -53,6 +53,10 @@ export interface ObjectStoragePort {
     contentType?: string,
   ): Promise<string>;
   getFileUrl(bucket: string, key: string): Promise<string>;
+  getFile(
+    bucket: string,
+    key: string,
+  ): Promise<{ body: Buffer; contentType?: string }>;
   deleteFile(bucket: string, key: string): Promise<void>;
 }
 

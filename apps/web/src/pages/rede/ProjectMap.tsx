@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import type { FeatureCollection } from 'geojson';
 import Map, {
   Layer,
+  Marker,
   NavigationControl,
   Source,
   type MapRef,
@@ -21,6 +22,13 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 const FALLBACK_FAT_COLOR = '#000000';
 const FALLBACK_CABLE_COLOR = '#0284c7';
 
+export type CustomerMapPin = {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+};
+
 export type ProjectMapProps = {
   mapRef: React.RefObject<MapRef | null>;
   mapboxToken: string;
@@ -36,6 +44,7 @@ export type ProjectMapProps = {
   cables: NearbyFiberCableDto[];
   layers: MapLayerVisibility;
   selectedId: string | null;
+  customerPin: CustomerMapPin | null;
   onMoveEnd: () => void;
 };
 
@@ -104,6 +113,7 @@ export const ProjectMap: React.FC<ProjectMapProps> = ({
   cables,
   layers,
   selectedId,
+  customerPin,
   onMoveEnd,
 }) => {
   const fatData = useMemo(() => fatsToGeoJson(fats), [fats]);
@@ -241,6 +251,22 @@ export const ProjectMap: React.FC<ProjectMapProps> = ({
           }}
         />
       </Source>
+
+      {customerPin ? (
+        <Marker
+          longitude={customerPin.longitude}
+          latitude={customerPin.latitude}
+          anchor="bottom"
+        >
+          <div
+            className="flex size-8 items-center justify-center rounded-full border-2 border-white bg-violet-600 text-white shadow-md"
+            title={customerPin.name}
+            aria-hidden
+          >
+            <span className="text-xs font-bold">C</span>
+          </div>
+        </Marker>
+      ) : null}
     </Map>
   );
 };

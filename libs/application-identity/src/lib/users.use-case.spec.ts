@@ -314,6 +314,7 @@ describe('Users admin use cases', () => {
     const storage: ObjectStoragePort = {
       uploadFile: jest.fn(async (_b, key) => `http://minio/${bucket}/${key}`),
       getFileUrl: jest.fn(async (_b, key) => `http://minio/${bucket}/${key}`),
+      getFile: jest.fn(async () => ({ body: Buffer.from('fake-image') })),
       deleteFile: jest.fn(async () => undefined),
     };
     const setAvatar = new SetUserAvatarUseCase(
@@ -340,8 +341,8 @@ describe('Users admin use cases', () => {
       file: Buffer.from('fake-image'),
       contentType: 'image/png',
     });
-    expect(setResult.user.avatarUrl).toBe(
-      'http://minio/gigahub/avatars/usr-1/file-1.png',
+    expect(setResult.user.avatarUrl).toMatch(
+      /^\/api\/v1\/users\/usr-1\/avatar\?v=\d+$/,
     );
     expect(users[0]!.avatarObjectKey).toBe('avatars/usr-1/file-1.png');
 
@@ -352,6 +353,111 @@ describe('Users admin use cases', () => {
     expect(clearResult.user.avatarUrl).toBeUndefined();
     expect(users[0]!.avatarObjectKey).toBeUndefined();
     expect(storage.deleteFile).toHaveBeenCalled();
+  });
+
+  it('allows self-service get and avatar without admin permissions', async () => {
+    const users = [makeUser({ id: 'usr-1' })];
+    const deps = emptyDetailDeps(users);
+    deps.access = denyAccess('*');
+    const storage: ObjectStoragePort = {
+      uploadFile: jest.fn(async (_b, key) => `http://minio/${bucket}/${key}`),
+      getFileUrl: jest.fn(async (_b, key) => `http://minio/${bucket}/${key}`),
+      getFile: jest.fn(async () => ({ body: Buffer.from('fake-image') })),
+      deleteFile: jest.fn(async () => undefined),
+    };
+    const get = new GetUserUseCase(
+      deps.users,
+      deps.roles,
+      deps.grants,
+      deps.access,
+      storage,
+      bucket,
+    );
+    const setAvatar = new SetUserAvatarUseCase(
+      deps.users,
+      deps.roles,
+      deps.grants,
+      deps.access,
+      storage,
+      bucket,
+      { generate: () => 'file-self' },
+    );
+    const clearAvatar = new ClearUserAvatarUseCase(
+      deps.users,
+      deps.roles,
+      deps.grants,
+      deps.access,
+      storage,
+      bucket,
+    );
+
+    const detail = await get.execute({ actorUserId: 'usr-1', userId: 'usr-1' });
+    expect(detail.email).toBe('alice@gigahub.local');
+
+    const setResult = await setAvatar.execute({
+      actorUserId: 'usr-1',
+      userId: 'usr-1',
+      file: Buffer.from('fake-image'),
+      contentType: 'image/png',
+    });
+    expect(setResult.user.avatarUrl).toMatch(
+      /^\/api\/v1\/users\/usr-1\/avatar\?v=\d+$/,
+    );
+
+    const clearResult = await clearAvatar.execute({
+      actorUserId: 'usr-1',
+      userId: 'usr-1',
+    });
+    expect(clearResult.user.avatarUrl).toBeUndefined();
+  });
+
+  it('denies self-service access to another user without admin permissions', async () => {
+    const users = [
+      makeUser({ id: 'usr-1' }),
+      makeUser({ id: 'usr-2', email: 'bob@gigahub.local', name: 'Bob' }),
+    ];
+    const deps = emptyDetailDeps(users);
+    deps.access = denyAccess('*');
+    const storage: ObjectStoragePort = {
+      uploadFile: jest.fn(async (_b, key) => `http://minio/${bucket}/${key}`),
+      getFileUrl: jest.fn(async (_b, key) => `http://minio/${bucket}/${key}`),
+      getFile: jest.fn(async () => ({ body: Buffer.from('fake-image') })),
+      deleteFile: jest.fn(async () => undefined),
+    };
+    const get = new GetUserUseCase(
+      deps.users,
+      deps.roles,
+      deps.grants,
+      deps.access,
+      storage,
+      bucket,
+    );
+    const setAvatar = new SetUserAvatarUseCase(
+      deps.users,
+      deps.roles,
+      deps.grants,
+      deps.access,
+      storage,
+      bucket,
+      { generate: () => 'file-1' },
+    );
+
+    await expect(
+      get.execute({ actorUserId: 'usr-1', userId: 'usr-2' }),
+    ).rejects.toMatchObject({
+      code: ApplicationErrorCodes.PermissionDenied,
+    });
+
+    await expect(
+      setAvatar.execute({
+        actorUserId: 'usr-1',
+        userId: 'usr-2',
+        file: Buffer.from('fake-image'),
+        contentType: 'image/png',
+      }),
+    ).rejects.toMatchObject({
+      code: ApplicationErrorCodes.PermissionDenied,
+    });
   });
 
   it('seeds default roles idempotently and merges new permissions', async () => {

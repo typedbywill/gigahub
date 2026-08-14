@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
   PutObjectCommand,
+  GetObjectCommand,
   DeleteObjectCommand,
   HeadBucketCommand,
   CreateBucketCommand,
@@ -72,6 +73,26 @@ export class MinioStorageService implements StoragePort, OnModuleInit {
 
   async getFileUrl(bucket: string, key: string): Promise<string> {
     return `${this.endpoint}/${bucket}/${key}`;
+  }
+
+  async getFile(
+    bucket: string,
+    key: string,
+  ): Promise<{ body: Buffer; contentType?: string }> {
+    const response = await this.client.send(
+      new GetObjectCommand({
+        Bucket: bucket,
+        Key: key,
+      }),
+    );
+    if (!response.Body) {
+      throw new Error(`Object not found: ${bucket}/${key}`);
+    }
+    const body = Buffer.from(await response.Body.transformToByteArray());
+    return {
+      body,
+      contentType: response.ContentType,
+    };
   }
 
   async deleteFile(bucket: string, key: string): Promise<void> {

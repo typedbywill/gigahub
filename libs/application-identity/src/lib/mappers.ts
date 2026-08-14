@@ -63,14 +63,21 @@ export function toUserDetailDto(
   };
 }
 
-export async function resolveAvatarUrl(
+export function buildAvatarUrl(
   user: User,
-  storage: ObjectStoragePort | null,
-  bucket: string,
-): Promise<string | undefined> {
-  const key = user.avatarObjectKey;
-  if (!key || !storage) {
+  apiPrefix = '/api/v1',
+): string | undefined {
+  if (!user.avatarObjectKey) {
     return undefined;
   }
-  return storage.getFileUrl(bucket, key);
+  const snap = user.toSnapshot();
+  return `${apiPrefix}/users/${encodeURIComponent(user.id)}/avatar?v=${snap.updatedAt.getTime()}`;
+}
+
+export async function resolveAvatarUrl(
+  user: User,
+  _storage: ObjectStoragePort | null,
+  _bucket: string,
+): Promise<string | undefined> {
+  return buildAvatarUrl(user);
 }

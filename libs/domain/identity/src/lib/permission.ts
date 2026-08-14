@@ -31,6 +31,12 @@ export const PERMISSION_CATALOG = [
     group: 'work-order',
   },
   {
+    id: 'customer:read',
+    title: 'Consultar clientes',
+    description: 'Buscar e consultar dados de assinantes no IXC',
+    group: 'customer',
+  },
+  {
     id: 'care:inbox:read',
     title: 'Ler caixas de atendimento',
     group: 'care',

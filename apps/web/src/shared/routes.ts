@@ -2,6 +2,7 @@
 export const routes = {
   home: '/',
   login: '/login',
+  perfil: '/perfil',
   redeProjeto: '/rede/projeto',
   usuarios: '/configuracoes/usuarios',
   usuario: (id: string) => `/configuracoes/usuarios/${encodeURIComponent(id)}`,

@@ -1,5 +1,12 @@
 import React from 'react';
-import { Button, Drawer, SearchField, Spinner, Switch } from '@heroui/react';
+import {
+  Button,
+  Drawer,
+  SearchField,
+  Spinner,
+  Switch,
+  Tabs,
+} from '@heroui/react';
 import {
   LuCable,
   LuChevronRight,
@@ -10,7 +17,7 @@ import {
   LuSearch,
   LuShapes,
   LuTag,
-  LuX,
+  LuUser,
 } from 'react-icons/lu';
 import type { MapPanelTab } from './map-preferences-storage';
 import { MAP_BASE_STYLES, type MapBaseStyleId } from './map-styles';
@@ -23,12 +30,16 @@ export type MapLayerVisibility = {
 
 export type MapSearchHit = {
   id: string;
-  kind: 'fat' | 'cable';
+  kind: 'fat' | 'cable' | 'customer';
   name: string;
   subtitle?: string;
   latitude: number;
   longitude: number;
 };
+
+export function mapSearchHitKey(hit: MapSearchHit): string {
+  return `${hit.kind}:${hit.id}`;
+}
 
 export type { MapPanelTab };
 
@@ -61,7 +72,7 @@ export type MapControlsPanelProps = {
   onShowFatLabelsChange: (value: boolean) => void;
   hits: MapSearchHit[];
   onSelectHit: (hit: MapSearchHit) => void;
-  selectedId: string | null;
+  selectedKey: string | null;
   loading: boolean;
   searching?: boolean;
   error: string | null;
@@ -88,7 +99,7 @@ type SectionProps = Pick<
   | 'onShowFatLabelsChange'
   | 'hits'
   | 'onSelectHit'
-  | 'selectedId'
+  | 'selectedKey'
   | 'searching'
   | 'error'
   | 'fatCount'
@@ -100,7 +111,7 @@ function SearchSection({
   onSearchChange,
   hits,
   onSelectHit,
-  selectedId,
+  selectedKey,
   searching = false,
   error,
 }: SectionProps) {
@@ -142,8 +153,8 @@ function SearchSection({
       >
         {!search.trim() ? (
           <p className="px-2 py-3 text-xs text-muted">
-            Digite ao menos 2 caracteres para buscar CTOs e cabos em todo o
-            projeto.
+            Digite ao menos 2 caracteres para buscar CTOs, cabos e clientes em
+            todo o projeto.
           </p>
         ) : search.trim().length < 2 ? (
           <p className="px-2 py-3 text-xs text-muted">
@@ -159,13 +170,20 @@ function SearchSection({
         ) : (
           <ul className="space-y-0.5">
             {hits.map((hit) => {
-              const active = hit.id === selectedId;
+              const active = mapSearchHitKey(hit) === selectedKey;
               return (
-                <li key={`${hit.kind}-${hit.id}`}>
+                <li key={mapSearchHitKey(hit)}>
                   <button
                     type="button"
                     role="option"
                     aria-selected={active}
+                    aria-label={
+                      hit.kind === 'customer'
+                        ? `Cliente ${hit.name}`
+                        : hit.kind === 'fat'
+                          ? `CTO ${hit.name}`
+                          : `Cabo ${hit.name}`
+                    }
                     onClick={() => onSelectHit(hit)}
                     className={`flex w-full items-start gap-2 rounded-lg px-2 py-2 text-left text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
                       active
@@ -175,6 +193,11 @@ function SearchSection({
                   >
                     {hit.kind === 'fat' ? (
                       <LuRadioTower
+                        aria-hidden
+                        className="mt-0.5 size-3.5 shrink-0 text-accent"
+                      />
+                    ) : hit.kind === 'customer' ? (
+                      <LuUser
                         aria-hidden
                         className="mt-0.5 size-3.5 shrink-0 text-accent"
                       />
@@ -189,7 +212,11 @@ function SearchSection({
                         {hit.name}
                       </span>
                       <span className="block text-xs text-muted">
-                        {hit.kind === 'fat' ? 'CTO (FAT)' : 'Cabo'}
+                        {hit.kind === 'fat'
+                          ? 'CTO (FAT)'
+                          : hit.kind === 'customer'
+                            ? 'Cliente'
+                            : 'Cabo'}
                         {hit.subtitle ? ` · ${hit.subtitle}` : ''}
                       </span>
                     </span>
@@ -361,51 +388,83 @@ function PanelBody(props: SectionProps & { activeTab: MapPanelTab }) {
   );
 }
 
-function activeTabLabel(tab: MapPanelTab): string {
-  return PANEL_TABS.find((item) => item.id === tab)?.label ?? 'Buscar';
-}
+const SEGMENTED_TAB_LIST_CLASS =
+  'grid w-full grid-cols-3 gap-0.5 rounded-xl border border-border bg-default/40 p-0.5 **:data-[slot=tabs-tab]:min-w-0 **:data-[slot=tabs-tab]:flex-1 **:data-[slot=tabs-tab]:rounded-lg **:data-[slot=tabs-tab]:bg-transparent **:data-[slot=tabs-tab]:px-2 **:data-[slot=tabs-tab]:py-2 **:data-[slot=tabs-tab]:text-muted **:data-[slot=tabs-tab]:shadow-none **:data-[slot=tabs-tab]:transition-colors **:data-[slot=tabs-tab]:data-[hovered=true]:not-data-[selected=true]:bg-default/60 **:data-[slot=tabs-tab]:data-[hovered=true]:not-data-[selected=true]:text-foreground **:data-[slot=tabs-tab]:data-[selected=true]:text-foreground **:data-[slot=tabs-tab]:data-[focus-visible=true]:ring-2 **:data-[slot=tabs-tab]:data-[focus-visible=true]:ring-accent/20 **:data-[slot=tabs-indicator]:rounded-lg **:data-[slot=tabs-indicator]:bg-surface **:data-[slot=tabs-indicator]:shadow-sm';
 
-function TabIconList({
+function PanelTabBar({
   activeTab,
   onSelect,
+  variant = 'segmented',
   orientation = 'horizontal',
 }: {
   activeTab: MapPanelTab;
   onSelect: (tab: MapPanelTab) => void;
+  variant?: 'segmented' | 'icons';
   orientation?: 'horizontal' | 'vertical';
 }) {
+  if (variant === 'icons') {
+    return (
+      <div
+        role="tablist"
+        aria-label="Seções do painel do projeto"
+        aria-orientation={orientation}
+        className={
+          orientation === 'vertical'
+            ? 'flex flex-col items-center gap-2'
+            : 'flex w-full items-center justify-around gap-1'
+        }
+      >
+        {PANEL_TABS.map((item) => {
+          const selected = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              role="tab"
+              aria-label={item.label}
+              aria-selected={selected}
+              onClick={() => onSelect(item.id)}
+              className={`inline-flex size-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                selected
+                  ? 'bg-default text-foreground'
+                  : 'text-muted hover:bg-default/50 hover:text-foreground'
+              }`}
+            >
+              <span aria-hidden>{item.icon}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
-    <div
-      role="tablist"
-      aria-label="Seções do painel do projeto"
-      aria-orientation={orientation}
-      className={
-        orientation === 'vertical'
-          ? 'flex flex-col items-center gap-2'
-          : 'flex w-full items-center justify-around gap-1'
-      }
+    <Tabs
+      selectedKey={activeTab}
+      onSelectionChange={(key) => onSelect(key as MapPanelTab)}
+      className="w-full"
     >
-      {PANEL_TABS.map((item) => {
-        const selected = activeTab === item.id;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-label={item.label}
-            aria-selected={selected}
-            onClick={() => onSelect(item.id)}
-            className={`inline-flex size-8 items-center justify-center rounded-lg transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-              selected
-                ? 'bg-default text-foreground'
-                : 'text-muted hover:bg-default/50 hover:text-foreground'
-            }`}
-          >
-            <span aria-hidden>{item.icon}</span>
-          </button>
-        );
-      })}
-    </div>
+      <Tabs.ListContainer className="rounded-none bg-transparent">
+        <Tabs.List
+          aria-label="Seções do painel do projeto"
+          className={SEGMENTED_TAB_LIST_CLASS}
+        >
+          {PANEL_TABS.map((item) => (
+            <Tabs.Tab key={item.id} id={item.id}>
+              <span className="flex items-center justify-center gap-1.5">
+                <span aria-hidden className="shrink-0">
+                  {item.icon}
+                </span>
+                <span className="truncate text-xs leading-none font-medium">
+                  {item.label}
+                </span>
+              </span>
+              <Tabs.Indicator />
+            </Tabs.Tab>
+          ))}
+        </Tabs.List>
+      </Tabs.ListContainer>
+    </Tabs>
   );
 }
 
@@ -420,7 +479,7 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
   onShowFatLabelsChange,
   hits,
   onSelectHit,
-  selectedId,
+  selectedKey,
   loading,
   searching = false,
   error,
@@ -445,7 +504,7 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
     onShowFatLabelsChange,
     hits,
     onSelectHit,
-    selectedId,
+    selectedKey,
     searching,
     error,
     fatCount,
@@ -491,10 +550,14 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
               className="max-h-[min(70dvh,36rem)] border-t border-border bg-surface"
             >
               <Drawer.Handle />
-              <Drawer.Header className="flex items-center justify-between gap-2 border-b border-border px-3 py-2">
-                <div className="flex min-w-0 items-center gap-2">
+              <Drawer.CloseTrigger
+                aria-label="Fechar painel do mapa"
+                onPress={onCloseMobile}
+              />
+              <Drawer.Header className="border-b border-border px-4 pt-1 pb-3">
+                <div className="flex min-w-0 items-center gap-2 pr-8">
                   <Drawer.Heading className="font-display text-base font-bold text-foreground">
-                    {activeTabLabel(activeTab)}
+                    Projeto
                   </Drawer.Heading>
                   {loading ? (
                     <Spinner
@@ -503,19 +566,10 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
                     />
                   ) : null}
                 </div>
-                <Button
-                  isIconOnly
-                  size="sm"
-                  variant="ghost"
-                  aria-label="Fechar painel do mapa"
-                  onPress={onCloseMobile}
-                >
-                  <LuX className="size-4" />
-                </Button>
+                <div className="mt-3">
+                  <PanelTabBar activeTab={activeTab} onSelect={openTab} />
+                </div>
               </Drawer.Header>
-              <div className="shrink-0 border-b border-border px-2 py-2">
-                <TabIconList activeTab={activeTab} onSelect={openTab} />
-              </div>
               <Drawer.Body className="flex min-h-0 flex-1 flex-col overflow-hidden p-0">
                 <PanelBody {...sectionProps} activeTab={activeTab} />
               </Drawer.Body>
@@ -568,9 +622,10 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
 
       {collapsed ? (
         <div className="flex flex-1 flex-col items-center gap-2 overflow-y-auto p-2">
-          <TabIconList
+          <PanelTabBar
             activeTab={activeTab}
             onSelect={openTab}
+            variant="icons"
             orientation="vertical"
           />
           {loading ? (
@@ -579,13 +634,8 @@ export const MapControlsPanel: React.FC<MapControlsPanelProps> = ({
         </div>
       ) : (
         <div className="flex min-h-0 flex-1 flex-col">
-          <div className="shrink-0 border-b border-border px-2 py-2">
-            <TabIconList activeTab={activeTab} onSelect={openTab} />
-          </div>
-          <div className="shrink-0 border-b border-border px-3 py-2">
-            <h2 className="text-sm font-medium text-foreground">
-              {activeTabLabel(activeTab)}
-            </h2>
+          <div className="shrink-0 border-b border-border px-3 py-3">
+            <PanelTabBar activeTab={activeTab} onSelect={openTab} />
           </div>
           <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <PanelBody {...sectionProps} activeTab={activeTab} />

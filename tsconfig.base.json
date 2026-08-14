@@ -56,6 +56,12 @@
       "@shared/application-network": [
         "./libs/application-network/src/index.ts"
       ],
+      "@gigahub/application-customer": [
+        "./libs/application-customer/src/index.ts"
+      ],
+      "@shared/application-customer": [
+        "./libs/application-customer/src/index.ts"
+      ],
       "@gigahub/adapters-ixc": ["./libs/adapters-ixc/src/index.ts"],
       "@shared/adapters-ixc": ["./libs/adapters-ixc/src/index.ts"]
     }

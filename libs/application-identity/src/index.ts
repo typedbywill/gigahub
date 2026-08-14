@@ -23,6 +23,7 @@ export {
   toUserListItemDto,
   toUserDetailDto,
   toRoleSummaryDto,
+  buildAvatarUrl,
   resolveAvatarUrl,
 } from './lib/mappers';
 export { buildUserDetailDto } from './lib/build-user-detail';
@@ -44,6 +45,10 @@ export {
   type ListUsersCommand,
 } from './lib/list-users.use-case';
 export { GetUserUseCase, type GetUserCommand } from './lib/get-user.use-case';
+export {
+  GetUserAvatarUseCase,
+  type GetUserAvatarCommand,
+} from './lib/get-user-avatar.use-case';
 export {
   InactivateUserUseCase,
   type InactivateUserCommand,
