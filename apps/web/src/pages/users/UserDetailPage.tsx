@@ -4,7 +4,6 @@ import type { Key } from '@heroui/react';
 import {
   Autocomplete,
   Button,
-  Chip,
   EmptyState,
   Input,
   Label,
@@ -48,6 +47,7 @@ import {
 import { routes } from '../../shared/routes';
 import { Permissions } from '../../shared/permissions';
 import { toast } from '../../shared/ui/toast';
+import { StatusBadge } from '../../shared/ui/StatusBadge';
 import { UserDetailHeader } from './UserDetailHeader';
 
 const fieldClassName =
@@ -76,22 +76,30 @@ function DetailSectionCard({
   subtitle,
   icon,
   badge,
+  themeColor = 'user',
   children,
 }: {
   title: string;
   subtitle: string;
   icon: React.ReactNode;
   badge?: React.ReactNode;
+  themeColor?: 'user' | 'security' | 'erp' | 'neutral';
   children: React.ReactNode;
 }) {
+  const iconThemeStyles = {
+    user: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
+    security: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
+    erp: 'bg-sky-500/10 text-sky-600 dark:text-sky-400',
+    neutral: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400',
+  }[themeColor];
+
   return (
     <section className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-xs transition-all">
-      <div className="h-0.5 bg-accent" aria-hidden />
       <div className="p-5 md:p-6">
         <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div className="flex items-center gap-3">
             <span
-              className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent"
+              className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${iconThemeStyles}`}
               aria-hidden
             >
               {icon}
@@ -421,15 +429,16 @@ export const UserDetailPage: React.FC = () => {
           title="Perfil e Identificação"
           subtitle="Dados básicos do colaborador no sistema."
           icon={<LuUser className="size-4" />}
+          themeColor="user"
           badge={
             canUpdate ? (
-              <Chip size="sm" variant="soft" color="success">
+              <StatusBadge variant="active">
                 Editável
-              </Chip>
+              </StatusBadge>
             ) : (
-              <Chip size="sm" variant="soft">
+              <StatusBadge variant="neutral">
                 Somente leitura
-              </Chip>
+              </StatusBadge>
             )
           }
         >
@@ -510,15 +519,16 @@ export const UserDetailPage: React.FC = () => {
           title="Nível de Acesso"
           subtitle="Grupo de permissões associado ao usuário."
           icon={<LuShield className="size-4" />}
+          themeColor="security"
           badge={
             canManageAccess ? (
-              <Chip size="sm" variant="soft" color="accent">
+              <StatusBadge variant="security">
                 Gestão ativa
-              </Chip>
+              </StatusBadge>
             ) : (
-              <Chip size="sm" variant="soft">
+              <StatusBadge variant="neutral">
                 Atribuído
-              </Chip>
+              </StatusBadge>
             )
           }
         >
@@ -596,18 +606,20 @@ export const UserDetailPage: React.FC = () => {
                 <div className="rounded-xl border border-border/60 bg-background/50 p-3.5">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <LuShield className="size-4 text-accent" />
+                      <LuShield className="size-4 text-violet-600 dark:text-violet-400" />
                       <span className="text-sm font-semibold text-foreground">
                         {selectedRoleName}
                       </span>
                     </div>
-                    <Chip
-                      size="sm"
-                      variant="soft"
-                      color={rolesDirty ? 'warning' : 'accent'}
-                    >
-                      {rolesDirty ? 'Alteração pendente' : 'Grupo ativo'}
-                    </Chip>
+                    {rolesDirty ? (
+                      <StatusBadge variant="warning">
+                        Alteração pendente
+                      </StatusBadge>
+                    ) : (
+                      <StatusBadge variant="security">
+                        Grupo ativo
+                      </StatusBadge>
+                    )}
                   </div>
                   <p className="mt-1.5 text-xs text-muted">
                     As permissões operacionais do colaborador são herdadas
@@ -642,7 +654,7 @@ export const UserDetailPage: React.FC = () => {
           ) : (
             <div className="rounded-xl border border-border/60 bg-background/50 p-4">
               <div className="flex items-center gap-2">
-                <LuShield className="size-4 text-accent" />
+                <LuShield className="size-4 text-violet-600 dark:text-violet-400" />
                 <span className="text-sm font-semibold text-foreground">
                   {user.roles[0]?.name ?? 'Nenhum grupo atribuído'}
                 </span>
@@ -657,14 +669,15 @@ export const UserDetailPage: React.FC = () => {
         title="Dados do ERP (IXC Soft)"
         subtitle="Informações operacionais obtidas via integração de dados."
         icon={<LuBuilding2 className="size-4" />}
+        themeColor="erp"
         badge={
-          <Chip size="sm" variant="dot" color="primary">
+          <StatusBadge variant="erp">
             Sincronizado
-          </Chip>
+          </StatusBadge>
         }
       >
-        <div className="mb-5 flex items-center gap-3 rounded-xl border border-border/60 bg-background/50 p-3.5 text-xs text-muted">
-          <LuRefreshCw className="size-4 shrink-0 text-accent" />
+        <div className="mb-5 flex items-center gap-3 rounded-xl border border-sky-500/20 bg-sky-500/5 p-3.5 text-xs text-sky-900 dark:text-sky-200">
+          <LuRefreshCw className="size-4 shrink-0 text-sky-600 dark:text-sky-400" />
           <span>
             Estes campos pertencem ao cadastro do IXC Soft e não podem ser
             editados manualmente no GigaHub.

@@ -21,7 +21,7 @@ const VARIANT_ICON_CLASS: Record<ToastVariant, string> = {
   success: 'text-success',
   warning: 'text-warning',
   error: 'text-danger',
-  info: 'text-accent',
+  info: 'text-sky-500 dark:text-sky-400',
 };
 
 function isTopPosition(position: ToastPosition): boolean {
@@ -77,7 +77,7 @@ export const ToastItemView: React.FC<ToastItemProps> = ({ item, position }) => {
           : { type: 'spring', stiffness: 420, damping: 32, mass: 0.8 }
       }
       role={role}
-      className="pointer-events-auto flex w-full max-w-[22rem] items-start gap-3 rounded-2xl border border-border bg-surface p-3.5 shadow-lg sm:w-[22rem]"
+      className="pointer-events-auto flex w-full max-w-88 items-start gap-3 rounded-2xl border border-border bg-surface p-3.5 shadow-lg sm:w-88"
     >
       <span
         className={`mt-0.5 shrink-0 ${VARIANT_ICON_CLASS[item.variant]}`}

@@ -9,7 +9,6 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   Button,
   Checkbox,
-  Chip,
   SearchField,
   Spinner,
   Switch,
@@ -28,6 +27,7 @@ import {
 } from '../../shared/api/roles.api';
 import { routes } from '../../shared/routes';
 import { toast } from '../../shared/ui/toast';
+import { StatusBadge } from '../../shared/ui/StatusBadge';
 
 const GROUP_LABELS: Record<string, string> = {
   'work-order': 'Ordens de serviço',
@@ -261,13 +261,13 @@ export const RoleDetailPage: React.FC = () => {
                 <h1 className="font-display text-xl font-bold text-foreground md:text-2xl">
                   {role.name}
                 </h1>
-                <Chip size="sm" variant="soft" color="accent">
-                  {selectedIds.length}/{catalog.length}
-                </Chip>
+                <StatusBadge variant="security">
+                  {selectedIds.length}/{catalog.length} ativas
+                </StatusBadge>
                 {dirty ? (
-                  <Chip size="sm" variant="soft" color="warning">
+                  <StatusBadge variant="warning">
                     Alterações não salvas
-                  </Chip>
+                  </StatusBadge>
                 ) : null}
               </div>
               <p className="mt-1 font-mono text-sm text-muted">{role.slug}</p>

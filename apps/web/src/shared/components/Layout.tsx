@@ -19,6 +19,7 @@ import { Permissions } from '../permissions';
 import { useAuthStore } from '../stores/auth.store';
 import { useSidebarStore } from '../stores/sidebar.store';
 import { useThemeStore } from '../stores/theme.store';
+import { getAvatarColor } from '../lib/avatar-color';
 import { Sidebar, type SidebarNavItem } from './Sidebar';
 
 interface LayoutProps {
@@ -137,6 +138,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const sidebarCollapsed = !isMobile && collapsed;
   const closeMobile = () => setMobileOpen(false);
 
+  const footerAvatarColor = user ? getAvatarColor(user.id ?? user.name) : null;
+
   const footer = user ? (
     <div
       className={`flex items-center gap-2 ${sidebarCollapsed ? 'flex-col px-0' : 'px-1'}`}
@@ -147,7 +150,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         className={`flex min-w-0 items-center gap-2 rounded-lg transition-colors hover:bg-default ${sidebarCollapsed ? 'flex-col' : 'flex-1'}`}
         onClick={isMobile ? closeMobile : undefined}
       >
-        <Avatar size="sm" color="accent" className="shrink-0">
+        <Avatar
+          size="sm"
+          className={`shrink-0 ${
+            !user.avatarUrl && footerAvatarColor
+              ? `${footerAvatarColor.bg} ${footerAvatarColor.text}`
+              : ''
+          }`}
+        >
           {user.avatarUrl ? (
             <Avatar.Image
               key={user.avatarUrl}
@@ -155,7 +165,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               src={user.avatarUrl}
             />
           ) : null}
-          <Avatar.Fallback>{userInitials(user.name)}</Avatar.Fallback>
+          <Avatar.Fallback className={footerAvatarColor?.text}>
+            {userInitials(user.name)}
+          </Avatar.Fallback>
         </Avatar>
         {!sidebarCollapsed ? (
           <div className="min-w-0 flex-1">

@@ -18,6 +18,7 @@ describe('ListNearbyFiberAccessTerminalsUseCase', () => {
           name: 'Far',
           location: { latitude: -29.69, longitude: -50.13 },
           distanceMeters: 400,
+          mapColorHex: '#f59e0b',
         },
         {
           id: 'fat-1',
@@ -25,6 +26,7 @@ describe('ListNearbyFiberAccessTerminalsUseCase', () => {
           name: 'Near',
           location: { latitude: -29.68, longitude: -50.12 },
           distanceMeters: 100,
+          mapColorHex: '#f59e0b',
         },
       ] satisfies NearbyFiberAccessTerminalReadModel[]),
     };
@@ -76,6 +78,9 @@ describe('ListNearbyFiberCablesUseCase', () => {
             { latitude: -29.681, longitude: -50.121 },
           ],
           distanceMeters: 50,
+          strokeColorHex: '#38bdf8',
+          strokeWidth: 2,
+          strokeDashed: false,
         },
       ] satisfies NearbyFiberCableReadModel[]),
     };

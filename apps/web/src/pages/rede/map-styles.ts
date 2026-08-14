@@ -2,12 +2,16 @@ export type MapBaseStyleId =
   | 'auto'
   | 'streets'
   | 'satellite'
+  | 'outdoors'
   | 'light'
-  | 'dark';
+  | 'dark'
+  | 'navigation-day'
+  | 'navigation-night';
 
 export type MapBaseStyleOption = {
   id: MapBaseStyleId;
   label: string;
+  category: string;
   description: string;
   /** Mapbox style URL; null means follow app theme. */
   styleUrl: string | null;
@@ -18,36 +22,65 @@ export const MAP_BASE_STYLES: readonly MapBaseStyleOption[] = [
   {
     id: 'auto',
     label: 'Automático',
-    description: 'Segue o tema claro/escuro do app',
+    category: 'Dinâmico',
+    description: 'Acompanha o tema claro/escuro do aplicativo',
     styleUrl: null,
     darkChrome: false,
   },
   {
     id: 'streets',
     label: 'Ruas',
-    description: 'Mapa padrão com ruas e bairros',
+    category: 'Vetor',
+    description: 'Mapa vetorial completo com logradouros e bairros',
     styleUrl: 'mapbox://styles/mapbox/streets-v12',
     darkChrome: false,
   },
   {
     id: 'satellite',
     label: 'Satélite',
-    description: 'Imagem de satélite com ruas',
+    category: 'Híbrido',
+    description: 'Imagem aérea de alta resolução sobreposta com vias',
     styleUrl: 'mapbox://styles/mapbox/satellite-streets-v12',
     darkChrome: true,
   },
   {
+    id: 'outdoors',
+    label: 'Relevo',
+    category: 'Terreno',
+    description: 'Curvas de nível, topografia e áreas verdes',
+    styleUrl: 'mapbox://styles/mapbox/outdoors-v12',
+    darkChrome: false,
+  },
+  {
     id: 'light',
-    label: 'Flat',
-    description: 'Base clara e minimalista',
+    label: 'Flat (Claro)',
+    category: 'Minimal',
+    description: 'Base neutra clara ideal para focar na infraestrutura',
     styleUrl: 'mapbox://styles/mapbox/light-v11',
     darkChrome: false,
   },
   {
     id: 'dark',
     label: 'Escuro',
-    description: 'Base escura para contraste',
+    category: 'Noturno',
+    description: 'Base escura de alto contraste para destaque das fibras',
     styleUrl: 'mapbox://styles/mapbox/dark-v11',
+    darkChrome: true,
+  },
+  {
+    id: 'navigation-day',
+    label: 'Navegação Claro',
+    category: 'Tráfego',
+    description: 'Foco em malha viária e rotas urbanas de dia',
+    styleUrl: 'mapbox://styles/mapbox/navigation-day-v1',
+    darkChrome: false,
+  },
+  {
+    id: 'navigation-night',
+    label: 'Navegação Escuro',
+    category: 'Tráfego',
+    description: 'Malha viária e vias expressas em contraste noturno',
+    styleUrl: 'mapbox://styles/mapbox/navigation-night-v1',
     darkChrome: true,
   },
 ] as const;

@@ -6,8 +6,13 @@ import React, {
   useState,
 } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertDialog, Button, Chip, Dropdown, Label } from '@heroui/react';
-import { LuEllipsisVertical, LuEye, LuUserX } from 'react-icons/lu';
+import { AlertDialog, Button, Dropdown, Label } from '@heroui/react';
+import {
+  LuBuilding2,
+  LuEllipsisVertical,
+  LuEye,
+  LuUserX,
+} from 'react-icons/lu';
 import type { UserListItemDto } from '@gigahub/shared/contracts';
 import {
   DataTable,
@@ -29,9 +34,24 @@ import {
 } from './users-list-search';
 import { routes } from '../../shared/routes';
 import { Permissions } from '../../shared/permissions';
+import { StatusBadge } from '../../shared/ui/StatusBadge';
+import { getAvatarColor } from '../../shared/lib/avatar-color';
 
 function statusLabel(status: UserListItemDto['status']): string {
   return status === 'active' ? 'Ativo' : 'Inativo';
+}
+
+function userInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0];
+  const last = parts[parts.length - 1];
+  if (!first) {
+    return '?';
+  }
+  if (parts.length === 1 || !last) {
+    return first.substring(0, 2).toUpperCase();
+  }
+  return `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
 }
 
 const UserActionsCell = React.memo(function UserActionsCell({
@@ -246,45 +266,64 @@ export const UsersListPage: React.FC = () => {
     () => [
       {
         id: 'name',
-        header: 'Nome',
+        header: 'Usuário',
         isRowHeader: true,
-        cell: (row) => (
-          <Link
-            to={routes.usuario(row.id)}
-            state={{ from: listHref }}
-            className="font-medium text-foreground underline-offset-2 hover:underline"
-          >
-            {row.name}
-          </Link>
-        ),
-      },
-      {
-        id: 'email',
-        header: 'E-mail',
-        cell: (row) => row.email,
+        cell: (row) => {
+          const avatarColor = getAvatarColor(row.id ?? row.name);
+          return (
+            <div className="flex items-center gap-3">
+              <span
+                className={`flex size-8 shrink-0 items-center justify-center rounded-lg text-xs font-semibold ${avatarColor.bg} ${avatarColor.text}`}
+                aria-hidden
+              >
+                {userInitials(row.name)}
+              </span>
+              <div className="flex min-w-0 flex-col">
+                <Link
+                  to={routes.usuario(row.id)}
+                  state={{ from: listHref }}
+                  className="truncate font-medium text-foreground underline-offset-2 hover:underline"
+                >
+                  {row.name}
+                </Link>
+                <span className="truncate text-xs text-muted">{row.email}</span>
+              </div>
+            </div>
+          );
+        },
       },
       {
         id: 'status',
         header: 'Status',
         cell: (row) => (
-          <Chip
-            size="sm"
-            color={row.status === 'active' ? 'success' : 'danger'}
-            variant="soft"
+          <StatusBadge
+            variant={row.status === 'active' ? 'active' : 'inactive'}
+            showDot
           >
             {statusLabel(row.status)}
-          </Chip>
+          </StatusBadge>
         ),
       },
       {
         id: 'jobTitle',
         header: 'Cargo',
-        cell: (row) => row.jobTitle ?? '—',
+        cell: (row) => (
+          <span className="text-sm text-foreground/90">
+            {row.jobTitle || '—'}
+          </span>
+        ),
       },
       {
         id: 'erp',
-        header: 'ERP',
-        cell: (row) => (row.idErp ? row.idErp : 'Local'),
+        header: 'Integração ERP',
+        cell: (row) =>
+          row.idErp ? (
+            <StatusBadge variant="erp" icon={<LuBuilding2 />}>
+              IXC #{row.idErp}
+            </StatusBadge>
+          ) : (
+            <StatusBadge variant="neutral">Local</StatusBadge>
+          ),
       },
       {
         id: 'actions',
@@ -384,13 +423,18 @@ export const UsersListPage: React.FC = () => {
       <DataTable
         className="min-h-0 flex-1"
         fillHeight
-        estimatedRowHeight={48}
+        estimatedRowHeight={52}
         onPageSizeChange={handlePageSizeChange}
         ariaLabel="Lista de usuários"
         leading={
-          <h1 className="font-display truncate text-xl font-bold text-foreground md:text-2xl">
-            Usuários
-          </h1>
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-display truncate text-xl font-bold text-foreground md:text-2xl">
+              Usuários
+            </h1>
+            <span className="hidden rounded-full bg-muted/15 px-2.5 py-0.5 text-xs font-semibold text-muted sm:inline-block">
+              {total}
+            </span>
+          </div>
         }
         columns={columns}
         items={items}

@@ -43,7 +43,7 @@ describe('Users admin use cases', () => {
   }
 
   function denyAccess(
-    denied: string = 'users:read',
+    denied = 'users:read',
   ): ResolveEffectiveAccess {
     return {
       forUser: jest.fn(),

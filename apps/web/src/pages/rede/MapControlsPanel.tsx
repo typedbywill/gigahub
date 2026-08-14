@@ -9,13 +9,21 @@ import {
 } from '@heroui/react';
 import {
   LuCable,
+  LuCheck,
   LuChevronRight,
+  LuCompass,
+  LuGlobe,
   LuMap,
   LuMapPin,
+  LuMoon,
+  LuMoonStar,
+  LuMountain,
   LuPanelLeftClose,
   LuRadioTower,
   LuSearch,
   LuShapes,
+  LuSparkles,
+  LuSun,
   LuTag,
   LuUser,
 } from 'react-icons/lu';
@@ -194,17 +202,17 @@ function SearchSection({
                     {hit.kind === 'fat' ? (
                       <LuRadioTower
                         aria-hidden
-                        className="mt-0.5 size-3.5 shrink-0 text-accent"
+                        className="mt-0.5 size-3.5 shrink-0 text-amber-500 dark:text-amber-400"
                       />
                     ) : hit.kind === 'customer' ? (
                       <LuUser
                         aria-hidden
-                        className="mt-0.5 size-3.5 shrink-0 text-accent"
+                        className="mt-0.5 size-3.5 shrink-0 text-emerald-500 dark:text-emerald-400"
                       />
                     ) : (
                       <LuCable
                         aria-hidden
-                        className="mt-0.5 size-3.5 shrink-0 text-accent"
+                        className="mt-0.5 size-3.5 shrink-0 text-sky-500 dark:text-sky-400"
                       />
                     )}
                     <span className="min-w-0">
@@ -213,7 +221,7 @@ function SearchSection({
                       </span>
                       <span className="block text-xs text-muted">
                         {hit.kind === 'fat'
-                          ? 'CTO (FAT)'
+                          ? 'CTO'
                           : hit.kind === 'customer'
                             ? 'Cliente'
                             : 'Cabo'}
@@ -251,10 +259,10 @@ function LayersSection({
           <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
             <LuRadioTower
               aria-hidden
-              className="size-4 shrink-0 text-accent"
+              className="size-4 shrink-0 text-amber-500 dark:text-amber-400"
             />
             <span className="min-w-0">
-              <span className="block font-medium">CTO (FAT)</span>
+              <span className="block font-medium">CTO</span>
               <span className="block text-xs text-muted">
                 {fatCount} carregadas
               </span>
@@ -273,7 +281,7 @@ function LayersSection({
       >
         <Switch.Content className="w-full justify-between gap-3">
           <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
-            <LuCable aria-hidden className="size-4 shrink-0 text-accent" />
+            <LuCable aria-hidden className="size-4 shrink-0 text-sky-500 dark:text-sky-400" />
             <span className="min-w-0">
               <span className="block font-medium">Cabos</span>
               <span className="block text-xs text-muted">
@@ -309,6 +317,35 @@ function LayersSection({
   );
 }
 
+function getMapStyleIcon(styleId: MapBaseStyleId) {
+  switch (styleId) {
+    case 'auto':
+      return (
+        <LuSparkles className="size-4 text-amber-500 dark:text-amber-400" />
+      );
+    case 'streets':
+      return <LuMap className="size-4 text-sky-500 dark:text-sky-400" />;
+    case 'satellite':
+      return (
+        <LuGlobe className="size-4 text-emerald-500 dark:text-emerald-400" />
+      );
+    case 'outdoors':
+      return <LuMountain className="size-4 text-teal-500 dark:text-teal-400" />;
+    case 'light':
+      return <LuSun className="size-4 text-orange-500 dark:text-orange-400" />;
+    case 'dark':
+      return <LuMoon className="size-4 text-indigo-500 dark:text-indigo-400" />;
+    case 'navigation-day':
+      return <LuCompass className="size-4 text-blue-500 dark:text-blue-400" />;
+    case 'navigation-night':
+      return (
+        <LuMoonStar className="size-4 text-purple-500 dark:text-purple-400" />
+      );
+    default:
+      return <LuMap className="size-4 text-muted" />;
+  }
+}
+
 function MapSection({
   mapStyle,
   onMapStyleChange,
@@ -317,33 +354,84 @@ function MapSection({
 }: SectionProps) {
   return (
     <div className="space-y-4 p-2">
-      <div className="space-y-1" role="radiogroup" aria-label="Estilo do mapa">
-        <p className="px-2 pb-1 text-[11px] font-medium tracking-wide text-muted uppercase">
-          Estilo do mapa
-        </p>
-        {MAP_BASE_STYLES.map((style) => {
-          const selected = mapStyle === style.id;
-          return (
-            <button
-              key={style.id}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              onClick={() => onMapStyleChange(style.id)}
-              className={`flex w-full flex-col items-start rounded-lg px-3 py-2.5 text-left transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
-                selected
-                  ? 'bg-accent/15 text-foreground'
-                  : 'text-foreground hover:bg-default/50'
-              }`}
-            >
-              <span className="text-sm font-medium">{style.label}</span>
-              <span className="text-xs text-muted">{style.description}</span>
-            </button>
-          );
-        })}
+      <div className="space-y-1.5" role="radiogroup" aria-label="Estilo do mapa">
+        <div className="flex items-center justify-between px-2 pb-1">
+          <p className="text-[11px] font-medium tracking-wide text-muted uppercase">
+            Estilo do mapa
+          </p>
+          <span className="text-[10px] font-medium text-muted">
+            {MAP_BASE_STYLES.length} opções
+          </span>
+        </div>
+
+        <div className="space-y-1.5">
+          {MAP_BASE_STYLES.map((style) => {
+            const selected = mapStyle === style.id;
+            const styleIcon = getMapStyleIcon(style.id);
+
+            return (
+              <button
+                key={style.id}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                onClick={() => onMapStyleChange(style.id)}
+                className={`group relative flex w-full items-start gap-3 rounded-xl border p-2.5 text-left transition-all focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${
+                  selected
+                    ? 'border-accent/40 bg-accent/10 shadow-xs'
+                    : 'border-border/40 bg-background/50 hover:border-border hover:bg-default/40'
+                }`}
+              >
+                <div
+                  className={`mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+                    selected
+                      ? 'border-accent/30 bg-accent/20'
+                      : 'border-border/60 bg-default/60 group-hover:bg-default'
+                  }`}
+                  aria-hidden
+                >
+                  {styleIcon}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1.5">
+                    <span className="truncate text-sm font-medium text-foreground">
+                      {style.label}
+                    </span>
+                    {style.category ? (
+                      <span
+                        className={`inline-flex items-center rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase transition-colors ${
+                          selected
+                            ? 'bg-accent/20 text-accent'
+                            : 'bg-default/80 text-muted group-hover:text-foreground'
+                        }`}
+                      >
+                        {style.category}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-0.5 line-clamp-2 text-xs text-muted leading-relaxed">
+                    {style.description}
+                  </p>
+                </div>
+
+                <div
+                  className={`mt-1 flex size-4 shrink-0 items-center justify-center rounded-full transition-all ${
+                    selected
+                      ? 'bg-accent text-accent-foreground scale-100 opacity-100'
+                      : 'border border-border/80 bg-transparent scale-90 opacity-0 group-hover:opacity-40'
+                  }`}
+                  aria-hidden
+                >
+                  <LuCheck className="size-2.5 stroke-3" />
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-1 border-t border-border/40 pt-2">
         <p className="px-2 pb-1 text-[11px] font-medium tracking-wide text-muted uppercase">
           Exibição
         </p>
@@ -354,7 +442,10 @@ function MapSection({
         >
           <Switch.Content className="w-full justify-between gap-3">
             <span className="flex min-w-0 items-center gap-2 text-sm text-foreground">
-              <LuTag aria-hidden className="size-4 shrink-0 text-accent" />
+              <LuTag
+                aria-hidden
+                className="size-4 shrink-0 text-amber-500 dark:text-amber-400"
+              />
               <span className="min-w-0">
                 <span className="block font-medium">Nomes das CTOs</span>
                 <span className="block text-xs text-muted">

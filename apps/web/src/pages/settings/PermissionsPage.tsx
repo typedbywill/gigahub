@@ -8,14 +8,13 @@ import React, {
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Button,
-  Chip,
   Dropdown,
   Input,
   Label,
   Modal,
   TextField,
 } from '@heroui/react';
-import { LuEllipsisVertical, LuPencil, LuPlus } from 'react-icons/lu';
+import { LuEllipsisVertical, LuKeyRound, LuPencil, LuPlus, LuShield } from 'react-icons/lu';
 import type { RoleListItemDto } from '@gigahub/shared/contracts';
 import {
   DataTable,
@@ -28,6 +27,7 @@ import {
   listRolesRequest,
 } from '../../shared/api/roles.api';
 import { routes } from '../../shared/routes';
+import { StatusBadge } from '../../shared/ui/StatusBadge';
 
 function slugify(value: string): string {
   return value
@@ -202,29 +202,33 @@ export const PermissionsPage: React.FC = () => {
         header: 'Função',
         isRowHeader: true,
         cell: (row) => (
-          <Link
-            to={routes.permissao(row.id)}
-            state={{ from: routes.permissoes }}
-            className="font-medium text-foreground underline-offset-2 hover:underline"
-          >
-            {row.name}
-          </Link>
-        ),
-      },
-      {
-        id: 'slug',
-        header: 'Slug',
-        cell: (row) => (
-          <span className="font-mono text-xs text-muted">{row.slug}</span>
+          <div className="flex items-center gap-3">
+            <span
+              className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400"
+              aria-hidden
+            >
+              <LuShield className="size-4" />
+            </span>
+            <div className="flex min-w-0 flex-col">
+              <Link
+                to={routes.permissao(row.id)}
+                state={{ from: routes.permissoes }}
+                className="font-medium text-foreground underline-offset-2 hover:underline"
+              >
+                {row.name}
+              </Link>
+              <span className="font-mono text-xs text-muted">{row.slug}</span>
+            </div>
+          </div>
         ),
       },
       {
         id: 'permissions',
-        header: 'Permissões',
+        header: 'Permissões Ativas',
         cell: (row) => (
-          <Chip size="sm" variant="soft" color="accent">
-            {row.permissionIds.length}
-          </Chip>
+          <StatusBadge variant="security" icon={<LuKeyRound />}>
+            {row.permissionIds.length} {row.permissionIds.length === 1 ? 'permissão' : 'permissões'}
+          </StatusBadge>
         ),
       },
       {

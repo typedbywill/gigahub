@@ -55,13 +55,13 @@ function NavBadge({
 }) {
   if (collapsed) {
     return (
-      <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-danger text-[10px] font-bold text-white">
+      <span className="absolute top-1 right-1 flex size-4 items-center justify-center rounded-full bg-accent text-[10px] font-bold text-accent-foreground shadow-xs">
         {badge}
       </span>
     );
   }
   return (
-    <Chip size="sm" color="danger" variant="primary" className="ml-auto shrink-0">
+    <Chip size="sm" color="accent" variant="soft" className="ml-auto shrink-0 font-medium">
       {badge}
     </Chip>
   );

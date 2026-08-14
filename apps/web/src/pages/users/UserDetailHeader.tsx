@@ -1,10 +1,9 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   AlertDialog,
   Avatar,
   Button,
-  Chip,
   Dropdown,
   Label,
 } from '@heroui/react';
@@ -12,91 +11,98 @@ import {
   LuArrowLeft,
   LuBriefcase,
   LuCamera,
+  LuCheck,
   LuCopy,
   LuMail,
   LuShield,
   LuTrash2,
   LuUserX,
 } from 'react-icons/lu';
+import { routes } from '../../shared/routes';
 import { toast } from '../../shared/ui/toast';
+import { StatusBadge } from '../../shared/ui/StatusBadge';
+import { getAvatarColor } from '../../shared/lib/avatar-color';
 
-export interface UserDetailHeaderProps {
+export type UserDetailHeaderProps = {
   name: string;
   email: string;
+  jobTitle?: string | null;
   status: 'active' | 'blocked';
-  avatarUrl?: string;
-  jobTitle?: string;
-  roleName?: string;
-  idErp?: string;
+  idErp?: number | string | null;
+  roleName?: string | null;
+  avatarUrl?: string | null;
   userId?: string;
-  backTo: string;
   canUpdate: boolean;
   canInactivate: boolean;
+  onAvatarFile: (file: File) => void;
+  onRemoveAvatar: () => void;
   uploadingAvatar: boolean;
+  onInactivate: () => void;
   inactivating: boolean;
   confirmOpen: boolean;
   onConfirmOpenChange: (open: boolean) => void;
-  onAvatarFile: (file: File) => void;
-  onRemoveAvatar: () => void;
-  onInactivate: () => void;
-}
+  backTo?: string;
+};
 
 function userInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   const first = parts[0];
   const last = parts[parts.length - 1];
-
   if (!first) {
     return '?';
   }
-  if (parts.length === 1) {
+  if (parts.length === 1 || !last) {
     return first.substring(0, 2).toUpperCase();
   }
-  if (last) {
-    return `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
-  }
-  return first.substring(0, 2).toUpperCase();
+  return `${first[0] ?? ''}${last[0] ?? ''}`.toUpperCase();
 }
 
 export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
   name,
   email,
-  status,
-  avatarUrl,
   jobTitle,
-  roleName,
+  status,
   idErp,
+  roleName,
+  avatarUrl,
   userId,
-  backTo,
   canUpdate,
   canInactivate,
+  onAvatarFile,
+  onRemoveAvatar,
   uploadingAvatar,
+  onInactivate,
   inactivating,
   confirmOpen,
   onConfirmOpenChange,
-  onAvatarFile,
-  onRemoveAvatar,
-  onInactivate,
+  backTo = routes.usuarios,
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isActive = status === 'active';
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
   const handleCopy = (text: string, label: string) => {
     void navigator.clipboard.writeText(text);
+    setCopiedKey(label);
     toast.success(`${label} copiado!`);
+    setTimeout(() => {
+      setCopiedKey(null);
+    }, 2000);
   };
+
+  const isActive = status === 'active';
+  const avatarColor = getAvatarColor(userId ?? name);
 
   return (
     <header className="flex flex-col gap-4">
-      {/* Breadcrumb & Navigation */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-1">
+      {/* Breadcrumb Navigation Toolbar */}
+      <div className="flex items-center justify-between gap-2">
         <nav
-          aria-label="Navegação de migalhas"
-          className="flex items-center gap-2 text-xs font-medium text-muted"
+          aria-label="Caminho de navegação"
+          className="flex items-center gap-2 text-sm text-muted"
         >
           <Link
             to={backTo}
-            className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+            className="inline-flex items-center gap-1.5 transition-colors hover:text-foreground"
           >
             <LuArrowLeft className="size-3.5" />
             <span>Usuários</span>
@@ -113,14 +119,7 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
       </div>
 
       {/* Hero Card Container */}
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-surface shadow-xs">
-        {/* Ambient Gradient Overlay */}
-        <div
-          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-accent/10 via-transparent to-accent/5"
-          aria-hidden
-        />
-        <div className="h-1.5 w-full bg-accent" aria-hidden />
-
+      <div className="relative overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-xs">
         <div className="relative flex flex-col gap-6 p-5 sm:p-6 lg:flex-row lg:items-start lg:justify-between">
           <div className="flex min-w-0 flex-1 flex-col gap-5 sm:flex-row sm:items-start">
             {/* Avatar & Photo Upload Controls */}
@@ -128,20 +127,21 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
               <div className="relative">
                 <Avatar
                   size="lg"
-                  color="accent"
                   className={`size-24 text-xl ring-4 ring-offset-2 ring-offset-surface ${
-                    isActive ? 'ring-emerald-500/30' : 'ring-danger/30'
-                  }`}
+                    isActive ? 'ring-emerald-500/20' : 'ring-zinc-500/20'
+                  } ${!avatarUrl ? `${avatarColor.bg} ${avatarColor.text}` : ''}`}
                 >
                   {avatarUrl ? (
                     <Avatar.Image alt={name} src={avatarUrl} />
                   ) : null}
-                  <Avatar.Fallback>{userInitials(name)}</Avatar.Fallback>
+                  <Avatar.Fallback className={avatarColor.text}>
+                    {userInitials(name)}
+                  </Avatar.Fallback>
                 </Avatar>
 
                 <span
                   className={`absolute bottom-1 left-1 size-4 rounded-full border-2 border-surface ${
-                    isActive ? 'bg-emerald-500' : 'bg-danger'
+                    isActive ? 'bg-emerald-500' : 'bg-zinc-400'
                   }`}
                   title={isActive ? 'Usuário Ativo' : 'Usuário Inativo'}
                 />
@@ -223,31 +223,26 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
                 <h1 className="font-display text-2xl font-bold tracking-tight text-foreground md:text-3xl">
                   {name}
                 </h1>
-                <Chip
-                  size="sm"
-                  color={isActive ? 'success' : 'danger'}
-                  variant="soft"
-                  className="font-medium"
+                <StatusBadge
+                  variant={isActive ? 'active' : 'inactive'}
+                  showDot
                 >
                   {isActive ? 'Ativo' : 'Inativo'}
-                </Chip>
+                </StatusBadge>
 
                 {roleName ? (
-                  <Chip
-                    size="sm"
-                    variant="soft"
-                    color="accent"
-                    className="font-medium"
+                  <StatusBadge
+                    variant="security"
+                    icon={<LuShield />}
                   >
-                    <LuShield className="mr-1 inline size-3" />
                     {roleName}
-                  </Chip>
+                  </StatusBadge>
                 ) : null}
 
                 {idErp ? (
-                  <Chip size="sm" variant="dot" color="primary">
+                  <StatusBadge variant="erp">
                     IXC #{idErp}
-                  </Chip>
+                  </StatusBadge>
                 ) : null}
               </div>
 
@@ -266,7 +261,11 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
                     className="size-6 min-w-6 text-muted hover:text-foreground"
                     onPress={() => handleCopy(email, 'E-mail')}
                   >
-                    <LuCopy className="size-3.5" />
+                    {copiedKey === 'E-mail' ? (
+                      <LuCheck className="size-3.5 text-success" />
+                    ) : (
+                      <LuCopy className="size-3.5" />
+                    )}
                   </Button>
                 </div>
 
@@ -289,7 +288,11 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
                       className="size-6 min-w-6 text-muted hover:text-foreground"
                       onPress={() => handleCopy(userId, 'ID do usuário')}
                     >
-                      <LuCopy className="size-3" />
+                      {copiedKey === 'ID do usuário' ? (
+                        <LuCheck className="size-3 text-success" />
+                      ) : (
+                        <LuCopy className="size-3" />
+                      )}
                     </Button>
                   </div>
                 ) : null}
@@ -352,4 +355,3 @@ export const UserDetailHeader: React.FC<UserDetailHeaderProps> = ({
     </header>
   );
 };
-
