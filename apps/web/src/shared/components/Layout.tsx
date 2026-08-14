@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { Avatar, Button } from '@heroui/react';
 import {
   LuClock,
+  LuContact,
   LuFileText,
   LuFolderGit2,
+  LuIdCard,
   LuInbox,
   LuLayers,
   LuLogOut,
@@ -81,6 +83,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const canReadDemandAll = hasPermission(Permissions.DemandReadAll);
   const canOpenDemand = hasPermission(Permissions.DemandOpen);
   const canManageSubjects = hasPermission(Permissions.DemandSubjectManage);
+  const canReadCustomers = hasPermission(Permissions.CustomerRead);
 
   const accessToken = useAuthStore((s) => s.accessToken);
   const counts = useDemandCountsStore((s) => s.counts);
@@ -163,8 +166,24 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       ],
     });
 
+    if (canReadCustomers) {
+      list.push({
+        id: 'cadastros',
+        label: 'Cadastros',
+        icon: <LuContact />,
+        children: [
+          {
+            id: 'cadastros-clientes',
+            label: 'Clientes',
+            href: routes.cadastrosClientes,
+            icon: <LuUsers />,
+          },
+        ],
+      });
+    }
+
     return list;
-  }, [canOpenDemand, canReadDemand, canReadDemandAll, counts]);
+  }, [canOpenDemand, canReadDemand, canReadDemandAll, canReadCustomers, counts]);
 
   const bottomItems = useMemo<SidebarNavItem[]>(() => {
     const settingsChildren: SidebarNavItem[] = [];
@@ -194,12 +213,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
 
     const items: SidebarNavItem[] = [
-      {
-        id: 'perfil',
-        label: 'Perfil',
-        icon: <LuUser />,
-        href: routes.perfil,
-      },
       {
         id: 'theme',
         label: 'Alterar Tema',
@@ -236,8 +249,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         onClick={isMobile ? closeMobile : undefined}
       >
         <Avatar
-          size="sm"
-          className={`shrink-0 ${
+          className={`shrink-0 size-10 ${
             !user.avatarUrl && footerAvatarColor
               ? `${footerAvatarColor.bg} ${footerAvatarColor.text}`
               : ''

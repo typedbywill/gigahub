@@ -18,7 +18,6 @@ import type {
 } from './ports';
 import { OpenDemandUseCase } from './open-demand.use-case';
 import { ClaimDemandUseCase } from './claim-demand.use-case';
-import { AssignDemandUseCase } from './assign-demand.use-case';
 import { TransferDemandUseCase } from './transfer-demand.use-case';
 import { ResolveDemandUseCase } from './resolve-demand.use-case';
 import { CloseDemandUseCase } from './close-demand.use-case';
@@ -130,7 +129,9 @@ class InMemoryQueueRepo implements DemandQueueRepository {
 }
 
 class AllowAllAccess implements AccessPort {
-  async assertCan(): Promise<void> {}
+  async assertCan(): Promise<void> {
+    return Promise.resolve();
+  }
 }
 
 class MockEventPublisher implements EventPublisherPort {

@@ -30,7 +30,6 @@ import { routes } from '../../shared/routes';
 import { useAuthStore } from '../../shared/stores/auth.store';
 import { toast } from '../../shared/ui/toast';
 import { StatusBadge } from '../../shared/ui/StatusBadge';
-import { getAvatarColor } from '../../shared/lib/avatar-color';
 
 const fieldClassName =
   'h-10 rounded-xl border border-border bg-background text-foreground shadow-none placeholder:text-muted';
@@ -80,27 +79,18 @@ function ProfileInfoRow({
 function ProfilePanel({
   title,
   icon,
-  themeColor = 'user',
   children,
 }: {
   title: string;
   icon: React.ReactNode;
-  themeColor?: 'user' | 'security' | 'erp' | 'password';
   children: React.ReactNode;
 }) {
-  const iconThemeStyles = {
-    user: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
-    security: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
-    erp: 'bg-sky-500/10 text-sky-600 dark:text-sky-400',
-    password: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  }[themeColor];
-
   return (
     <section className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-xs">
       <div className="p-5 md:p-6">
         <div className="mb-4 flex items-center gap-2.5">
           <span
-            className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${iconThemeStyles}`}
+            className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-foreground/5 text-foreground"
             aria-hidden
           >
             {icon}
@@ -118,24 +108,15 @@ function ProfilePanel({
 function DisclosureSection({
   title,
   icon,
-  themeColor = 'user',
   children,
   defaultExpanded = false,
 }: {
   title: string;
   icon: React.ReactNode;
-  themeColor?: 'user' | 'security' | 'erp' | 'password';
   children: React.ReactNode;
   defaultExpanded?: boolean;
 }) {
   const [expanded, setExpanded] = useState(defaultExpanded);
-
-  const iconThemeStyles = {
-    user: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
-    security: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
-    erp: 'bg-sky-500/10 text-sky-600 dark:text-sky-400',
-    password: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  }[themeColor];
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-xs">
@@ -153,7 +134,7 @@ function DisclosureSection({
           >
             <span className="flex min-w-0 items-center gap-2.5">
               <span
-                className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${iconThemeStyles}`}
+                className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-foreground/5 text-foreground"
                 aria-hidden
               >
                 {icon}
@@ -355,27 +336,20 @@ export const PerfilPage: React.FC = () => {
     { label: 'Membro desde', value: formatDate(user.createdAt) },
   ].filter((row): row is { label: string; value: string } => row !== null);
 
-  const avatarColor = getAvatarColor(user.id ?? user.name);
-
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 md:px-8 md:py-12">
       <div className="grid gap-6 lg:grid-cols-[minmax(260px,320px)_1fr] lg:items-start lg:gap-8">
         <aside className="overflow-hidden rounded-2xl border border-border/80 bg-surface shadow-xs lg:sticky lg:top-8">
           <div
-            className="relative overflow-hidden bg-linear-to-br from-surface-secondary via-surface to-background px-6 pb-8 pt-8 md:px-8 md:pt-10 border-b border-border/40"
+            className="h-20 border-b border-border/40 bg-linear-to-b from-surface-secondary/70 to-surface"
             aria-hidden
-          >
-            <div className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-indigo-500/10 blur-2xl" />
-            <div className="pointer-events-none absolute -bottom-6 -left-6 size-24 rounded-full bg-violet-500/10 blur-xl" />
-          </div>
+          />
 
-          <div className="-mt-14 flex flex-col items-center gap-4 px-6 pb-6 text-center md:px-8 lg:-mt-16 lg:items-start lg:pb-8 lg:text-left">
+          <div className="-mt-12 flex flex-col items-center gap-4 px-6 pb-6 text-center md:px-8 lg:-mt-14 lg:items-start lg:pb-8 lg:text-left">
             <div className="relative shrink-0">
               <Avatar
                 size="lg"
-                className={`size-24 text-xl ring-4 ring-offset-2 ring-offset-surface ${avatarColor.ring} md:size-28 md:text-2xl ${
-                  !user.avatarUrl ? `${avatarColor.bg} ${avatarColor.text}` : ''
-                }`}
+                className="size-24 text-xl ring-4 ring-offset-2 ring-offset-surface ring-border/80 md:size-28 md:text-2xl bg-foreground text-background font-semibold"
               >
                 {user.avatarUrl ? (
                   <Avatar.Image
@@ -384,7 +358,7 @@ export const PerfilPage: React.FC = () => {
                     src={user.avatarUrl}
                   />
                 ) : null}
-                <Avatar.Fallback className={avatarColor.text}>
+                <Avatar.Fallback className="bg-foreground text-background font-semibold">
                   {userInitials(user.name)}
                 </Avatar.Fallback>
               </Avatar>
@@ -466,15 +440,15 @@ export const PerfilPage: React.FC = () => {
 
             <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
               <StatusBadge
-                variant={isActive ? 'active' : 'inactive'}
+                variant={isActive ? 'neutral' : 'inactive'}
                 showDot
               >
                 {isActive ? 'Ativo' : 'Inativo'}
               </StatusBadge>
               {roleName ? (
                 <StatusBadge
-                  variant="security"
-                  icon={<LuShield />}
+                  variant="neutral"
+                  icon={<LuShield className="size-3 text-muted" />}
                 >
                   {roleName}
                 </StatusBadge>
@@ -491,7 +465,6 @@ export const PerfilPage: React.FC = () => {
           <ProfilePanel
             title="Conta"
             icon={<LuUserRound className="size-4" />}
-            themeColor="user"
           >
             <dl className="divide-y divide-border">
               {accountRows.map((row) => (
@@ -508,7 +481,6 @@ export const PerfilPage: React.FC = () => {
             <DisclosureSection
               title="Integração IXC"
               icon={<LuBuilding2 className="size-4" />}
-              themeColor="erp"
             >
               <dl className="divide-y divide-border">
                 {ixcFields.map((field) => (
@@ -525,7 +497,6 @@ export const PerfilPage: React.FC = () => {
           <DisclosureSection
             title="Alterar senha"
             icon={<LuKeyRound className="size-4" />}
-            themeColor="password"
           >
             <p className="mb-4 text-sm text-muted">
               Todas as sessões serão encerradas após a troca.

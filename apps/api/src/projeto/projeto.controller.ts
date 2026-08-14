@@ -65,6 +65,9 @@ export class ProjetoController {
           },
           distanceMeters: item.distanceMeters,
           mapColorHex: item.mapColorHex,
+          portCount: item.portCount,
+          occupiedPortCount: item.occupiedPortCount,
+          availablePortCount: item.availablePortCount,
         })),
       };
     } catch (error) {

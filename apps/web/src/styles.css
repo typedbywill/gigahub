@@ -106,3 +106,15 @@ body {
 .project-map-root .mapboxgl-ctrl-logo {
   display: none !important;
 }
+
+/* Rede > Projeto: custom styled network element popup */
+.network-element-mapbox-popup .mapboxgl-popup-content {
+  padding: 0;
+  border-radius: 1rem;
+  background: transparent;
+  box-shadow: none;
+}
+
+.network-element-mapbox-popup .mapboxgl-popup-tip {
+  display: none;
+}

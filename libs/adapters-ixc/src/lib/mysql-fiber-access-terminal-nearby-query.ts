@@ -63,6 +63,9 @@ export class MysqlFiberAccessTerminalNearbyQuery
           row.codigo_estilo_caixa,
           row.estilo_nome_tipo,
         ),
+        portCount: 16,
+        occupiedPortCount: 0,
+        availablePortCount: 16,
       });
     }
     return items;

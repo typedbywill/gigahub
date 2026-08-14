@@ -98,6 +98,7 @@ export const RedeProjetoPage: React.FC = () => {
   );
 
   const mapRef = useRef<MapRef | null>(null);
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const fetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -317,6 +318,40 @@ export const RedeProjetoPage: React.FC = () => {
       void fetchNearby(center.lat, center.lng, radius);
     }, FETCH_DEBOUNCE_MS);
   }, [fetchNearby, patchUrlState]);
+
+  useEffect(() => {
+    const container = mapContainerRef.current;
+    if (!container) {
+      return;
+    }
+
+    let animationFrameId: number;
+
+    const handleResize = () => {
+      cancelAnimationFrame(animationFrameId);
+      animationFrameId = requestAnimationFrame(() => {
+        const map = mapRef.current;
+        if (map) {
+          map.resize();
+        }
+      });
+    };
+
+    const observer = new ResizeObserver(() => {
+      handleResize();
+    });
+
+    observer.observe(container);
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+      observer.disconnect();
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -593,6 +628,52 @@ export const RedeProjetoPage: React.FC = () => {
     patchUrlState({ panelCollapsed: !collapsed });
   }, [collapsed, isMobile, patchUrlState]);
 
+  const handleSelectElement = useCallback(
+    (selected: MapSelectedRef | null) => {
+      if (!selected) {
+        patchUrlState({ selected: null });
+        return;
+      }
+      if (selected.kind === 'fat') {
+        const fat = fats.find((f) => f.id === selected.id);
+        if (fat) {
+          patchUrlState({
+            selected,
+            lat: fat.location.latitude,
+            lng: fat.location.longitude,
+          });
+        } else {
+          patchUrlState({ selected });
+        }
+      } else if (selected.kind === 'cable') {
+        const cable = cables.find((c) => c.id === selected.id);
+        if (cable && cable.path.length > 0) {
+          const target = cableFlyTarget(cable);
+          patchUrlState({
+            selected,
+            lat: target.latitude,
+            lng: target.longitude,
+          });
+        } else {
+          patchUrlState({ selected });
+        }
+      } else {
+        patchUrlState({ selected });
+      }
+    },
+    [cables, fats, patchUrlState],
+  );
+
+  const selectedCustomerData = useMemo(() => {
+    if (urlState.selected?.kind !== 'customer') {
+      return null;
+    }
+    const hit = hits.find(
+      (h) => h.kind === 'customer' && h.id === urlState.selected?.id,
+    );
+    return hit ? { subtitle: hit.subtitle, document: hit.subtitle } : null;
+  }, [hits, urlState.selected]);
+
   const handleSelectHit = useCallback(
     (hit: MapSearchHit) => {
       if (hit.kind === 'customer') {
@@ -660,7 +741,10 @@ export const RedeProjetoPage: React.FC = () => {
 
   return (
     <div className="relative h-[calc(100dvh-3.5rem)] overflow-hidden md:h-dvh">
-      <div className="project-map-root absolute inset-0 z-0">
+      <div
+        ref={mapContainerRef}
+        className="project-map-root absolute inset-0 z-0"
+      >
         <ProjectMap
           mapRef={mapRef}
           mapboxToken={mapboxToken}
@@ -671,9 +755,12 @@ export const RedeProjetoPage: React.FC = () => {
           fats={fats}
           cables={cables}
           layers={layers}
-          selectedId={selectedId}
+          selected={urlState.selected}
+          selectedCustomerData={selectedCustomerData}
           customerPin={customerPin}
+          onSelectElement={handleSelectElement}
           onMoveEnd={scheduleFetchFromMap}
+          onResize={scheduleFetchFromMap}
         />
       </div>
 

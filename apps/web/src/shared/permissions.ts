@@ -12,6 +12,7 @@ export const Permissions = {
   DemandReply: 'demand:reply',
   DemandClose: 'demand:close',
   DemandSubjectManage: 'demand:subject:manage',
+  CustomerRead: 'customer:read',
 } as const;
 
 export type AppPermission = (typeof Permissions)[keyof typeof Permissions];

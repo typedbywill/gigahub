@@ -84,6 +84,14 @@ export class FiberAccessTerminal {
     return this.props.portCount;
   }
 
+  get occupiedPortCount(): number {
+    return this.props.ports.length;
+  }
+
+  get availablePortCount(): number {
+    return Math.max(0, this.props.portCount - this.props.ports.length);
+  }
+
   get location(): GeoPoint | undefined {
     return this.props.location;
   }

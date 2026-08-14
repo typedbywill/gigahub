@@ -18,4 +18,18 @@ export const routes = {
     `/configuracoes/permissoes/${encodeURIComponent(id)}`,
   assuntos: '/configuracoes/assuntos',
   assunto: (id: string) => `/configuracoes/assuntos/${encodeURIComponent(id)}`,
+  // Cadastros > Clientes
+  cadastrosClientes: '/cadastros/clientes',
+  cadastrosCliente: (id: string) =>
+    `/cadastros/clientes/${encodeURIComponent(id)}`,
+  cadastrosClienteVisaoGeral: (id: string) =>
+    `/cadastros/clientes/${encodeURIComponent(id)}/visao-geral`,
+  cadastrosClienteContratos: (id: string) =>
+    `/cadastros/clientes/${encodeURIComponent(id)}/contratos`,
+  cadastrosClienteFinanceiro: (id: string) =>
+    `/cadastros/clientes/${encodeURIComponent(id)}/financeiro`,
+  cadastrosClienteLogins: (id: string) =>
+    `/cadastros/clientes/${encodeURIComponent(id)}/logins`,
+  cadastrosClienteOrdensServico: (id: string) =>
+    `/cadastros/clientes/${encodeURIComponent(id)}/ordens-de-servico`,
 } as const;

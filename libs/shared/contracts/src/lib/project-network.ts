@@ -20,6 +20,9 @@ export const nearbyFiberAccessTerminalDtoSchema = z.object({
   location: geoPointDtoSchema,
   distanceMeters: z.number().nonnegative(),
   mapColorHex: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  portCount: z.number().int().nonnegative().optional(),
+  occupiedPortCount: z.number().int().nonnegative().optional(),
+  availablePortCount: z.number().int().nonnegative().optional(),
 });
 
 export type NearbyFiberAccessTerminalDto = z.infer<

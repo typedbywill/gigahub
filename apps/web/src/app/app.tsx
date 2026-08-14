@@ -23,6 +23,13 @@ import { DemandaDetailPage } from '../pages/demandas/DemandaDetailPage';
 import { NovaDemandaPage } from '../pages/demandas/NovaDemandaPage';
 import { AssuntosPage } from '../pages/settings/AssuntosPage';
 import { AssuntoDetailPage } from '../pages/settings/AssuntoDetailPage';
+import { ClientesListPage } from '../pages/cadastros/clientes/ClientesListPage';
+import { ClienteLayoutPage } from '../pages/cadastros/clientes/ClienteLayoutPage';
+import { ClienteVisaoGeralTab } from '../pages/cadastros/clientes/tabs/ClienteVisaoGeralTab';
+import { ClienteContratosTab } from '../pages/cadastros/clientes/tabs/ClienteContratosTab';
+import { ClienteFinanceiroTab } from '../pages/cadastros/clientes/tabs/ClienteFinanceiroTab';
+import { ClienteLoginsTab } from '../pages/cadastros/clientes/tabs/ClienteLoginsTab';
+import { ClienteOrdensServicoTab } from '../pages/cadastros/clientes/tabs/ClienteOrdensServicoTab';
 import { routes } from '../shared/routes';
 import { Permissions } from '../shared/permissions';
 import { useAuthStore } from '../shared/stores/auth.store';
@@ -239,9 +246,51 @@ export function App() {
               }
             />
 
+            {/* Cadastros > Clientes */}
+            <Route
+              path={routes.cadastrosClientes}
+              element={
+                <RequirePermission permission={Permissions.CustomerRead}>
+                  <ClientesListPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="/cadastros/clientes/:id"
+              element={
+                <RequirePermission permission={Permissions.CustomerRead}>
+                  <ClienteLayoutPage />
+                </RequirePermission>
+              }
+            >
+              <Route index element={<Navigate to="visao-geral" replace />} />
+              <Route path="visao-geral" element={<ClienteVisaoGeralTab />} />
+              <Route path="contratos" element={<ClienteContratosTab />} />
+              <Route path="financeiro" element={<ClienteFinanceiroTab />} />
+              <Route path="logins" element={<ClienteLoginsTab />} />
+              <Route
+                path="ordens-de-servico"
+                element={<ClienteOrdensServicoTab />}
+              />
+            </Route>
+
             <Route
               path="/profile"
               element={<AliasRedirect to={routes.perfil} />}
+            />
+
+            {/* Aliases curtos = /clientes/... */}
+            <Route
+              path="/clientes"
+              element={<AliasRedirect to={routes.cadastrosClientes} />}
+            />
+            <Route
+              path="/clientes/:id"
+              element={
+                <AliasRedirectWithId
+                  to={(id) => routes.cadastrosClienteVisaoGeral(id)}
+                />
+              }
             />
 
             {/* Aliases curtos = /configuracoes/... */}

@@ -9,6 +9,9 @@ export interface NearbyFiberAccessTerminalReadModel {
   distanceMeters: number;
   /** Map fill/stroke from IXC "Estilo da Caixa" (`codigo_estilo_caixa`). */
   mapColorHex: string;
+  portCount?: number;
+  occupiedPortCount?: number;
+  availablePortCount?: number;
 }
 
 export interface NearbyFiberCableReadModel {

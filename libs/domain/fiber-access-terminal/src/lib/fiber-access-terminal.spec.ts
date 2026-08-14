@@ -31,7 +31,12 @@ describe('FiberAccessTerminal', () => {
 
   it('links a customer to a valid port', () => {
     const fat = terminal();
+    expect(fat.occupiedPortCount).toBe(0);
+    expect(fat.availablePortCount).toBe(8);
+
     fat.linkCustomer('cli-1', 3);
+    expect(fat.occupiedPortCount).toBe(1);
+    expect(fat.availablePortCount).toBe(7);
     expect(fat.toSnapshot().ports).toEqual([
       { port: 3, customerId: 'cli-1' },
     ]);
