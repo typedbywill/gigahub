@@ -78,7 +78,7 @@ export class Role {
     }
     return new Role({
       ...snapshot,
-      permissionIds: [...snapshot.permissionIds],
+      permissionIds: normalizePermissionIds(snapshot.permissionIds as string[]),
     });
   }
 

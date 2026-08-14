@@ -140,9 +140,22 @@ export const PERMISSION_GROUPS = [
 
 export type PermissionGroup = (typeof PERMISSION_GROUPS)[number];
 
+export const LEGACY_PERMISSION_ALIASES: Readonly<
+  Record<string, CatalogPermissionId>
+> = {
+  'care:inbox:read': 'demand:read',
+  'care:ticket:assign': 'demand:assign',
+  'care:ticket:read': 'demand:read',
+  'care:ticket:reply': 'demand:reply',
+  'care:ticket:close': 'demand:close',
+  'care:ticket:open': 'demand:open',
+  'care:read': 'demand:read',
+};
+
 export function permissionId(value: string): PermissionId {
   const normalized = assertNonEmpty(value, 'permissionId');
-  const definition = CATALOG_BY_ID.get(normalized);
+  const targetId = LEGACY_PERMISSION_ALIASES[normalized] ?? normalized;
+  const definition = CATALOG_BY_ID.get(targetId);
   if (!definition) {
     throw new DomainError(
       DomainErrorCodes.UnknownPermission,
@@ -180,5 +193,5 @@ export function listPermissionsByGroup(
 }
 
 export function isKnownPermissionId(value: string): value is CatalogPermissionId {
-  return CATALOG_BY_ID.has(value);
+  return CATALOG_BY_ID.has(value) || value in LEGACY_PERMISSION_ALIASES;
 }

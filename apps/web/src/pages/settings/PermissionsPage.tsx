@@ -303,10 +303,13 @@ export const PermissionsPage: React.FC = () => {
         onPageSizeChange={handlePageSizeChange}
         ariaLabel="Lista de funções e permissões"
         leading={
-          <div className="flex min-w-0 flex-col gap-0.5">
+          <div className="flex items-center gap-2.5">
             <h1 className="font-display truncate text-xl font-bold text-foreground md:text-2xl">
               Permissões
             </h1>
+            <span className="hidden rounded-full bg-muted/15 px-2.5 py-0.5 text-xs font-semibold text-muted sm:inline-block">
+              {filteredItems.length}
+            </span>
           </div>
         }
         columns={columns}

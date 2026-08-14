@@ -204,7 +204,10 @@ export class GrantPermission extends GrantBase<GrantPermissionSnapshot> {
   }
 
   static fromSnapshot(snapshot: GrantPermissionSnapshot): GrantPermission {
-    return new GrantPermission({ ...snapshot });
+    return new GrantPermission({
+      ...snapshot,
+      permissionId: permissionId(snapshot.permissionId),
+    });
   }
 
   get kind(): 'permission' {

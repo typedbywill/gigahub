@@ -28,6 +28,19 @@ describe('Role', () => {
     expect(role.has('work-order:read')).toBe(true);
   });
 
+  it('migrates legacy care permissions to demand permissions in snapshots', () => {
+    const role = Role.fromSnapshot({
+      id: 'role-1' as any,
+      slug: 'supervisor',
+      name: 'Supervisor',
+      permissionIds: ['care:inbox:read' as any, 'work-order:read' as any],
+      status: 'active',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+    expect(role.permissionIds).toEqual(['demand:read', 'work-order:read']);
+  });
+
   it('normalizes slug to kebab-case and rejects invalid slugs', () => {
     expect(createRole({ slug: 'Admin-Acesso' }).slug).toBe('admin-acesso');
     expect(() => createRole({ slug: 'Admin Acesso' })).toThrow(DomainError);

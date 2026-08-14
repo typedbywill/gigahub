@@ -7,12 +7,12 @@
   color-scheme: light;
 }
 
-/* Accent vermelho — light */
+/* Accent preto — light */
 :root,
 html.light,
 html[data-theme="light"] {
-  --accent: oklch(0.55 0.21 25);
-  --accent-foreground: oklch(0.99 0 0);
+  --accent: oklch(0 0 0);
+  --accent-foreground: oklch(1 0 0);
   --focus: var(--accent);
   --link: var(--accent);
   /* Campos com borda/fundo visíveis sobre cards surface */
@@ -23,12 +23,12 @@ html[data-theme="light"] {
   --field-placeholder: var(--muted);
 }
 
-/* Accent vermelho — dark */
+/* Accent branco — dark */
 html.dark,
 html[data-theme="dark"] {
   color-scheme: dark;
-  --accent: oklch(0.68 0.2 25);
-  --accent-foreground: oklch(0.18 0.02 25);
+  --accent: oklch(1 0 0);
+  --accent-foreground: oklch(0 0 0);
   --focus: var(--accent);
   --link: var(--accent);
   --field-border-width: 1px;

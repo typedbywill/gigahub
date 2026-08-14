@@ -13,6 +13,11 @@ describe('permission catalog', () => {
     expect(permissionId('work-order:read')).toBe('work-order:read');
   });
 
+  it('maps legacy permission aliases transparently', () => {
+    expect(permissionId('care:inbox:read')).toBe('demand:read');
+    expect(permissionId('care:ticket:assign')).toBe('demand:assign');
+  });
+
   it('rejects unknown permission ids', () => {
     expect(() => permissionId('unknown:read')).toThrow(DomainError);
     try {
