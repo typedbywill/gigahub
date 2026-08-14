@@ -1,9 +1,9 @@
 {
-  "name": "domain-care-inbox",
+  "name": "domain-demand",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/domain/care-inbox/src",
+  "sourceRoot": "libs/domain/demand/src",
   "projectType": "library",
-  "tags": ["type:domain", "scope:customer-care"],
-  "// targets": "to see all targets run: nx show project domain-care-inbox --web",
+  "tags": ["type:domain", "scope:demand"],
+  "// targets": "to see all targets run: nx show project domain-demand --web",
   "targets": {}
 }

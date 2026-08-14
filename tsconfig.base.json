@@ -28,8 +28,8 @@
       "@shared/domain/customer": ["./libs/domain/customer/src/index.ts"],
       "@gigahub/domain/work-order": ["./libs/domain/work-order/src/index.ts"],
       "@shared/domain/work-order": ["./libs/domain/work-order/src/index.ts"],
-      "@gigahub/domain/care-inbox": ["./libs/domain/care-inbox/src/index.ts"],
-      "@shared/domain/care-inbox": ["./libs/domain/care-inbox/src/index.ts"],
+      "@gigahub/domain/demand": ["./libs/domain/demand/src/index.ts"],
+      "@shared/domain/demand": ["./libs/domain/demand/src/index.ts"],
       "@gigahub/domain/fiber-access-terminal": [
         "./libs/domain/fiber-access-terminal/src/index.ts"
       ],
@@ -49,6 +49,12 @@
       ],
       "@shared/application-identity": [
         "./libs/application-identity/src/index.ts"
+      ],
+      "@gigahub/application-demand": [
+        "./libs/application-demand/src/index.ts"
+      ],
+      "@shared/application-demand": [
+        "./libs/application-demand/src/index.ts"
       ],
       "@gigahub/application-network": [
         "./libs/application-network/src/index.ts"

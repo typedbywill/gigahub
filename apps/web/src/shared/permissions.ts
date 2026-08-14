@@ -4,6 +4,14 @@ export const Permissions = {
   UsersUpdate: 'users:update',
   UsersInactivate: 'users:inactivate',
   AccessManage: 'access:manage',
+  DemandRead: 'demand:read',
+  DemandReadAll: 'demand:read:all',
+  DemandOpen: 'demand:open',
+  DemandClaim: 'demand:claim',
+  DemandAssign: 'demand:assign',
+  DemandReply: 'demand:reply',
+  DemandClose: 'demand:close',
+  DemandSubjectManage: 'demand:subject:manage',
 } as const;
 
 export type AppPermission = (typeof Permissions)[keyof typeof Permissions];

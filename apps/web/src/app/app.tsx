@@ -18,6 +18,11 @@ import { RoleDetailPage } from '../pages/settings/RoleDetailPage';
 import { UsersListPage } from '../pages/users/UsersListPage';
 import { UserDetailPage } from '../pages/users/UserDetailPage';
 import { PerfilPage } from '../pages/perfil/PerfilPage';
+import { DemandasListPage } from '../pages/demandas/DemandasListPage';
+import { DemandaDetailPage } from '../pages/demandas/DemandaDetailPage';
+import { NovaDemandaPage } from '../pages/demandas/NovaDemandaPage';
+import { AssuntosPage } from '../pages/settings/AssuntosPage';
+import { AssuntoDetailPage } from '../pages/settings/AssuntoDetailPage';
 import { routes } from '../shared/routes';
 import { Permissions } from '../shared/permissions';
 import { useAuthStore } from '../shared/stores/auth.store';
@@ -119,6 +124,78 @@ export function App() {
             <Route path={routes.redeProjeto} element={<RedeProjetoPage />} />
             <Route path={routes.perfil} element={<PerfilPage />} />
 
+            {/* Demandas (HelpDesk) */}
+            <Route
+              path={routes.demandas}
+              element={<Navigate to={routes.demandasPendentes} replace />}
+            />
+            <Route
+              path={routes.demandasPendentes}
+              element={
+                <RequirePermission permission={Permissions.DemandRead}>
+                  <DemandasListPage view="queue" />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path={routes.demandasCaixa}
+              element={
+                <RequirePermission permission={Permissions.DemandRead}>
+                  <DemandasListPage view="mine" />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path={routes.demandasAssumidas}
+              element={
+                <RequirePermission permission={Permissions.DemandRead}>
+                  <DemandasListPage view="claimed" />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path={routes.demandasTodas}
+              element={
+                <RequirePermission permission={Permissions.DemandReadAll}>
+                  <DemandasListPage view="all" />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path={routes.demandasNova}
+              element={
+                <RequirePermission permission={Permissions.DemandOpen}>
+                  <NovaDemandaPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path={`${routes.demandas}/:id`}
+              element={
+                <RequirePermission permission={Permissions.DemandRead}>
+                  <DemandaDetailPage />
+                </RequirePermission>
+              }
+            />
+
+            {/* Assuntos e Parâmetros */}
+            <Route
+              path={routes.assuntos}
+              element={
+                <RequirePermission permission={Permissions.DemandSubjectManage}>
+                  <AssuntosPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path={`${routes.assuntos}/:id`}
+              element={
+                <RequirePermission permission={Permissions.DemandSubjectManage}>
+                  <AssuntoDetailPage />
+                </RequirePermission>
+              }
+            />
+
             <Route
               path={routes.usuarios}
               element={
@@ -158,6 +235,14 @@ export function App() {
             />
 
             {/* Aliases curtos = /configuracoes/... */}
+            <Route
+              path="/assuntos"
+              element={<AliasRedirect to={routes.assuntos} />}
+            />
+            <Route
+              path="/assuntos/:id"
+              element={<AliasRedirectWithId to={routes.assunto} />}
+            />
             <Route
               path="/usuarios"
               element={<AliasRedirect to={routes.usuarios} />}

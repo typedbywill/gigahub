@@ -2,15 +2,22 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar, Button } from '@heroui/react';
 import {
+  LuClock,
+  LuFileText,
+  LuFolderGit2,
+  LuInbox,
+  LuLayers,
   LuLogOut,
   LuMap,
   LuMenu,
   LuMoon,
   LuNetwork,
+  LuPlus,
   LuSettings,
   LuShield,
   LuSun,
   LuUser,
+  LuUserCheck,
   LuUsers,
 } from 'react-icons/lu';
 import { useMediaQuery } from '../hooks/use-media-query';
@@ -19,6 +26,7 @@ import { Permissions } from '../permissions';
 import { useAuthStore } from '../stores/auth.store';
 import { useSidebarStore } from '../stores/sidebar.store';
 import { useThemeStore } from '../stores/theme.store';
+import { useDemandCountsStore } from '../stores/demand-counts.store';
 import { getAvatarColor } from '../lib/avatar-color';
 import { Sidebar, type SidebarNavItem } from './Sidebar';
 
@@ -69,25 +77,94 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const canReadUsers = hasPermission(Permissions.UsersRead);
   const canManageAccess = hasPermission(Permissions.AccessManage);
+  const canReadDemand = hasPermission(Permissions.DemandRead);
+  const canReadDemandAll = hasPermission(Permissions.DemandReadAll);
+  const canOpenDemand = hasPermission(Permissions.DemandOpen);
+  const canManageSubjects = hasPermission(Permissions.DemandSubjectManage);
 
-  const topItems = useMemo<SidebarNavItem[]>(
-    () => [
-      {
-        id: 'rede',
-        label: 'Rede',
-        icon: <LuNetwork />,
-        children: [
-          {
-            id: 'rede-projeto',
-            label: 'Projeto',
-            href: routes.redeProjeto,
-            icon: <LuMap />,
-          },
-        ],
-      },
-    ],
-    [],
-  );
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const counts = useDemandCountsStore((s) => s.counts);
+  const setupRealtime = useDemandCountsStore((s) => s.setupRealtime);
+
+  useEffect(() => {
+    if (accessToken && canReadDemand) {
+      const cleanup = setupRealtime(accessToken);
+      return cleanup;
+    }
+    return undefined;
+  }, [accessToken, canReadDemand, setupRealtime]);
+
+  const topItems = useMemo<SidebarNavItem[]>(() => {
+    const list: SidebarNavItem[] = [];
+
+    if (canReadDemand) {
+      const demandChildren: SidebarNavItem[] = [
+        {
+          id: 'demandas-pendentes',
+          label: 'Pendentes',
+          href: routes.demandasPendentes,
+          icon: <LuClock />,
+          badge: counts.queue > 0 ? counts.queue : undefined,
+        },
+        {
+          id: 'demandas-caixa',
+          label: 'Caixa de Entrada',
+          href: routes.demandasCaixa,
+          icon: <LuInbox />,
+          badge: counts.inbox > 0 ? counts.inbox : undefined,
+        },
+        {
+          id: 'demandas-assumidas',
+          label: 'Minhas Demandas',
+          href: routes.demandasAssumidas,
+          icon: <LuUserCheck />,
+          badge: counts.claimed > 0 ? counts.claimed : undefined,
+        },
+      ];
+
+      if (canReadDemandAll) {
+        demandChildren.push({
+          id: 'demandas-todas',
+          label: 'Todas',
+          href: routes.demandasTodas,
+          icon: <LuLayers />,
+        });
+      }
+
+      if (canOpenDemand) {
+        demandChildren.push({
+          id: 'demandas-nova',
+          label: 'Nova Demanda',
+          href: routes.demandasNova,
+          icon: <LuPlus />,
+        });
+      }
+
+      list.push({
+        id: 'demandas',
+        label: 'Demandas',
+        icon: <LuFileText />,
+        badge: counts.queue > 0 ? counts.queue : undefined,
+        children: demandChildren,
+      });
+    }
+
+    list.push({
+      id: 'rede',
+      label: 'Rede',
+      icon: <LuNetwork />,
+      children: [
+        {
+          id: 'rede-projeto',
+          label: 'Projeto',
+          href: routes.redeProjeto,
+          icon: <LuMap />,
+        },
+      ],
+    });
+
+    return list;
+  }, [canOpenDemand, canReadDemand, canReadDemandAll, counts]);
 
   const bottomItems = useMemo<SidebarNavItem[]>(() => {
     const settingsChildren: SidebarNavItem[] = [];
@@ -105,6 +182,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         label: 'Permissões',
         icon: <LuShield />,
         href: routes.permissoes,
+      });
+    }
+    if (canManageSubjects) {
+      settingsChildren.push({
+        id: 'settings-assuntos',
+        label: 'Assuntos (HelpDesk)',
+        icon: <LuFolderGit2 />,
+        href: routes.assuntos,
       });
     }
 
@@ -133,7 +218,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
 
     return items;
-  }, [canManageAccess, canReadUsers, isDark, toggleTheme]);
+  }, [canManageAccess, canManageSubjects, canReadUsers, isDark, toggleTheme]);
 
   const sidebarCollapsed = !isMobile && collapsed;
   const closeMobile = () => setMobileOpen(false);

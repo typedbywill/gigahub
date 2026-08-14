@@ -19,8 +19,10 @@ export type CustomerId = Brand<string, 'CustomerId'>;
 export type ContractId = Brand<string, 'ContractId'>;
 export type WorkOrderId = Brand<string, 'WorkOrderId'>;
 export type SubjectId = Brand<string, 'SubjectId'>;
-export type CareInboxId = Brand<string, 'CareInboxId'>;
-export type CareTicketId = Brand<string, 'CareTicketId'>;
+export type DemandQueueId = Brand<string, 'DemandQueueId'>;
+export type DemandId = Brand<string, 'DemandId'>;
+export type CareInboxId = DemandQueueId;
+export type CareTicketId = DemandId;
 export type FiberAccessTerminalId = Brand<string, 'FiberAccessTerminalId'>;
 export type FiberCableId = Brand<string, 'FiberCableId'>;
 export type UserId = Brand<string, 'UserId'>;
@@ -37,10 +39,12 @@ export const workOrderId = (value: string): WorkOrderId =>
   brandedId(value, 'WorkOrderId');
 export const subjectId = (value: string): SubjectId =>
   brandedId(value, 'SubjectId');
-export const careInboxId = (value: string): CareInboxId =>
-  brandedId(value, 'CareInboxId');
-export const careTicketId = (value: string): CareTicketId =>
-  brandedId(value, 'CareTicketId');
+export const demandQueueId = (value: string): DemandQueueId =>
+  brandedId(value, 'DemandQueueId');
+export const demandId = (value: string): DemandId =>
+  brandedId(value, 'DemandId');
+export const careInboxId = demandQueueId;
+export const careTicketId = demandId;
 export const fiberAccessTerminalId = (
   value: string,
 ): FiberAccessTerminalId => brandedId(value, 'FiberAccessTerminalId');

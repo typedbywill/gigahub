@@ -62,7 +62,7 @@ describe('permission catalog', () => {
     expect(PERMISSION_GROUPS).toEqual([
       'work-order',
       'customer',
-      'care',
+      'demand',
       'finance',
       'telemetry',
       'gamification',

@@ -52,7 +52,7 @@ Containers iniciais:
 - `libs/shared/kernel`: IDs, ponto geográfico e erros de domínio, sem framework.
 - `libs/domain/customer`: entidade Cliente (Customer Care).
 - `libs/domain/work-order`: entidade Ordem de Serviço, assuntos e políticas de campo.
-- `libs/domain/care-inbox`: caixa de atendimento e tickets (HelpDesk).
+- `libs/domain/demand`: demandas, filas e assuntos com parâmetros configuráveis (HelpDesk).
 - `libs/domain/fiber-access-terminal`: CTO / terminal de acesso óptico (Network).
 - `libs/shared/contracts`: DTOs HTTP e eventos versionados, sem lógica de domínio.
 - `libs/application-*`: casos de uso, portas e eventos (a introduzir por módulo).

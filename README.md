@@ -16,7 +16,7 @@ gigahub/
 │   ├── domain/
 │   │   ├── customer/              # Cliente (assinante IXC)
 │   │   ├── work-order/            # Ordem de serviço + assuntos
-│   │   ├── care-inbox/            # Caixa de atendimento e tickets
+│   │   ├── demand/                # Demandas, filas e assuntos (HelpDesk)
 │   │   └── fiber-access-terminal/ # CTO / terminal de acesso óptico
 │   └── shared/
 │       ├── kernel/      # IDs, GeoPoint e erros de domínio

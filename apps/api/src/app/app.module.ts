@@ -10,6 +10,7 @@ import { AuthModule } from '../auth/auth.module';
 import { ClientesModule } from '../clientes/clientes.module';
 import { IxcModule } from '../ixc/ixc.module';
 import { ProjetoModule } from '../projeto/projeto.module';
+import { DemandModule } from '../demand/demand.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { ProjetoModule } from '../projeto/projeto.module';
     IxcModule,
     ProjetoModule,
     ClientesModule,
+    DemandModule,
   ],
 })
 export class AppModule {}

@@ -20,6 +20,15 @@ export const DomainEventTypes = {
   WorkOrderExecutionStarted: 'fieldwork.order.execution.started',
   WorkOrderCompletionRequested: 'fieldwork.order.completion.requested',
   WorkOrderCompleted: 'fieldwork.order.completed',
+  DemandOpened: 'demand.opened',
+  DemandClaimed: 'demand.claimed',
+  DemandAssigned: 'demand.assigned',
+  DemandTransferred: 'demand.transferred',
+  DemandResolved: 'demand.resolved',
+  DemandClosed: 'demand.closed',
+  DemandReopened: 'demand.reopened',
+  DemandValuesUpdated: 'demand.values.updated',
+  // Backward-compat aliases if needed
   CareTicketAssigned: 'customer.care.ticket.assigned',
   CareTicketTransferred: 'customer.care.ticket.transferred',
   CareTicketResolved: 'customer.support.resolved',
@@ -31,6 +40,15 @@ export type DomainEventType =
 export interface WorkOrderEventPayload {
   workOrderId: string;
   customerId: string;
+  status: string;
+}
+
+export interface DemandEventPayload {
+  demandId: string;
+  queueId: string;
+  subjectId: string;
+  customerIds?: string[];
+  assignedAgentId?: string;
   status: string;
 }
 

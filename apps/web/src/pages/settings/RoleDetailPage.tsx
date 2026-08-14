@@ -31,7 +31,7 @@ import { StatusBadge } from '../../shared/ui/StatusBadge';
 
 const GROUP_LABELS: Record<string, string> = {
   'work-order': 'Ordens de serviço',
-  care: 'Atendimento',
+  demand: 'Demandas (HelpDesk)',
   finance: 'Financeiro',
   telemetry: 'Telemetria',
   gamification: 'Gamificação',
