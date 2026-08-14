@@ -72,7 +72,7 @@ export const userListQueryDtoSchema = z.object({
       return value === 'true';
     }),
   page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+  pageSize: z.coerce.number().int().min(1).max(1000).default(20),
 });
 
 export type UserListQueryDto = z.infer<typeof userListQueryDtoSchema>;

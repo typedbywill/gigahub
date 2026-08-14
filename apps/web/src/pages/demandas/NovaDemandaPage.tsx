@@ -17,13 +17,13 @@ import type {
   UserListItemDto,
 } from '@gigahub/shared/contracts';
 import { useAuthStore } from '../../shared/stores/auth.store';
+import { useUsersStore } from '../../shared/stores/users.store';
 import { ApiClientError } from '../../shared/api/auth.api';
 import { openDemandRequest } from '../../shared/api/demandas.api';
 import {
   listDemandQueuesRequest,
   listSubjectsRequest,
 } from '../../shared/api/assuntos.api';
-import { listUsersRequest } from '../../shared/api/users.api';
 import { searchCustomersRequest } from '../../shared/api/clientes.api';
 import { routes } from '../../shared/routes';
 import { toast } from '../../shared/ui/toast';
@@ -31,10 +31,11 @@ import { toast } from '../../shared/ui/toast';
 export const NovaDemandaPage: React.FC = () => {
   const navigate = useNavigate();
   const accessToken = useAuthStore((s) => s.accessToken);
+  const users = useUsersStore((s) => s.users);
+  const fetchUsers = useUsersStore((s) => s.fetchUsers);
 
   const [subjects, setSubjects] = useState<DemandSubjectDto[]>([]);
   const [queues, setQueues] = useState<DemandQueueDto[]>([]);
-  const [users, setUsers] = useState<UserListItemDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -54,15 +55,15 @@ export const NovaDemandaPage: React.FC = () => {
     if (!accessToken) return;
     const controller = new AbortController();
 
+    void fetchUsers(accessToken);
+
     Promise.all([
       listSubjectsRequest(accessToken, true, controller.signal),
       listDemandQueuesRequest(accessToken, true, controller.signal),
-      listUsersRequest(accessToken, { status: 'active', pageSize: 100 }, controller.signal),
     ])
-      .then(([subs, qList, uList]) => {
+      .then(([subs, qList]) => {
         setSubjects(subs);
         setQueues(qList);
-        setUsers(uList.items);
         if (subs.length > 0) {
           const first = subs[0];
           setSelectedSubjectId(first.id);
@@ -73,7 +74,7 @@ export const NovaDemandaPage: React.FC = () => {
       .finally(() => setIsLoading(false));
 
     return () => controller.abort();
-  }, [accessToken]);
+  }, [accessToken, fetchUsers]);
 
   const selectedSubject = subjects.find((s) => s.id === selectedSubjectId);
 

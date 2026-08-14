@@ -28,6 +28,7 @@ import { Permissions } from '../shared/permissions';
 import { useAuthStore } from '../shared/stores/auth.store';
 import { useSidebarStore } from '../shared/stores/sidebar.store';
 import { useThemeStore } from '../shared/stores/theme.store';
+import { useUsersStore } from '../shared/stores/users.store';
 import { Toaster } from '../shared/ui/toast';
 
 function AuthBootstrap({ children }: { children: React.ReactNode }) {
@@ -62,6 +63,15 @@ function AuthBootstrap({ children }: { children: React.ReactNode }) {
 function ProtectedShell() {
   const location = useLocation();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const fetchUsers = useUsersStore((s) => s.fetchUsers);
+
+  useEffect(() => {
+    if (isAuthenticated && accessToken) {
+      void fetchUsers(accessToken);
+    }
+  }, [isAuthenticated, accessToken, fetchUsers]);
+
   if (!isAuthenticated) {
     return (
       <Navigate

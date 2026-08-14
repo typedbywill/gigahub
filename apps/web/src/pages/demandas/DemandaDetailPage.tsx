@@ -45,7 +45,7 @@ import {
   getSubjectRequest,
   listDemandQueuesRequest,
 } from '../../shared/api/assuntos.api';
-import { listUsersRequest } from '../../shared/api/users.api';
+import { useUsersStore } from '../../shared/stores/users.store';
 import { routes } from '../../shared/routes';
 import { Permissions } from '../../shared/permissions';
 import { StatusBadge, type StatusBadgeVariant } from '../../shared/ui/StatusBadge';
@@ -77,6 +77,8 @@ export const DemandaDetailPage: React.FC = () => {
   const accessToken = useAuthStore((s) => s.accessToken);
   const currentUser = useAuthStore((s) => s.user);
   const hasPermission = useAuthStore((s) => s.hasPermission);
+  const users = useUsersStore((s) => s.users);
+  const fetchUsers = useUsersStore((s) => s.fetchUsers);
 
   const canClaim = hasPermission(Permissions.DemandClaim);
   const canAssign = hasPermission(Permissions.DemandAssign);
@@ -86,7 +88,6 @@ export const DemandaDetailPage: React.FC = () => {
   const [demand, setDemand] = useState<DemandDto | null>(null);
   const [subject, setSubject] = useState<DemandSubjectDto | null>(null);
   const [queues, setQueues] = useState<DemandQueueDto[]>([]);
-  const [users, setUsers] = useState<UserListItemDto[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Transfer modal
@@ -96,6 +97,10 @@ export const DemandaDetailPage: React.FC = () => {
   // Assign modal
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState('');
+
+  // Close / Resolve modal
+  const [closeOpen, setCloseOpen] = useState(false);
+  const [resolutionNote, setResolutionNote] = useState('');
 
   // Edit Values
   const [isEditingValues, setIsEditingValues] = useState(false);
@@ -111,18 +116,15 @@ export const DemandaDetailPage: React.FC = () => {
       setDemand(d);
       setEditValues(d.values);
 
-      const [sub, qList, uList] = await Promise.all([
+      void fetchUsers(accessToken);
+
+      const [sub, qList] = await Promise.all([
         getSubjectRequest(accessToken, d.subjectId).catch(() => null),
         listDemandQueuesRequest(accessToken, true).catch(() => []),
-        listUsersRequest(accessToken, { status: 'active', pageSize: 100 }).catch(() => ({
-          items: [],
-          total: 0,
-        })),
       ]);
 
       setSubject(sub);
       setQueues(qList);
-      setUsers(uList.items);
     } catch (err) {
       if (err instanceof ApiClientError) {
         toast.danger('Erro ao carregar demanda', { description: err.message });
@@ -130,7 +132,7 @@ export const DemandaDetailPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [accessToken, id]);
+  }, [accessToken, fetchUsers, id]);
 
   useEffect(() => {
     void loadDemand();

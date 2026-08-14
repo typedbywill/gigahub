@@ -23,7 +23,7 @@ export class ListUsersUseCase {
     await this.access.assertCan(command.actorUserId, 'users:read');
 
     const page = Math.max(1, command.page);
-    const pageSize = Math.min(100, Math.max(1, command.pageSize));
+    const pageSize = Math.min(1000, Math.max(1, command.pageSize));
     const result = await this.users.list({
       q: command.q?.trim() || undefined,
       status: command.status ?? 'all',

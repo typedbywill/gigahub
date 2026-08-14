@@ -5,6 +5,7 @@ import {
   loginRequest,
   renewTokenRequest,
 } from '../api/auth.api';
+import { useUsersStore } from './users.store';
 
 interface AuthState {
   user: PublicUserDto | null;
@@ -41,12 +42,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           }
         : state,
     ),
-  logout: () =>
+  logout: () => {
+    useUsersStore.getState().reset();
     set({
       user: null,
       accessToken: null,
       isAuthenticated: false,
-    }),
+    });
+  },
   hasPermission: (permissionId) => {
     const ids = get().user?.permissionIds ?? [];
     return ids.includes(permissionId);
