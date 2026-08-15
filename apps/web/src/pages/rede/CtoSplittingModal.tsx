@@ -75,6 +75,7 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
   const [activeTab, setActiveTab] = useState<ViewTab>('diagram');
 
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const diagramCanvasRef = useRef<HTMLDivElement | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 800, height: 500 });
 
   // Zoom & Pan State
@@ -169,10 +170,10 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
         y,
         width,
         height,
-        inPortsCoords: [{ portNumber: 1, x: x + 25, y: y + 16, colorHex: '#00aa00' }],
+        inPortsCoords: [{ portNumber: 1, x: x + 55, y: y + 14, colorHex: '#00aa00' }],
         outPortsCoords: [
-          { portNumber: 1, x: x + 40, y: y + 20, colorHex: '#00aa00' },
-          { portNumber: 2, x: x + width - 5, y: y + height - 15, colorHex: '#ffff00' },
+          { portNumber: 1, x: x + 55, y: y + 14, colorHex: '#00aa00' },
+          { portNumber: 2, x: x + 48, y: y + 41, colorHex: '#ffff00' },
         ],
       });
 
@@ -212,6 +213,7 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
 
     // 4. Position Balanced Splitters in Right Column
     balSplitters.forEach((node) => {
+      const outCount = Math.max(8, node.portsOut?.length || 8);
       const x = rightColumnX;
       const y = currRightY;
       const width = 95;
@@ -222,11 +224,11 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
         y,
         width,
         height,
-        inPortsCoords: [{ portNumber: 1, x, y: y + 20, colorHex: '#00aa00' }],
-        outPortsCoords: Array.from({ length: 8 }, (_, pIdx) => ({
+        inPortsCoords: [{ portNumber: 1, x, y: y + 14, colorHex: '#00aa00' }],
+        outPortsCoords: Array.from({ length: outCount }, (_, pIdx) => ({
           portNumber: pIdx + 1,
           x: x + width,
-          y: y + 10 + pIdx * 6,
+          y: y + 2 + pIdx * (58 / outCount) + (58 / outCount) / 2,
           colorHex: getFiberColor(pIdx + 1),
         })),
       });
@@ -361,12 +363,48 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
+        e.stopPropagation();
         onClose();
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown, true);
+    return () => window.removeEventListener('keydown', handleKeyDown, true);
   }, [onClose]);
+
+  // Handle Mouse Wheel Zoom centered on cursor position
+  useEffect(() => {
+    const el = diagramCanvasRef.current;
+    if (!el) return;
+
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const pointerX = e.clientX - rect.left;
+      const pointerY = e.clientY - rect.top;
+
+      const zoomFactor = e.deltaY < 0 ? 1.15 : 0.87;
+
+      setZoom((prevZoom) => {
+        const currentScale = baseTransform.scale * prevZoom;
+        const newZoom = Math.min(4.0, Math.max(0.25, Number((prevZoom * zoomFactor).toFixed(3))));
+        const newScale = baseTransform.scale * newZoom;
+
+        // Calculate world coordinates under cursor
+        const worldX = (pointerX - (baseTransform.x + panOffset.x)) / currentScale;
+        const worldY = (pointerY - (baseTransform.y + panOffset.y)) / currentScale;
+
+        // Adjust panOffset so point under cursor remains stationary
+        const newPanX = pointerX - baseTransform.x - worldX * newScale;
+        const newPanY = pointerY - baseTransform.y - worldY * newScale;
+
+        setPanOffset({ x: newPanX, y: newPanY });
+        return newZoom;
+      });
+    };
+
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [baseTransform, panOffset]);
 
   // Drag / Pan Handlers for Touch & Mouse
   const handlePointerDown = useCallback((clientX: number, clientY: number) => {
@@ -410,6 +448,11 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-labelledby="cto-splitting-title"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/80 backdrop-blur-xs transition-opacity animate-in fade-in"
     >
       <div className="flex flex-col w-full h-[95dvh] sm:h-[88vh] sm:max-w-5xl bg-surface rounded-t-3xl sm:rounded-2xl border border-border shadow-2xl overflow-hidden">
@@ -556,6 +599,7 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
             </div>
           ) : data && activeTab === 'diagram' ? (
             <div
+              ref={diagramCanvasRef}
               className="relative flex-1 w-full h-full overflow-hidden cursor-grab active:cursor-grabbing touch-none"
               onMouseDown={(e) => handlePointerDown(e.clientX, e.clientY)}
               onMouseMove={(e) => handlePointerMove(e.clientX, e.clientY)}
@@ -574,7 +618,7 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
               {/* Help hint badge */}
               <div className="absolute top-2.5 left-3 z-10 pointer-events-none flex items-center gap-1.5 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-full text-[11px] text-white/90 border border-white/15 shadow-md">
                 <LuMove className="size-3.5 text-sky-400" />
-                <span>Arraste e use o zoom para explorar</span>
+                <span>Arraste para mover • Scroll do mouse para zoom • ESC para fechar</span>
               </div>
 
               {/* Full-width interactive SVG Canvas */}
@@ -654,25 +698,42 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
                       // Straight pass-through horizontal line
                       pathD = `M ${sPort.x} ${sPort.y} L ${tPort.x} ${tPort.y}`;
                     } else if (
-                      conn.sourceNodeId.startsWith('cable_in') &&
-                      conn.targetNodeId.startsWith('splitter_')
+                      (conn.sourceNodeId.startsWith('cable_in') || conn.sourceNodeId.startsWith('splitter_')) &&
+                      conn.targetNodeId.startsWith('splitter_') &&
+                      sourcePos.x < 300 &&
+                      targetPos.x < 300
                     ) {
-                      const controlX = sPort.x + 45;
+                      // Connections between elements on the left column (looping around on the right side)
+                      const controlX = Math.max(sPort.x, tPort.x) + 45;
                       pathD = `M ${sPort.x} ${sPort.y} C ${controlX} ${sPort.y}, ${controlX} ${tPort.y}, ${tPort.x} ${tPort.y}`;
                     } else if (
-                      conn.sourceNodeId.startsWith('splitter_') &&
-                      conn.targetNodeId.startsWith('cable_out')
+                      sourcePos.x > 500 &&
+                      targetPos.x > 500
                     ) {
+                      // Connections between elements on the right column (looping around on the left side)
+                      const controlX = Math.min(sPort.x, tPort.x) - 45;
+                      pathD = `M ${sPort.x} ${sPort.y} C ${controlX} ${sPort.y}, ${controlX} ${tPort.y}, ${tPort.x} ${tPort.y}`;
+                    } else if (tPort.x > sPort.x + 50) {
+                      // Left-to-right connections (flowing from left column elements to right column elements)
                       const dx = tPort.x - sPort.x;
-                      const c1x = sPort.x + dx * 0.4;
+                      const c1x = sPort.x + dx * 0.45;
                       const c1y = sPort.y;
-                      const c2x = sPort.x + dx * 0.6;
+                      const c2x = tPort.x - dx * 0.45;
+                      const c2y = tPort.y;
+                      pathD = `M ${sPort.x} ${sPort.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${tPort.x} ${tPort.y}`;
+                    } else if (sPort.x > tPort.x + 50) {
+                      // Right-to-left connections
+                      const dx = sPort.x - tPort.x;
+                      const c1x = sPort.x - dx * 0.45;
+                      const c1y = sPort.y;
+                      const c2x = tPort.x + dx * 0.45;
                       const c2y = tPort.y;
                       pathD = `M ${sPort.x} ${sPort.y} C ${c1x} ${c1y}, ${c2x} ${c2y}, ${tPort.x} ${tPort.y}`;
                     } else {
                       const dx = Math.abs(tPort.x - sPort.x);
-                      const c1x = sPort.x + Math.max(35, dx * 0.4);
-                      const c2x = tPort.x - Math.max(35, dx * 0.4);
+                      const sign = tPort.x >= sPort.x ? 1 : -1;
+                      const c1x = sPort.x + sign * Math.max(35, dx * 0.45);
+                      const c2x = tPort.x - sign * Math.max(35, dx * 0.45);
                       pathD = `M ${sPort.x} ${sPort.y} C ${c1x} ${sPort.y}, ${c2x} ${tPort.y}, ${tPort.x} ${tPort.y}`;
                     }
 
@@ -732,8 +793,6 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
                     if (!pos) return null;
 
                     if (node.kind === 'cable_in') {
-                      const portCount = Math.max(1, node.portsOut.length);
-
                       return (
                         <g key={node.id} transform={`translate(${pos.x}, ${pos.y})`}>
                           {/* Label Above */}
@@ -794,8 +853,6 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
                     }
 
                     if (node.kind === 'cable_out') {
-                      const portCount = Math.max(1, node.portsIn.length);
-
                       return (
                         <g key={node.id} transform={`translate(${pos.x}, ${pos.y})`}>
                           {/* Label Above */}
@@ -924,6 +981,9 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
                     }
 
                     // Balanced Splitter (1/8, 1/16)
+                    const outCount = Math.max(8, node.portsOut?.length || 8);
+                    const portHeight = 58 / outCount;
+
                     return (
                       <g key={node.id} transform={`translate(${pos.x}, ${pos.y})`}>
                         <text
@@ -937,15 +997,7 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
                           {node.name}
                         </text>
 
-                        {/* White Wire Loop */}
-                        <path
-                          d="M 30 15 L 68 15 L 68 42 L 30 42"
-                          fill="none"
-                          stroke="#ffffff"
-                          strokeWidth="2.5"
-                        />
-
-                        {/* Input Green Connector */}
+                        {/* Input Green Connector on Left */}
                         <rect
                           x="0"
                           y="2"
@@ -968,25 +1020,69 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
                           1
                         </text>
 
-                        {/* Splitter Body */}
+                        {/* Metallic PLC Splitter Body */}
                         <path
-                          d="M 0 30 L 30 30 L 30 54 L 0 54 L -18 47 Z"
+                          d="M 30 6 L 66 2 L 66 60 L 30 56 Z"
                           fill="url(#splitterMetallicGradient)"
                           stroke="#71717a"
                           strokeWidth="1"
                         />
-
                         <text
-                          x="15"
-                          y="47"
-                          fill="#71717a"
+                          x="48"
+                          y="25"
+                          fill="#3f3f46"
+                          fontSize="9"
+                          fontWeight="bold"
+                          textAnchor="middle"
+                          fontFamily="sans-serif"
+                        >
+                          PLC
+                        </text>
+                        <text
+                          x="48"
+                          y="39"
+                          fill="#18181b"
                           fontSize="11"
                           fontWeight="bold"
                           textAnchor="middle"
                           fontFamily="sans-serif"
                         >
-                          2
+                          {node.ratio || `1/${outCount}`}
                         </text>
+
+                        {/* Output Ports on Right */}
+                        {Array.from({ length: outCount }, (_, pIdx) => {
+                          const pY = 2 + pIdx * portHeight;
+                          const pNum = pIdx + 1;
+                          const color = getFiberColor(pNum);
+                          const isLight = color === '#ffff00' || color === '#ffffff' || color === '#ff88cc';
+
+                          return (
+                            <g key={pNum}>
+                              <rect
+                                x="68"
+                                y={pY}
+                                width="27"
+                                height={Math.max(4.5, portHeight - 1)}
+                                rx="2"
+                                fill={color}
+                                stroke="rgba(0,0,0,0.5)"
+                                strokeWidth="0.8"
+                              />
+                              <text
+                                x="81.5"
+                                y={pY + portHeight / 2 + 3}
+                                fill={isLight ? '#000000' : '#ffffff'}
+                                fontSize={outCount > 8 ? '7' : '8'}
+                                fontWeight="bold"
+                                textAnchor="middle"
+                                fontFamily="sans-serif"
+                              >
+                                {pNum}
+                              </text>
+                            </g>
+                          );
+                        })}
                       </g>
                     );
                   })}
