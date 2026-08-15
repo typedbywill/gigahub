@@ -13,6 +13,9 @@ export const Permissions = {
   DemandClose: 'demand:close',
   DemandSubjectManage: 'demand:subject:manage',
   CustomerRead: 'customer:read',
+  WorkOrderRead: 'work-order:read',
+  WorkOrderExecute: 'work-order:execute',
+  WorkOrderReview: 'work-order:review',
 } as const;
 
 export type AppPermission = (typeof Permissions)[keyof typeof Permissions];

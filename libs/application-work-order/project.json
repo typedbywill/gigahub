@@ -1,0 +1,8 @@
+{
+  "name": "application-work-order",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/application-work-order/src",
+  "projectType": "library",
+  "tags": ["type:application", "scope:field-work"],
+  "targets": {}
+}

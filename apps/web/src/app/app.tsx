@@ -30,6 +30,10 @@ import { ClienteContratosTab } from '../pages/cadastros/clientes/tabs/ClienteCon
 import { ClienteFinanceiroTab } from '../pages/cadastros/clientes/tabs/ClienteFinanceiroTab';
 import { ClienteLoginsTab } from '../pages/cadastros/clientes/tabs/ClienteLoginsTab';
 import { ClienteOrdensServicoTab } from '../pages/cadastros/clientes/tabs/ClienteOrdensServicoTab';
+import { AgendaPage } from '../pages/os/AgendaPage';
+import { EmAndamentoPage } from '../pages/os/EmAndamentoPage';
+import { WorkOrdersListPage } from '../pages/os/WorkOrdersListPage';
+import { WorkOrderDetailPage } from '../pages/os/WorkOrderDetailPage';
 import { routes } from '../shared/routes';
 import { Permissions } from '../shared/permissions';
 import { useAuthStore } from '../shared/stores/auth.store';
@@ -140,6 +144,48 @@ export function App() {
 
             <Route path={routes.redeProjeto} element={<RedeProjetoPage />} />
             <Route path={routes.perfil} element={<PerfilPage />} />
+
+            {/* Ordens de Serviço & Agenda */}
+            <Route
+              path={routes.os}
+              element={<Navigate to={routes.osAgenda} replace />}
+            />
+            <Route
+              path={routes.agenda}
+              element={<Navigate to={routes.osAgenda} replace />}
+            />
+            <Route
+              path={routes.osAgenda}
+              element={
+                <RequirePermission permission={Permissions.WorkOrderRead}>
+                  <AgendaPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path={routes.osEmAndamento}
+              element={
+                <RequirePermission permission={Permissions.WorkOrderRead}>
+                  <EmAndamentoPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path={routes.osTodas}
+              element={
+                <RequirePermission permission={Permissions.WorkOrderRead}>
+                  <WorkOrdersListPage />
+                </RequirePermission>
+              }
+            />
+            <Route
+              path="/os/:id"
+              element={
+                <RequirePermission permission={Permissions.WorkOrderRead}>
+                  <WorkOrderDetailPage />
+                </RequirePermission>
+              }
+            />
 
             {/* Demandas (HelpDesk) */}
             <Route

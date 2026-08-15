@@ -16,6 +16,8 @@ export { MysqlCtoSplittingDiagramQuery } from './lib/mysql-cto-splitting-diagram
 export { MysqlCustomerSearchQuery } from './lib/mysql-customer-search-query';
 
 export { MysqlCustomerQueryAdapter } from './lib/mysql-customer-query.adapter';
+export { MysqlWorkOrderQueryAdapter } from './lib/mysql-work-order-query.adapter';
+export { MysqlWorkOrderCommandAdapter } from './lib/mysql-work-order-command.adapter';
 export { TcpCustomerRemoteAccessAdapter } from './lib/tcp-customer-remote-access.adapter';
 export { NullCustomerSignalReaderAdapter } from './lib/null-customer-signal-reader.adapter';
 export {

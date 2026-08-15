@@ -18,6 +18,13 @@ export const routes = {
     `/configuracoes/permissoes/${encodeURIComponent(id)}`,
   assuntos: '/configuracoes/assuntos',
   assunto: (id: string) => `/configuracoes/assuntos/${encodeURIComponent(id)}`,
+  // Ordens de Serviço & Agenda
+  os: '/os',
+  agenda: '/agenda',
+  osAgenda: '/os/agenda',
+  osEmAndamento: '/os/em-andamento',
+  osTodas: '/os/todas',
+  osDetalhe: (id: string) => `/os/${encodeURIComponent(id)}`,
   // Cadastros > Clientes
   cadastrosClientes: '/cadastros/clientes',
   cadastrosCliente: (id: string) =>

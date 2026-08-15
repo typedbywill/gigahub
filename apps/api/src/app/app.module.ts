@@ -12,6 +12,7 @@ import { IxcModule } from '../ixc/ixc.module';
 import { ProjetoModule } from '../projeto/projeto.module';
 import { DemandModule } from '../demand/demand.module';
 import { SearchModule } from '../search/search.module';
+import { WorkOrdersModule } from '../work-orders/work-orders.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { SearchModule } from '../search/search.module';
     ClientesModule,
     DemandModule,
     SearchModule,
+    WorkOrdersModule,
   ],
 })
 export class AppModule {}

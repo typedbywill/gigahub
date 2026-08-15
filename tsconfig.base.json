@@ -68,6 +68,12 @@
       "@shared/application-customer": [
         "./libs/application-customer/src/index.ts"
       ],
+      "@gigahub/application-work-order": [
+        "./libs/application-work-order/src/index.ts"
+      ],
+      "@shared/application-work-order": [
+        "./libs/application-work-order/src/index.ts"
+      ],
       "@gigahub/adapters-ixc": ["./libs/adapters-ixc/src/index.ts"],
       "@shared/adapters-ixc": ["./libs/adapters-ixc/src/index.ts"]
     }

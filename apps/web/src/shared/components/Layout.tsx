@@ -2,12 +2,15 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Avatar, Button } from '@heroui/react';
 import {
+  LuActivity,
+  LuCalendar,
   LuClock,
   LuContact,
   LuFileText,
   LuFolderGit2,
   LuInbox,
   LuLayers,
+  LuListFilter,
   LuLogOut,
   LuMap,
   LuMenu,
@@ -19,6 +22,7 @@ import {
   LuSun,
   LuUserCheck,
   LuUsers,
+  LuWrench,
 } from 'react-icons/lu';
 import { useMediaQuery } from '../hooks/use-media-query';
 import { routes } from '../routes';
@@ -93,6 +97,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const canOpenDemand = hasPermission(Permissions.DemandOpen);
   const canManageSubjects = hasPermission(Permissions.DemandSubjectManage);
   const canReadCustomers = hasPermission(Permissions.CustomerRead);
+  const canReadWorkOrders =
+    hasPermission(Permissions.WorkOrderRead) ||
+    hasPermission(Permissions.WorkOrderExecute);
 
   const accessToken = useAuthStore((s) => s.accessToken);
   const counts = useDemandCountsStore((s) => s.counts);
@@ -108,6 +115,34 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const topItems = useMemo<SidebarNavItem[]>(() => {
     const list: SidebarNavItem[] = [];
+
+    if (canReadWorkOrders) {
+      list.push({
+        id: 'ordens-servico',
+        label: 'Ordens de Serviço',
+        icon: <LuWrench />,
+        children: [
+          {
+            id: 'os-agenda',
+            label: 'Minha Agenda',
+            href: routes.osAgenda,
+            icon: <LuCalendar />,
+          },
+          {
+            id: 'os-em-andamento',
+            label: 'Em Andamento',
+            href: routes.osEmAndamento,
+            icon: <LuActivity />,
+          },
+          {
+            id: 'os-todas',
+            label: 'Todas as OSs',
+            href: routes.osTodas,
+            icon: <LuListFilter />,
+          },
+        ],
+      });
+    }
 
     if (canReadDemand) {
       const demandChildren: SidebarNavItem[] = [
@@ -192,7 +227,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
 
     return list;
-  }, [canOpenDemand, canReadDemand, canReadDemandAll, canReadCustomers, counts]);
+  }, [
+    canOpenDemand,
+    canReadDemand,
+    canReadDemandAll,
+    canReadCustomers,
+    canReadWorkOrders,
+    counts,
+  ]);
 
   const bottomItems = useMemo<SidebarNavItem[]>(() => {
     const settingsChildren: SidebarNavItem[] = [];

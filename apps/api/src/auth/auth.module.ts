@@ -497,6 +497,11 @@ export const AVATAR_BUCKET = 'AVATAR_BUCKET';
       inject: [SyncUsersFromErpUseCase],
     },
   ],
-  exports: [AccessTokenGuard, ResolveEffectiveAccess, ListUsersUseCase],
+  exports: [
+    AccessTokenGuard,
+    ResolveEffectiveAccess,
+    ListUsersUseCase,
+    MongoUserRepository,
+  ],
 })
 export class AuthModule {}
