@@ -200,3 +200,13 @@ export {
   type CtoSplittingDiagramResponseDto,
 } from './lib/cto-splitting';
 
+export {
+  opticalSignalQualitySchema,
+  opticalSignalDtoSchema,
+  ctoCustomerDtoSchema,
+  ctoCustomersResponseDtoSchema,
+  type OpticalSignalQualityDto,
+  type OpticalSignalDto,
+  type CtoCustomerDto,
+  type CtoCustomersResponseDto,
+} from './lib/project-network';

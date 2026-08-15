@@ -130,3 +130,53 @@ export type SearchProjectNetworkResponseDto = z.infer<
   typeof searchProjectNetworkResponseDtoSchema
 >;
 
+export const opticalSignalQualitySchema = z.enum([
+  'EXCELLENT',
+  'GOOD',
+  'WARNING',
+  'CRITICAL',
+  'OFFLINE',
+]);
+
+export type OpticalSignalQualityDto = z.infer<typeof opticalSignalQualitySchema>;
+
+export const opticalSignalDtoSchema = z.object({
+  rxPowerDbm: z.number(),
+  txPowerDbm: z.number(),
+  quality: opticalSignalQualitySchema,
+  isMock: z.literal(true),
+});
+
+export type OpticalSignalDto = z.infer<typeof opticalSignalDtoSchema>;
+
+export const ctoCustomerDtoSchema = z.object({
+  radUsuarioId: z.string().min(1),
+  clienteId: z.string().min(1),
+  contratoId: z.string().optional(),
+  login: z.string().min(1),
+  mac: z.string().optional(),
+  portaFtth: z.number().int().min(1),
+  razaoSocial: z.string().min(1),
+  nomeFantasia: z.string().optional(),
+  cpfCnpj: z.string().optional(),
+  telefone: z.string().optional(),
+  endereco: z.string().optional(),
+  online: z.boolean(),
+  signal: opticalSignalDtoSchema,
+});
+
+export type CtoCustomerDto = z.infer<typeof ctoCustomerDtoSchema>;
+
+export const ctoCustomersResponseDtoSchema = z.object({
+  fatId: z.string().min(1),
+  fatName: z.string().min(1),
+  totalPorts: z.number().int().positive(),
+  occupiedPorts: z.number().int().nonnegative(),
+  availablePorts: z.number().int().nonnegative(),
+  customers: z.array(ctoCustomerDtoSchema),
+});
+
+export type CtoCustomersResponseDto = z.infer<
+  typeof ctoCustomersResponseDtoSchema
+>;
+

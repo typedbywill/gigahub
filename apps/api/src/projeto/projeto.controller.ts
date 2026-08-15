@@ -15,6 +15,7 @@ import {
   ListNearbyFiberSpliceEnclosuresUseCase,
   SearchProjectNetworkUseCase,
   GetCtoSplittingDiagramUseCase,
+  GetCtoCustomersUseCase,
 } from '@gigahub/application-network';
 import {
   nearbyProjectQueryDtoSchema,
@@ -24,6 +25,7 @@ import {
   type NearbyFiberSpliceEnclosuresResponseDto,
   type SearchProjectNetworkResponseDto,
   type CtoSplittingDiagramResponseDto,
+  type CtoCustomersResponseDto,
 } from '@gigahub/shared/contracts';
 import { AccessTokenGuard } from '../auth/access-token.guard';
 
@@ -33,6 +35,7 @@ import { AccessTokenGuard } from '../auth/access-token.guard';
  * Implemented:
  * - GET /projeto/fat
  * - GET /projeto/fat/:id/splitagem
+ * - GET /projeto/fat/:id/clientes
  * - GET /projeto/cabos
  * - GET /projeto/ceo
  * - GET /projeto/busca
@@ -49,8 +52,46 @@ export class ProjetoController {
     private readonly listNearbyCeos: ListNearbyFiberSpliceEnclosuresUseCase,
     private readonly searchProjectNetwork: SearchProjectNetworkUseCase,
     private readonly getCtoSplittingDiagram: GetCtoSplittingDiagramUseCase,
+    private readonly getCtoCustomers: GetCtoCustomersUseCase,
   ) {}
 
+  @Get('fat/:id/clientes')
+  async getFatCustomers(
+    @Param('id') id: string,
+  ): Promise<CtoCustomersResponseDto> {
+    try {
+      const result = await this.getCtoCustomers.execute({ fatId: id });
+      return {
+        fatId: result.fatId,
+        fatName: result.fatName,
+        totalPorts: result.totalPorts,
+        occupiedPorts: result.occupiedPorts,
+        availablePorts: result.availablePorts,
+        customers: result.customers.map((c) => ({
+          radUsuarioId: c.radUsuarioId,
+          clienteId: c.clienteId,
+          contratoId: c.contratoId,
+          login: c.login,
+          mac: c.mac,
+          portaFtth: c.portaFtth,
+          razaoSocial: c.razaoSocial,
+          nomeFantasia: c.nomeFantasia,
+          cpfCnpj: c.cpfCnpj,
+          telefone: c.telefone,
+          endereco: c.endereco,
+          online: c.online,
+          signal: {
+            rxPowerDbm: c.signal.rxPowerDbm,
+            txPowerDbm: c.signal.txPowerDbm,
+            quality: c.signal.quality,
+            isMock: c.signal.isMock,
+          },
+        })),
+      };
+    } catch (error) {
+      this.rethrowProjectError(error);
+    }
+  }
 
   @Get('fat/:id/splitagem')
   async getFatSplittingDiagram(
@@ -157,8 +198,14 @@ export class ProjetoController {
           cableTypeName: item.cableTypeName,
         })),
       };
+    } catch (error) {
+      this.rethrowProjectError(error);
+    }
+  }
+
   @Get('ceo')
   async listNearbyFiberSpliceEnclosures(
+
     @Query() query: unknown,
   ): Promise<NearbyFiberSpliceEnclosuresResponseDto> {
     const parsed = this.parseNearbyQuery(query);

@@ -6,6 +6,7 @@ import {
   MysqlFiberSpliceEnclosureNearbyQuery,
   MysqlProjectNetworkSearchQuery,
   MysqlCtoSplittingDiagramQuery,
+  MysqlCtoCustomersQuery,
 } from '@gigahub/adapters-ixc';
 import {
   ListNearbyFiberAccessTerminalsUseCase,
@@ -13,11 +14,13 @@ import {
   ListNearbyFiberSpliceEnclosuresUseCase,
   SearchProjectNetworkUseCase,
   GetCtoSplittingDiagramUseCase,
+  GetCtoCustomersUseCase,
   type FiberAccessTerminalNearbyQuery,
   type FiberCableNearbyQuery,
   type FiberSpliceEnclosureNearbyQuery,
   type ProjectNetworkSearchQuery,
   type CtoSplittingDiagramQuery,
+  type CtoCustomersQuery,
 } from '@gigahub/application-network';
 import { AuthModule } from '../auth/auth.module';
 import { IXC_MYSQL_POOL } from '../ixc/ixc.module';
@@ -30,6 +33,7 @@ export const FIBER_SPLICE_ENCLOSURE_NEARBY_QUERY =
   'FIBER_SPLICE_ENCLOSURE_NEARBY_QUERY';
 export const PROJECT_NETWORK_SEARCH_QUERY = 'PROJECT_NETWORK_SEARCH_QUERY';
 export const CTO_SPLITTING_DIAGRAM_QUERY = 'CTO_SPLITTING_DIAGRAM_QUERY';
+export const CTO_CUSTOMERS_QUERY = 'CTO_CUSTOMERS_QUERY';
 
 @Module({
   imports: [AuthModule],
@@ -116,6 +120,22 @@ export const CTO_SPLITTING_DIAGRAM_QUERY = 'CTO_SPLITTING_DIAGRAM_QUERY';
       inject: [IXC_MYSQL_POOL],
     },
     {
+      provide: CTO_CUSTOMERS_QUERY,
+      useFactory: (pool: Pool | null): CtoCustomersQuery => {
+        if (!pool) {
+          return {
+            async findByFatId() {
+              throw new Error(
+                'IXC database is not configured (set IXC_DB_USER / IXC_DB_HOST)',
+              );
+            },
+          };
+        }
+        return new MysqlCtoCustomersQuery(pool);
+      },
+      inject: [IXC_MYSQL_POOL],
+    },
+    {
       provide: ListNearbyFiberAccessTerminalsUseCase,
       useFactory: (query: FiberAccessTerminalNearbyQuery) =>
         new ListNearbyFiberAccessTerminalsUseCase(query),
@@ -144,6 +164,12 @@ export const CTO_SPLITTING_DIAGRAM_QUERY = 'CTO_SPLITTING_DIAGRAM_QUERY';
       useFactory: (query: CtoSplittingDiagramQuery) =>
         new GetCtoSplittingDiagramUseCase(query),
       inject: [CTO_SPLITTING_DIAGRAM_QUERY],
+    },
+    {
+      provide: GetCtoCustomersUseCase,
+      useFactory: (query: CtoCustomersQuery) =>
+        new GetCtoCustomersUseCase(query),
+      inject: [CTO_CUSTOMERS_QUERY],
     },
   ],
   exports: [SearchProjectNetworkUseCase],

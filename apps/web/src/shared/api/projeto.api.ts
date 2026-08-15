@@ -4,6 +4,7 @@ import type {
   NearbyFiberSpliceEnclosuresResponseDto,
   SearchProjectNetworkResponseDto,
   CtoSplittingDiagramResponseDto,
+  CtoCustomersResponseDto,
 } from '@gigahub/shared/contracts';
 import { apiFetch } from './http';
 
@@ -91,6 +92,20 @@ export function getCtoSplittingDiagramRequest(
 ): Promise<CtoSplittingDiagramResponseDto> {
   return apiFetch<CtoSplittingDiagramResponseDto>(
     `/api/v1/projeto/fat/${encodeURIComponent(fatId)}/splitagem`,
+    {
+      accessToken,
+      signal,
+    },
+  );
+}
+
+export function getCtoCustomersRequest(
+  accessToken: string,
+  fatId: string,
+  signal?: AbortSignal,
+): Promise<CtoCustomersResponseDto> {
+  return apiFetch<CtoCustomersResponseDto>(
+    `/api/v1/projeto/fat/${encodeURIComponent(fatId)}/clientes`,
     {
       accessToken,
       signal,

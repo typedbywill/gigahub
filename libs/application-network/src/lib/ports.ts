@@ -120,6 +120,40 @@ export interface CtoSplittingDiagramQuery {
   findByFatId(fatId: string): Promise<CtoSplittingDiagramReadModel | null>;
 }
 
+export interface CtoCustomerReadModel {
+  radUsuarioId: string;
+  clienteId: string;
+  contratoId?: string;
+  login: string;
+  mac?: string;
+  portaFtth: number;
+  razaoSocial: string;
+  nomeFantasia?: string;
+  cpfCnpj?: string;
+  telefone?: string;
+  endereco?: string;
+  online: boolean;
+  signal: {
+    rxPowerDbm: number;
+    txPowerDbm: number;
+    quality: 'EXCELLENT' | 'GOOD' | 'WARNING' | 'CRITICAL' | 'OFFLINE';
+    isMock: true;
+  };
+}
+
+export interface CtoCustomersReadModel {
+  fatId: string;
+  fatName: string;
+  totalPorts: number;
+  occupiedPorts: number;
+  availablePorts: number;
+  customers: ReadonlyArray<CtoCustomerReadModel>;
+}
+
+export interface CtoCustomersQuery {
+  findByFatId(fatId: string): Promise<CtoCustomersReadModel | null>;
+}
+
 export class ApplicationError extends Error {
   constructor(
     readonly code: string,

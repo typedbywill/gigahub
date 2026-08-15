@@ -479,9 +479,6 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
                   ID #{fatId}
                 </span>
               </div>
-              <p className="text-[11px] sm:text-xs text-muted truncate">
-                Fusões ópticas e splitters internos da caixa
-              </p>
             </div>
           </div>
 
@@ -615,11 +612,6 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
               }}
               onTouchEnd={handlePointerUp}
             >
-              {/* Help hint badge */}
-              <div className="absolute top-2.5 left-3 z-10 pointer-events-none flex items-center gap-1.5 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-full text-[11px] text-white/90 border border-white/15 shadow-md">
-                <LuMove className="size-3.5 text-sky-400" />
-                <span>Arraste para mover • Scroll do mouse para zoom • ESC para fechar</span>
-              </div>
 
               {/* Full-width interactive SVG Canvas */}
               <svg
@@ -1203,10 +1195,7 @@ export const CtoSplittingModal: React.FC<CtoSplittingModalProps> = ({
 
         {/* Footer info banner */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-5 py-2.5 border-t border-border/80 bg-default/20 text-[11px] sm:text-xs text-muted">
-          <div className="flex items-center gap-1.5">
-            <span className="inline-block size-2 rounded-full bg-success shrink-0" />
-            <span>Padrão ABNT / EIA598</span>
-          </div>
+        <div />
           <div className="flex items-center gap-3">
             <span>Fusões: <strong>{data?.connections.length || 0}</strong></span>
             <span>Elementos: <strong>{data?.nodes.length || 0}</strong></span>

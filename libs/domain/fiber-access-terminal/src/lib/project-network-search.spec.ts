@@ -40,15 +40,33 @@ describe('assertProjectNetworkSearchParams', () => {
     );
   });
 
+  it('accepts kind ceo', () => {
+    expect(
+      assertProjectNetworkSearchParams({
+        q: 'emenda',
+        kind: 'CEO',
+        limit: 10,
+      }),
+    ).toEqual({
+      q: 'emenda',
+      kind: 'ceo',
+      limit: 10,
+    });
+  });
+
   it('rejects unknown kind', () => {
     expect(() =>
-      assertProjectNetworkSearchParams({ q: 'cto', kind: 'ceo' }),
+      assertProjectNetworkSearchParams({
+        q: 'cto',
+        kind: 'invalid-kind' as never,
+      }),
     ).toThrow(
       expect.objectContaining({
         code: DomainErrorCodes.InvariantViolation,
       }),
     );
   });
+
 
   it('rejects limit above max', () => {
     expect(() =>

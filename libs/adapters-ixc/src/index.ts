@@ -18,6 +18,7 @@ export {
 export { MysqlProjectNetworkSearchQuery } from './lib/mysql-project-network-search-query';
 
 export { MysqlCtoSplittingDiagramQuery } from './lib/mysql-cto-splitting-diagram-query';
+export { MysqlCtoCustomersQuery } from './lib/mysql-cto-customers-query';
 export { MysqlCustomerSearchQuery } from './lib/mysql-customer-search-query';
 
 export { MysqlCustomerQueryAdapter } from './lib/mysql-customer-query.adapter';

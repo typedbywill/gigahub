@@ -77,6 +77,7 @@ export type ProjectMapProps = {
   onCenterUserLocation?: () => void;
   onSelectElement: (selected: MapSelectedRef | null) => void;
   onOpenSplitting?: (fatId: string) => void;
+  onOpenCustomers?: (fatId: string) => void;
   onMoveEnd: () => void;
   onResize?: () => void;
 };
@@ -203,6 +204,7 @@ export const ProjectMap: React.FC<ProjectMapProps> = ({
   onCenterUserLocation,
   onSelectElement,
   onOpenSplitting,
+  onOpenCustomers,
   onMoveEnd,
   onResize,
 }) => {
@@ -528,6 +530,7 @@ export const ProjectMap: React.FC<ProjectMapProps> = ({
               element={{ kind: 'fat', data: selectedFat }}
               onClose={() => onSelectElement(null)}
               onOpenSplitting={onOpenSplitting}
+              onOpenCustomers={onOpenCustomers}
             />
           </Popup>
         ) : null}

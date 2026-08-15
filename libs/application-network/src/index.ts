@@ -14,6 +14,9 @@ export {
   type CtoDiagramConnectionReadModel,
   type CtoSplittingDiagramReadModel,
   type CtoSplittingDiagramQuery,
+  type CtoCustomerReadModel,
+  type CtoCustomersReadModel,
+  type CtoCustomersQuery,
 } from './lib/ports';
 export {
   ListNearbyFiberAccessTerminalsUseCase,
@@ -39,5 +42,9 @@ export {
   GetCtoSplittingDiagramUseCase,
   type GetCtoSplittingDiagramInput,
 } from './lib/get-cto-splitting-diagram.use-case';
+export {
+  GetCtoCustomersUseCase,
+  type GetCtoCustomersInput,
+} from './lib/get-cto-customers.use-case';
 
 

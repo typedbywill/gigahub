@@ -18,6 +18,8 @@ interface FatRow extends RowDataPacket {
   longitude: string | null;
   codigo_estilo_caixa: string | null;
   estilo_nome_tipo: string | null;
+  capacidade: number | null;
+  ocupacao: number | null;
 }
 
 export class MysqlFiberAccessTerminalNearbyQuery
@@ -35,8 +37,16 @@ export class MysqlFiberAccessTerminalNearbyQuery
               c.latitude,
               c.longitude,
               c.codigo_estilo_caixa,
+              c.capacidade,
+              COALESCE(ru_count.ocupacao, 0) AS ocupacao,
               t.nome_tipo AS estilo_nome_tipo
        FROM rad_caixa_ftth c
+       LEFT JOIN (
+         SELECT id_caixa_ftth, COUNT(*) AS ocupacao
+         FROM radusuarios
+         WHERE id_caixa_ftth > 0
+         GROUP BY id_caixa_ftth
+       ) ru_count ON ru_count.id_caixa_ftth = c.id
        LEFT JOIN df_tipo_elemento t
          ON t.codigo_identificador = c.codigo_estilo_caixa
        WHERE c.status = 'A'
@@ -53,6 +63,10 @@ export class MysqlFiberAccessTerminalNearbyQuery
         continue;
       }
       const idErp = String(row.id);
+      const portCount = Number(row.capacidade) > 0 ? Number(row.capacidade) : 16;
+      const occupiedPortCount = Number(row.ocupacao) >= 0 ? Number(row.ocupacao) : 0;
+      const availablePortCount = Math.max(0, portCount - occupiedPortCount);
+
       items.push({
         id: idErp,
         idErp,
@@ -63,9 +77,9 @@ export class MysqlFiberAccessTerminalNearbyQuery
           row.codigo_estilo_caixa,
           row.estilo_nome_tipo,
         ),
-        portCount: 16,
-        occupiedPortCount: 0,
-        availablePortCount: 16,
+        portCount,
+        occupiedPortCount,
+        availablePortCount,
       });
     }
     return items;

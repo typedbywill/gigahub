@@ -44,6 +44,7 @@ import {
 import type { MapBaseStyleId } from './map-styles';
 import { ProjectMap, type CustomerMapPin } from './ProjectMap';
 import { CtoSplittingModal } from './CtoSplittingModal';
+import { CtoCustomersModal } from './CtoCustomersModal';
 import {
 
   DEFAULT_NEARBY_RADIUS_METERS,
@@ -137,6 +138,7 @@ export const RedeProjetoPage: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [customerPin, setCustomerPin] = useState<CustomerMapPin | null>(null);
   const [splittingFatId, setSplittingFatId] = useState<string | null>(null);
+  const [customersFatId, setCustomersFatId] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{
     latitude: number;
     longitude: number;
@@ -278,7 +280,7 @@ export const RedeProjetoPage: React.FC = () => {
           accuracy: pos.coords.accuracy,
         });
       },
-      () => {},
+      () => undefined,
       { enableHighAccuracy: true, timeout: 15_000, maximumAge: 30_000 },
     );
     return () => {
@@ -848,6 +850,7 @@ export const RedeProjetoPage: React.FC = () => {
           onCenterUserLocation={handleCenterUserLocation}
           onSelectElement={handleSelectElement}
           onOpenSplitting={(id) => setSplittingFatId(id)}
+          onOpenCustomers={(id) => setCustomersFatId(id)}
           onMoveEnd={scheduleFetchFromMap}
           onResize={scheduleFetchFromMap}
         />
@@ -875,6 +878,13 @@ export const RedeProjetoPage: React.FC = () => {
         <CtoSplittingModal
           fatId={splittingFatId}
           onClose={() => setSplittingFatId(null)}
+        />
+      ) : null}
+
+      {customersFatId ? (
+        <CtoCustomersModal
+          fatId={customersFatId}
+          onClose={() => setCustomersFatId(null)}
         />
       ) : null}
     </div>

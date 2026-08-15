@@ -27,4 +27,14 @@ export {
   type ProjectNetworkSearchKind,
   type ProjectNetworkSearchParams,
 } from './lib/project-network-search';
-
+export {
+  CtoCustomer,
+  CtoCustomerList,
+  generateMockOpticalSignal,
+  type OpticalSignalQuality,
+  type OpticalSignalInfo,
+  type CtoCustomerSnapshot,
+  type CreateCtoCustomerInput,
+  type CtoCustomerListSnapshot,
+  type CreateCtoCustomerListInput,
+} from './lib/cto-customer';
