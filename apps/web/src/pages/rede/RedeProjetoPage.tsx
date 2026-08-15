@@ -11,11 +11,13 @@ import type { MapRef } from 'react-map-gl/mapbox';
 import type {
   NearbyFiberAccessTerminalDto,
   NearbyFiberCableDto,
+  NearbyFiberSpliceEnclosureDto,
 } from '@gigahub/shared/contracts';
 import { ApiClientError } from '../../shared/api/auth.api';
 import { searchCustomersRequest } from '../../shared/api/clientes.api';
 import {
   listNearbyCablesRequest,
+  listNearbyCeosRequest,
   listNearbyFatsRequest,
   searchProjectNetworkRequest,
 } from '../../shared/api/projeto.api';
@@ -76,7 +78,7 @@ function layersFromUrl(url: MapUrlState): MapLayerVisibility {
   return {
     fat: url.layers.fat,
     cables: url.layers.cables,
-    ceo: false,
+    ceo: url.layers.ceo,
   };
 }
 
@@ -124,7 +126,9 @@ export const RedeProjetoPage: React.FC = () => {
     return null;
   });
   const [fats, setFats] = useState<NearbyFiberAccessTerminalDto[]>([]);
+  const [ceos, setCeos] = useState<NearbyFiberSpliceEnclosureDto[]>([]);
   const [cables, setCables] = useState<NearbyFiberCableDto[]>([]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hits, setHits] = useState<MapSearchHit[]>([]);
@@ -133,6 +137,12 @@ export const RedeProjetoPage: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [customerPin, setCustomerPin] = useState<CustomerMapPin | null>(null);
   const [splittingFatId, setSplittingFatId] = useState<string | null>(null);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+    accuracy?: number;
+  } | null>(null);
+  const [isLocating, setIsLocating] = useState(false);
 
   const search = urlState.q;
 
@@ -230,6 +240,11 @@ export const RedeProjetoPage: React.FC = () => {
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
+        setUserLocation({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        });
         apply({
           longitude: pos.coords.longitude,
           latitude: pos.coords.latitude,
@@ -251,6 +266,26 @@ export const RedeProjetoPage: React.FC = () => {
     };
   }, [initialView, patchUrlState]);
 
+  useEffect(() => {
+    if (!navigator.geolocation) {
+      return;
+    }
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        setUserLocation({
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        });
+      },
+      () => {},
+      { enableHighAccuracy: true, timeout: 15_000, maximumAge: 30_000 },
+    );
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, []);
+
   const fetchNearby = useCallback(
     async (lat: number, lng: number, radius: number) => {
       if (!accessToken) {
@@ -264,7 +299,7 @@ export const RedeProjetoPage: React.FC = () => {
       setError(null);
 
       try {
-        const [fatRes, cableRes] = await Promise.all([
+        const [fatRes, cableRes, ceoRes] = await Promise.all([
           listNearbyFatsRequest(
             accessToken,
             { lat, lng, radius },
@@ -275,12 +310,18 @@ export const RedeProjetoPage: React.FC = () => {
             { lat, lng, radius },
             controller.signal,
           ),
+          listNearbyCeosRequest(
+            accessToken,
+            { lat, lng, radius },
+            controller.signal,
+          ),
         ]);
         if (controller.signal.aborted) {
           return;
         }
         setFats(fatRes.items);
         setCables(cableRes.items);
+        setCeos(ceoRes.items);
       } catch (err) {
         if (controller.signal.aborted) {
           return;
@@ -298,6 +339,7 @@ export const RedeProjetoPage: React.FC = () => {
     },
     [accessToken],
   );
+
 
   const scheduleFetchFromMap = useCallback(() => {
     if (fetchTimerRef.current) {
@@ -430,8 +472,10 @@ export const RedeProjetoPage: React.FC = () => {
                 name: item.name,
                 subtitle:
                   item.kind === 'fat'
-                    ? item.idErp
-                    : (item.cableTypeName ?? item.idErp),
+                    ? `CTO #${item.idErp}`
+                    : item.kind === 'ceo'
+                      ? `CEO #${item.idErp}`
+                      : (item.cableTypeName ?? item.idErp),
                 latitude: item.location.latitude,
                 longitude: item.location.longitude,
               })),
@@ -473,18 +517,7 @@ export const RedeProjetoPage: React.FC = () => {
               }
             }
           }
-          setSearchError(errors.length ? errors.join(' ') : null);
-        })
-        .catch((err) => {
-          if (controller.signal.aborted) {
-            return;
-          }
-          setHits([]);
-          if (err instanceof ApiClientError) {
-            setSearchError(err.message || 'Falha ao buscar elementos.');
-          } else {
-            setSearchError('Falha ao buscar elementos.');
-          }
+          setSearchError(errors.length > 0 ? errors.join(' ') : null);
         })
         .finally(() => {
           if (!controller.signal.aborted) {
@@ -492,28 +525,52 @@ export const RedeProjetoPage: React.FC = () => {
           }
         });
     }, SEARCH_DEBOUNCE_MS);
-
-    return () => {
-      if (searchTimerRef.current) {
-        clearTimeout(searchTimerRef.current);
-      }
-    };
   }, [accessToken, search]);
 
   const flyToPoint = useCallback(
-    (latitude: number, longitude: number, zoom: number) => {
+    (latitude: number, longitude: number, zoom = 16) => {
       const map = mapRef.current;
       if (!map) {
         return;
       }
       map.flyTo({
         center: [longitude, latitude],
-        zoom: Math.max(map.getZoom(), zoom),
+        zoom,
         essential: true,
+        duration: 800,
       });
     },
     [],
   );
+
+  const handleCenterUserLocation = useCallback(() => {
+    if (typeof navigator === 'undefined' || !('geolocation' in navigator)) {
+      return;
+    }
+    setIsLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setIsLocating(false);
+        const loc = {
+          latitude: pos.coords.latitude,
+          longitude: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        };
+        setUserLocation(loc);
+        flyToPoint(loc.latitude, loc.longitude, 16);
+        void fetchNearby(
+          loc.latitude,
+          loc.longitude,
+          DEFAULT_NEARBY_RADIUS_METERS,
+        );
+      },
+      (err) => {
+        setIsLocating(false);
+        console.warn('Falha ao obter localização atual:', err);
+      },
+      { enableHighAccuracy: true, timeout: 10_000, maximumAge: 10_000 },
+    );
+  }, [fetchNearby, flyToPoint]);
 
   const flyToSelection = useCallback(
     (selected: MapSelectedRef) => {
@@ -531,6 +588,14 @@ export const RedeProjetoPage: React.FC = () => {
         flyToPoint(fat.location.latitude, fat.location.longitude, 16);
         return;
       }
+      if (selected.kind === 'ceo') {
+        const ceo = ceos.find((c) => c.id === selected.id);
+        if (!ceo) {
+          return;
+        }
+        flyToPoint(ceo.location.latitude, ceo.location.longitude, 16);
+        return;
+      }
       const cable = cables.find((c) => c.id === selected.id);
       if (!cable || cable.path.length === 0) {
         return;
@@ -538,7 +603,7 @@ export const RedeProjetoPage: React.FC = () => {
       const target = cableFlyTarget(cable);
       flyToPoint(target.latitude, target.longitude, 15);
     },
-    [cables, fats, flyToPoint, urlState.lat, urlState.lng],
+    [cables, ceos, fats, flyToPoint, urlState.lat, urlState.lng],
   );
 
   useEffect(() => {
@@ -574,19 +639,21 @@ export const RedeProjetoPage: React.FC = () => {
       flyToSelection(urlState.selected);
       return;
     }
-    if (fats.length === 0 && cables.length === 0) {
+    if (fats.length === 0 && cables.length === 0 && ceos.length === 0) {
       return;
     }
     const exists =
       urlState.selected.kind === 'fat'
         ? fats.some((f) => f.id === urlState.selected!.id)
-        : cables.some((c) => c.id === urlState.selected!.id);
+        : urlState.selected.kind === 'ceo'
+          ? ceos.some((c) => c.id === urlState.selected!.id)
+          : cables.some((c) => c.id === urlState.selected!.id);
     if (!exists) {
       return;
     }
     didFlyToSelectionRef.current = true;
     flyToSelection(urlState.selected);
-  }, [cables, fats, flyToSelection, urlState.selected]);
+  }, [cables, ceos, fats, flyToSelection, urlState.selected]);
 
   const handleSearchChange = useCallback(
     (value: string) => {
@@ -597,17 +664,15 @@ export const RedeProjetoPage: React.FC = () => {
 
   const handleLayerChange = useCallback(
     (layer: keyof MapLayerVisibility, value: boolean) => {
-      if (layer === 'ceo') {
-        return;
-      }
       patchUrlState({
         layers: {
           fat: layer === 'fat' ? value : layers.fat,
           cables: layer === 'cables' ? value : layers.cables,
+          ceo: layer === 'ceo' ? value : layers.ceo,
         },
       });
     },
-    [layers.cables, layers.fat, patchUrlState],
+    [layers.cables, layers.ceo, layers.fat, patchUrlState],
   );
 
   const handleMapStyleChange = useCallback(
@@ -649,6 +714,17 @@ export const RedeProjetoPage: React.FC = () => {
         } else {
           patchUrlState({ selected });
         }
+      } else if (selected.kind === 'ceo') {
+        const ceo = ceos.find((c) => c.id === selected.id);
+        if (ceo) {
+          patchUrlState({
+            selected,
+            lat: ceo.location.latitude,
+            lng: ceo.location.longitude,
+          });
+        } else {
+          patchUrlState({ selected });
+        }
       } else if (selected.kind === 'cable') {
         const cable = cables.find((c) => c.id === selected.id);
         if (cable && cable.path.length > 0) {
@@ -665,7 +741,7 @@ export const RedeProjetoPage: React.FC = () => {
         patchUrlState({ selected });
       }
     },
-    [cables, fats, patchUrlState],
+    [cables, ceos, fats, patchUrlState],
   );
 
   const selectedCustomerData = useMemo(() => {
@@ -704,7 +780,9 @@ export const RedeProjetoPage: React.FC = () => {
       flyToPoint(
         hit.latitude,
         hit.longitude,
-        hit.kind === 'fat' ? 16 : hit.kind === 'customer' ? 16 : 15,
+        hit.kind === 'fat' || hit.kind === 'ceo' || hit.kind === 'customer'
+          ? 16
+          : 15,
       );
       void fetchNearby(
         hit.latitude,
@@ -754,14 +832,20 @@ export const RedeProjetoPage: React.FC = () => {
           mapboxToken={mapboxToken}
           isAppDark={isDark}
           mapStyle={mapStyle}
+          onMapStyleChange={handleMapStyleChange}
           showFatLabels={showFatLabels}
           initialViewState={initialView}
           fats={fats}
+          ceos={ceos}
           cables={cables}
           layers={layers}
           selected={urlState.selected}
           selectedCustomerData={selectedCustomerData}
           customerPin={customerPin}
+          userLocation={userLocation}
+          isMobile={isMobile}
+          isLocating={isLocating}
+          onCenterUserLocation={handleCenterUserLocation}
           onSelectElement={handleSelectElement}
           onOpenSplitting={(id) => setSplittingFatId(id)}
           onMoveEnd={scheduleFetchFromMap}
@@ -775,10 +859,6 @@ export const RedeProjetoPage: React.FC = () => {
           onSearchChange={handleSearchChange}
           layers={layers}
           onLayerChange={handleLayerChange}
-          mapStyle={mapStyle}
-          onMapStyleChange={handleMapStyleChange}
-          showFatLabels={showFatLabels}
-          onShowFatLabelsChange={handleShowFatLabelsChange}
           hits={hits}
           onSelectHit={handleSelectHit}
           selectedKey={selectedKey}
@@ -787,13 +867,7 @@ export const RedeProjetoPage: React.FC = () => {
           error={searchError ?? error}
           fatCount={fats.length}
           cableCount={cables.length}
-          collapsed={collapsed}
-          onToggleCollapse={handleToggleCollapse}
-          isMobile={isMobile}
-          mobileOpen={mobileOpen}
-          onCloseMobile={() => setMobileOpen(false)}
-          activeTab={activeTab}
-          onActiveTabChange={handleActiveTabChange}
+          ceoCount={ceos.length}
         />
       </div>
 
@@ -806,4 +880,3 @@ export const RedeProjetoPage: React.FC = () => {
     </div>
   );
 };
-

@@ -24,6 +24,7 @@ export type DemandId = Brand<string, 'DemandId'>;
 export type CareInboxId = DemandQueueId;
 export type CareTicketId = DemandId;
 export type FiberAccessTerminalId = Brand<string, 'FiberAccessTerminalId'>;
+export type FiberSpliceEnclosureId = Brand<string, 'FiberSpliceEnclosureId'>;
 export type FiberCableId = Brand<string, 'FiberCableId'>;
 export type UserId = Brand<string, 'UserId'>;
 export type CredentialId = Brand<string, 'CredentialId'>;
@@ -48,6 +49,9 @@ export const careTicketId = demandId;
 export const fiberAccessTerminalId = (
   value: string,
 ): FiberAccessTerminalId => brandedId(value, 'FiberAccessTerminalId');
+export const fiberSpliceEnclosureId = (
+  value: string,
+): FiberSpliceEnclosureId => brandedId(value, 'FiberSpliceEnclosureId');
 export const fiberCableId = (value: string): FiberCableId =>
   brandedId(value, 'FiberCableId');
 export const userId = (value: string): UserId => brandedId(value, 'UserId');
@@ -57,3 +61,4 @@ export const sessionId = (value: string): SessionId =>
   brandedId(value, 'SessionId');
 export const roleId = (value: string): RoleId => brandedId(value, 'RoleId');
 export const grantId = (value: string): GrantId => brandedId(value, 'GrantId');
+

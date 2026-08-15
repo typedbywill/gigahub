@@ -18,6 +18,7 @@ export type MapPreferences = {
   layers: {
     fat: boolean;
     cables: boolean;
+    ceo: boolean;
   };
   mapStyle: MapBaseStyleId;
   showFatLabels: boolean;
@@ -29,7 +30,7 @@ export const DEFAULT_MAP_PREFERENCES: MapPreferences = {
   layers: { ...DEFAULT_MAP_LAYERS },
   mapStyle: DEFAULT_MAP_BASE_STYLE,
   showFatLabels: true,
-  panelCollapsed: false,
+  panelCollapsed: true,
   activeTab: 'buscar',
 };
 
@@ -55,8 +56,10 @@ function parseLayers(value: unknown): MapPreferences['layers'] {
   return {
     fat: raw.fat !== false,
     cables: raw.cables !== false,
+    ceo: raw.ceo !== false,
   };
 }
+
 
 function parseActiveTab(value: unknown): MapPanelTab {
   if (typeof value === 'string' && PANEL_TABS.has(value as MapPanelTab)) {
@@ -112,9 +115,14 @@ export function writeMapPreferences(partial: Partial<MapPreferences>): void {
     ...current,
     ...partial,
     layers: partial.layers
-      ? { fat: partial.layers.fat, cables: partial.layers.cables }
+      ? {
+          fat: partial.layers.fat,
+          cables: partial.layers.cables,
+          ceo: partial.layers.ceo,
+        }
       : current.layers,
   };
+
   window.localStorage.setItem(
     MAP_PREFERENCES_STORAGE_KEY,
     JSON.stringify(next),

@@ -7,6 +7,8 @@ import type { GeoPoint } from '@gigahub/shared/kernel';
 import type { Pool, RowDataPacket } from 'mysql2/promise';
 import { parseIxcCoordinate } from './ixc-geo';
 import { IXC_FIBER_CABLE_ELEMENT_TIPO } from './mysql-fiber-cable-nearby-query';
+import { IXC_FIBER_SPLICE_ENCLOSURE_ELEMENT_TIPO } from './mysql-fiber-splice-enclosure-nearby-query';
+
 
 interface FatSearchRow extends RowDataPacket {
   id: number;
@@ -20,6 +22,15 @@ interface CableSearchRow extends RowDataPacket {
   id: number;
   descricao: string;
   nome_tipo: string | null;
+  id_exact: number;
+}
+
+interface CeoSearchRow extends RowDataPacket {
+  id: number;
+  descricao: string;
+  nome_tipo: string | null;
+  latitude: string | null;
+  longitude: string | null;
   id_exact: number;
 }
 
@@ -50,15 +61,18 @@ export class MysqlProjectNetworkSearchQuery
     if (input.kind === 'cable') {
       return this.searchCables(input.q, input.limit);
     }
+    if (input.kind === 'ceo') {
+      return this.searchCeos(input.q, input.limit);
+    }
 
-    const fatLimit = Math.ceil(input.limit / 2);
-    const cableLimit = Math.floor(input.limit / 2);
-    const [fats, cables] = await Promise.all([
-      this.searchFats(input.q, fatLimit),
-      this.searchCables(input.q, cableLimit),
+    const third = Math.ceil(input.limit / 3);
+    const [fats, cables, ceos] = await Promise.all([
+      this.searchFats(input.q, third),
+      this.searchCables(input.q, third),
+      this.searchCeos(input.q, third),
     ]);
     // Prefer exact id matches first, then name.
-    const merged = [...fats, ...cables].sort((a, b) => {
+    const merged = [...fats, ...cables, ...ceos].sort((a, b) => {
       const aExact = a.idErp === input.q ? 0 : 1;
       const bExact = b.idErp === input.q ? 0 : 1;
       if (aExact !== bExact) {
@@ -68,6 +82,7 @@ export class MysqlProjectNetworkSearchQuery
     });
     return merged.slice(0, input.limit);
   }
+
 
   private async searchFats(
     q: string,
@@ -170,10 +185,64 @@ export class MysqlProjectNetworkSearchQuery
     return items;
   }
 
+  private async searchCeos(
+    q: string,
+    limit: number,
+  ): Promise<ProjectNetworkSearchHitReadModel[]> {
+    if (limit < 1) {
+      return [];
+    }
+    const pattern = likePattern(q);
+    const [rows] = await this.pool.query<CeoSearchRow[]>(
+      `SELECT e.id,
+              e.descricao,
+              t.nome_tipo,
+              c.latitude,
+              c.longitude,
+              (CAST(e.id AS CHAR) = ?) AS id_exact
+       FROM df_elemento e
+       LEFT JOIN df_tipo_elemento t ON t.id = e.id_tipo_elemento
+       INNER JOIN df_elemento_coordenada ec ON ec.id_elemento = e.id
+       INNER JOIN df_coordenada c ON c.id = ec.id_coordenada
+       WHERE e.tipo = ?
+         AND e.ativo = 'S'
+         AND c.latitude IS NOT NULL
+         AND c.longitude IS NOT NULL
+         AND c.latitude <> ''
+         AND c.longitude <> ''
+         AND (
+           e.descricao LIKE ?
+           OR CAST(e.id AS CHAR) LIKE ?
+           OR t.nome_tipo LIKE ?
+         )
+       ORDER BY id_exact DESC, e.descricao ASC
+       LIMIT ?`,
+      [q, IXC_FIBER_SPLICE_ENCLOSURE_ELEMENT_TIPO, pattern, pattern, pattern, limit],
+    );
+
+    const items: ProjectNetworkSearchHitReadModel[] = [];
+    for (const row of rows) {
+      const location = parseIxcCoordinate(row.latitude, row.longitude);
+      if (!location) {
+        continue;
+      }
+      const idErp = String(row.id);
+      items.push({
+        kind: 'ceo',
+        id: idErp,
+        idErp,
+        name: (row.descricao ?? '').trim() || `CEO ${idErp}`,
+        location,
+      });
+    }
+    return items;
+  }
+
   /** One vertex per cable (lowest sequencia) for map fly-to. */
   private async loadCableFlyLocations(
     elementIds: number[],
   ): Promise<Map<number, GeoPoint>> {
+
     const [coords] = await this.pool.query<CableCoordRow[]>(
       `SELECT ec.id_elemento,
               c.latitude,

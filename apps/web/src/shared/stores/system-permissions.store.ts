@@ -20,8 +20,7 @@ export interface PermissionDetail {
   isOptional?: boolean;
 }
 
-const PROMPT_SESSION_KEY = 'gigahub_permissions_prompted_v1';
-const PROMPT_LOGIN_FLAG = 'gigahub_prompt_on_next_auth';
+const PROMPT_STORAGE_KEY = 'gigahub_permissions_prompted_v1';
 
 interface SystemPermissionsState {
   isOpen: boolean;
@@ -102,8 +101,7 @@ export const useSystemPermissionsStore = create<SystemPermissionsState>((set, ge
 
   closeModal: () => {
     try {
-      sessionStorage.setItem(PROMPT_SESSION_KEY, 'true');
-      sessionStorage.removeItem(PROMPT_LOGIN_FLAG);
+      localStorage.setItem(PROMPT_STORAGE_KEY, 'true');
     } catch {
       // Ignored in restrictive storage
     }
@@ -111,28 +109,44 @@ export const useSystemPermissionsStore = create<SystemPermissionsState>((set, ge
   },
 
   setPromptOnNextAuth: () => {
-    try {
-      sessionStorage.setItem(PROMPT_LOGIN_FLAG, 'true');
-    } catch {
-      // Ignored
-    }
+    // Preserved for compatibility
   },
 
   triggerAuthCheck: () => {
-    const hasLoginFlag = typeof window !== 'undefined' && sessionStorage.getItem(PROMPT_LOGIN_FLAG) === 'true';
-    const hasPrompted = typeof window !== 'undefined' && sessionStorage.getItem(PROMPT_SESSION_KEY) === 'true';
+    let hasPrompted = false;
+    try {
+      hasPrompted =
+        typeof window !== 'undefined' &&
+        localStorage.getItem(PROMPT_STORAGE_KEY) === 'true';
+    } catch {
+      hasPrompted = false;
+    }
 
     void get().checkAllPermissions().then(() => {
-      const current = get().permissions;
-      const hasPendingEssential =
-        current.geolocation.status === 'prompt' ||
-        current.notifications.status === 'prompt' ||
-        current.audio.status === 'prompt';
+      const permList = Object.values(get().permissions);
+      const supportedPerms = permList.filter((p) => p.status !== 'unsupported');
+      const hasPending = supportedPerms.some((p) => p.status === 'prompt');
+      const allGranted =
+        supportedPerms.length > 0 &&
+        supportedPerms.every((p) => p.status === 'granted');
 
-      // Always open on explicit login flag or if never prompted in this session and has pending permissions
-      if (hasLoginFlag || (!hasPrompted && hasPendingEssential)) {
-        set({ isOpen: true });
+      // Se todas as permissões suportadas já estiverem concedidas ou não há nenhuma pendente
+      if (allGranted || !hasPending) {
+        try {
+          localStorage.setItem(PROMPT_STORAGE_KEY, 'true');
+        } catch {
+          // Ignored
+        }
+        return;
       }
+
+      // Se o usuário já foi notificado uma vez, não abre novamente automaticamente
+      if (hasPrompted) {
+        return;
+      }
+
+      // Primeira vez com permissões pendentes: exibe o modal
+      set({ isOpen: true });
     });
   },
 
@@ -299,6 +313,22 @@ export const useSystemPermissionsStore = create<SystemPermissionsState>((set, ge
     }
 
     await get().checkAllPermissions();
+
+    const permList = Object.values(get().permissions);
+    const supportedPerms = permList.filter((p) => p.status !== 'unsupported');
+    const hasPending = supportedPerms.some((p) => p.status === 'prompt');
+    const allGranted =
+      supportedPerms.length > 0 &&
+      supportedPerms.every((p) => p.status === 'granted');
+
+    if (allGranted || !hasPending) {
+      try {
+        localStorage.setItem(PROMPT_STORAGE_KEY, 'true');
+      } catch {
+        // Ignored
+      }
+    }
+
     return success;
   },
 
@@ -328,5 +358,11 @@ export const useSystemPermissionsStore = create<SystemPermissionsState>((set, ge
 
     set({ isRequestingAll: false });
     await get().checkAllPermissions();
+
+    try {
+      localStorage.setItem(PROMPT_STORAGE_KEY, 'true');
+    } catch {
+      // Ignored
+    }
   },
 }));

@@ -11,7 +11,12 @@ export {
   MysqlFiberCableNearbyQuery,
   IXC_FIBER_CABLE_ELEMENT_TIPO,
 } from './lib/mysql-fiber-cable-nearby-query';
+export {
+  MysqlFiberSpliceEnclosureNearbyQuery,
+  IXC_FIBER_SPLICE_ENCLOSURE_ELEMENT_TIPO,
+} from './lib/mysql-fiber-splice-enclosure-nearby-query';
 export { MysqlProjectNetworkSearchQuery } from './lib/mysql-project-network-search-query';
+
 export { MysqlCtoSplittingDiagramQuery } from './lib/mysql-cto-splitting-diagram-query';
 export { MysqlCustomerSearchQuery } from './lib/mysql-customer-search-query';
 

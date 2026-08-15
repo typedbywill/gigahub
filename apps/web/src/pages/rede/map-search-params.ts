@@ -6,7 +6,7 @@ import {
 } from './map-styles';
 
 export type MapSelectedRef = {
-  kind: 'fat' | 'cable' | 'customer';
+  kind: 'fat' | 'cable' | 'customer' | 'ceo';
   id: string;
 };
 
@@ -19,6 +19,7 @@ export type MapUrlState = {
   layers: {
     fat: boolean;
     cables: boolean;
+    ceo: boolean;
   };
   panelCollapsed: boolean;
   mapStyle: MapBaseStyleId;
@@ -28,6 +29,7 @@ export type MapUrlState = {
 export const DEFAULT_MAP_LAYERS = {
   fat: true,
   cables: true,
+  ceo: true,
 } as const;
 
 function parseNumber(
@@ -55,7 +57,13 @@ function parseSelected(value: string | null): MapSelectedRef | null {
   }
   const kind = value.slice(0, sep);
   const id = value.slice(sep + 1).trim();
-  if ((kind !== 'fat' && kind !== 'cable' && kind !== 'customer') || !id) {
+  if (
+    (kind !== 'fat' &&
+      kind !== 'cable' &&
+      kind !== 'customer' &&
+      kind !== 'ceo') ||
+    !id
+  ) {
     return null;
   }
   return { kind, id };
@@ -72,16 +80,31 @@ function parseLayers(value: string | null): MapUrlState['layers'] {
   return {
     fat: parts.includes('fat') || parts.includes('cto'),
     cables: parts.includes('cables') || parts.includes('cabos'),
+    ceo: parts.includes('ceo') || parts.includes('ceos'),
   };
 }
 
 export function parseMapSearchParams(params: URLSearchParams): MapUrlState {
+  let selected = parseSelected(params.get('sel'));
+  if (!selected) {
+    const fatId = params.get('fatId');
+    const cableId = params.get('cableId');
+    const ceoId = params.get('ceoId');
+    if (fatId) {
+      selected = { kind: 'fat', id: fatId };
+    } else if (cableId) {
+      selected = { kind: 'cable', id: cableId };
+    } else if (ceoId) {
+      selected = { kind: 'ceo', id: ceoId };
+    }
+  }
+
   return {
     lat: parseNumber(params.get('lat'), -90, 90),
     lng: parseNumber(params.get('lng'), -180, 180),
     zoom: parseNumber(params.get('z') ?? params.get('zoom'), 0, 22),
     q: params.get('q')?.trim() ?? '',
-    selected: parseSelected(params.get('sel')),
+    selected,
     layers: parseLayers(params.get('layers')),
     panelCollapsed: params.get('panel') === 'collapsed',
     mapStyle: parseMapBaseStyleId(params.get('style')),
@@ -113,12 +136,17 @@ export function toMapSearchParams(state: MapUrlState): URLSearchParams {
   if (state.layers.cables) {
     layerParts.push('cables');
   }
+  if (state.layers.ceo) {
+    layerParts.push('ceo');
+  }
   if (
     state.layers.fat !== DEFAULT_MAP_LAYERS.fat ||
-    state.layers.cables !== DEFAULT_MAP_LAYERS.cables
+    state.layers.cables !== DEFAULT_MAP_LAYERS.cables ||
+    state.layers.ceo !== DEFAULT_MAP_LAYERS.ceo
   ) {
     params.set('layers', layerParts.join(','));
   }
+
 
   if (state.panelCollapsed) {
     params.set('panel', 'collapsed');

@@ -121,10 +121,11 @@ export class SearchController {
       }
     }
 
-    // Elementos de Rede (FATs e Cabos)
+    // Elementos de Rede (CTOs, Cabos e CEOs)
     const networkResult = results[1];
     if (networkResult.status === 'fulfilled' && networkResult.value) {
       const fatHits: GlobalSearchHitDto[] = [];
+      const ceoHits: GlobalSearchHitDto[] = [];
       const cableHits: GlobalSearchHitDto[] = [];
 
       for (const item of networkResult.value.items) {
@@ -133,8 +134,16 @@ export class SearchController {
             category: 'fat',
             id: item.id,
             title: item.name,
-            subtitle: `CTO/FAT • ID #${item.idErp}`,
+            subtitle: `CTO • ID #${item.idErp}`,
             href: `/rede/projeto?fatId=${encodeURIComponent(item.id)}`,
+          });
+        } else if (item.kind === 'ceo') {
+          ceoHits.push({
+            category: 'ceo',
+            id: item.id,
+            title: item.name,
+            subtitle: `CEO (Emenda) • ID #${item.idErp}`,
+            href: `/rede/projeto?ceoId=${encodeURIComponent(item.id)}`,
           });
         } else if (item.kind === 'cable') {
           cableHits.push({
@@ -152,8 +161,16 @@ export class SearchController {
       if (fatHits.length > 0) {
         groups.push({
           category: 'fat',
-          label: 'Caixas de Emenda / CTOs',
+          label: 'Caixas de Atendimento (CTO)',
           items: fatHits,
+        });
+      }
+
+      if (ceoHits.length > 0) {
+        groups.push({
+          category: 'ceo',
+          label: 'Caixas de Emenda (CEO)',
+          items: ceoHits,
         });
       }
 
@@ -165,6 +182,7 @@ export class SearchController {
         });
       }
     }
+
 
     // Demandas
     const demandsResult = results[2];

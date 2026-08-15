@@ -29,8 +29,20 @@ export interface NearbyFiberCableReadModel {
   cableTypeName?: string;
 }
 
+export interface NearbyFiberSpliceEnclosureReadModel {
+  id: string;
+  idErp: string;
+  name: string;
+  projectIdErp?: string;
+  location: GeoPoint;
+  distanceMeters: number;
+  /** Map fill/stroke from IXC "Estilo da Caixa" (`codigo_estilo_caixa`). */
+  mapColorHex: string;
+  traysCount?: number;
+}
+
 export interface ProjectNetworkSearchHitReadModel {
-  kind: 'fat' | 'cable';
+  kind: 'fat' | 'cable' | 'ceo';
   id: string;
   idErp: string;
   name: string;
@@ -51,6 +63,14 @@ export interface FiberCableNearbyQuery {
     radiusMeters: number,
   ): Promise<NearbyFiberCableReadModel[]>;
 }
+
+export interface FiberSpliceEnclosureNearbyQuery {
+  findNearby(
+    center: GeoPoint,
+    radiusMeters: number,
+  ): Promise<NearbyFiberSpliceEnclosureReadModel[]>;
+}
+
 
 export interface ProjectNetworkSearchQuery {
   search(input: {

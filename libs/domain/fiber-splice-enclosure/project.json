@@ -1,0 +1,8 @@
+{
+  "name": "fiber-splice-enclosure",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/domain/fiber-splice-enclosure/src",
+  "projectType": "library",
+  "tags": ["type:domain", "scope:field-work"],
+  "targets": {}
+}

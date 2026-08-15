@@ -42,6 +42,12 @@
       "@shared/domain/fiber-cable": [
         "./libs/domain/fiber-cable/src/index.ts"
       ],
+      "@gigahub/domain/fiber-splice-enclosure": [
+        "./libs/domain/fiber-splice-enclosure/src/index.ts"
+      ],
+      "@shared/domain/fiber-splice-enclosure": [
+        "./libs/domain/fiber-splice-enclosure/src/index.ts"
+      ],
       "@gigahub/domain/identity": ["./libs/domain/identity/src/index.ts"],
       "@shared/domain/identity": ["./libs/domain/identity/src/index.ts"],
       "@gigahub/application-identity": [

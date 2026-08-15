@@ -9,9 +9,14 @@ export const DEFAULT_PROJECT_NETWORK_SEARCH_LIMIT = 20;
 /** Hard ceiling for search result count (typeahead). */
 export const MAX_PROJECT_NETWORK_SEARCH_LIMIT = 40;
 
-export type ProjectNetworkSearchKind = 'all' | 'fat' | 'cable';
+export type ProjectNetworkSearchKind = 'all' | 'fat' | 'cable' | 'ceo';
 
-const SEARCH_KINDS = new Set<ProjectNetworkSearchKind>(['all', 'fat', 'cable']);
+const SEARCH_KINDS = new Set<ProjectNetworkSearchKind>([
+  'all',
+  'fat',
+  'cable',
+  'ceo',
+]);
 
 export interface ProjectNetworkSearchParams {
   q: string;
@@ -44,10 +49,11 @@ export function assertProjectNetworkSearchParams(input: {
   if (!SEARCH_KINDS.has(kindRaw as ProjectNetworkSearchKind)) {
     throw new DomainError(
       DomainErrorCodes.InvariantViolation,
-      'Search kind must be all, fat, or cable',
+      'Search kind must be all, fat, cable, or ceo',
       { kind: input.kind },
     );
   }
+
 
   const limit = input.limit ?? DEFAULT_PROJECT_NETWORK_SEARCH_LIMIT;
   if (

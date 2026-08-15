@@ -158,6 +158,8 @@ export {
   nearbyFiberAccessTerminalsResponseDtoSchema,
   nearbyFiberCableDtoSchema,
   nearbyFiberCablesResponseDtoSchema,
+  nearbyFiberSpliceEnclosureDtoSchema,
+  nearbyFiberSpliceEnclosuresResponseDtoSchema,
   searchProjectNetworkQueryDtoSchema,
   searchProjectNetworkHitDtoSchema,
   searchProjectNetworkResponseDtoSchema,
@@ -166,10 +168,13 @@ export {
   type NearbyFiberAccessTerminalsResponseDto,
   type NearbyFiberCableDto,
   type NearbyFiberCablesResponseDto,
+  type NearbyFiberSpliceEnclosureDto,
+  type NearbyFiberSpliceEnclosuresResponseDto,
   type SearchProjectNetworkQueryDto,
   type SearchProjectNetworkHitDto,
   type SearchProjectNetworkResponseDto,
 } from './lib/project-network';
+
 export {
   globalSearchQueryDtoSchema,
   globalSearchCategorySchema,

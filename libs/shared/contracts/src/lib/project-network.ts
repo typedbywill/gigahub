@@ -67,13 +67,37 @@ export type NearbyFiberCablesResponseDto = z.infer<
   typeof nearbyFiberCablesResponseDtoSchema
 >;
 
+export const nearbyFiberSpliceEnclosureDtoSchema = z.object({
+  id: z.string().min(1),
+  idErp: z.string().min(1),
+  name: z.string().min(1),
+  projectIdErp: z.string().min(1).optional(),
+  location: geoPointDtoSchema,
+  distanceMeters: z.number().nonnegative(),
+  mapColorHex: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+  traysCount: z.number().int().nonnegative().optional(),
+});
+
+export type NearbyFiberSpliceEnclosureDto = z.infer<
+  typeof nearbyFiberSpliceEnclosureDtoSchema
+>;
+
+export const nearbyFiberSpliceEnclosuresResponseDtoSchema = z.object({
+  items: z.array(nearbyFiberSpliceEnclosureDtoSchema),
+  radiusMeters: z.number().positive(),
+});
+
+export type NearbyFiberSpliceEnclosuresResponseDto = z.infer<
+  typeof nearbyFiberSpliceEnclosuresResponseDtoSchema
+>;
+
 /**
  * Global typeahead over project network elements (not limited to map viewport).
  * `kind` defaults to all; `limit` is capped by domain policy (max 40).
  */
 export const searchProjectNetworkQueryDtoSchema = z.object({
   q: z.string().trim().min(1),
-  kind: z.enum(['all', 'fat', 'cable']).default('all'),
+  kind: z.enum(['all', 'fat', 'cable', 'ceo']).default('all'),
   limit: z.coerce.number().int().min(1).max(40).optional(),
 });
 
@@ -82,11 +106,11 @@ export type SearchProjectNetworkQueryDto = z.infer<
 >;
 
 export const searchProjectNetworkHitDtoSchema = z.object({
-  kind: z.enum(['fat', 'cable']),
+  kind: z.enum(['fat', 'cable', 'ceo']),
   id: z.string().min(1),
   idErp: z.string().min(1),
   name: z.string().min(1),
-  /** Point used to fly the map (FAT location or a cable vertex). */
+  /** Point used to fly the map (FAT/CEO location or a cable vertex). */
   location: geoPointDtoSchema,
   cableTypeName: z.string().min(1).optional(),
 });
@@ -98,10 +122,11 @@ export type SearchProjectNetworkHitDto = z.infer<
 export const searchProjectNetworkResponseDtoSchema = z.object({
   items: z.array(searchProjectNetworkHitDtoSchema),
   q: z.string().min(1),
-  kind: z.enum(['all', 'fat', 'cable']),
+  kind: z.enum(['all', 'fat', 'cable', 'ceo']),
   limit: z.number().int().positive(),
 });
 
 export type SearchProjectNetworkResponseDto = z.infer<
   typeof searchProjectNetworkResponseDtoSchema
 >;
+

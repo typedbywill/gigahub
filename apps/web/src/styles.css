@@ -128,11 +128,16 @@ body {
 }
 
 /* Rede > Projeto: custom styled network element popup */
+.network-element-mapbox-popup {
+  pointer-events: none !important;
+}
+
 .network-element-mapbox-popup .mapboxgl-popup-content {
   padding: 0;
   border-radius: 1rem;
   background: transparent;
   box-shadow: none;
+  pointer-events: none !important;
 }
 
 .network-element-mapbox-popup .mapboxgl-popup-tip {

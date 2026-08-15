@@ -12,6 +12,7 @@ import {
   ApplicationErrorCodes,
   ListNearbyFiberAccessTerminalsUseCase,
   ListNearbyFiberCablesUseCase,
+  ListNearbyFiberSpliceEnclosuresUseCase,
   SearchProjectNetworkUseCase,
   GetCtoSplittingDiagramUseCase,
 } from '@gigahub/application-network';
@@ -20,6 +21,7 @@ import {
   searchProjectNetworkQueryDtoSchema,
   type NearbyFiberAccessTerminalsResponseDto,
   type NearbyFiberCablesResponseDto,
+  type NearbyFiberSpliceEnclosuresResponseDto,
   type SearchProjectNetworkResponseDto,
   type CtoSplittingDiagramResponseDto,
 } from '@gigahub/shared/contracts';
@@ -32,10 +34,10 @@ import { AccessTokenGuard } from '../auth/access-token.guard';
  * - GET /projeto/fat
  * - GET /projeto/fat/:id/splitagem
  * - GET /projeto/cabos
+ * - GET /projeto/ceo
  * - GET /projeto/busca
  *
  * Planned (same nearby query shape):
- * - GET /projeto/ceo
  * - GET /projeto/postes
  */
 @Controller('projeto')
@@ -44,9 +46,11 @@ export class ProjetoController {
   constructor(
     private readonly listNearbyFats: ListNearbyFiberAccessTerminalsUseCase,
     private readonly listNearbyCables: ListNearbyFiberCablesUseCase,
+    private readonly listNearbyCeos: ListNearbyFiberSpliceEnclosuresUseCase,
     private readonly searchProjectNetwork: SearchProjectNetworkUseCase,
     private readonly getCtoSplittingDiagram: GetCtoSplittingDiagramUseCase,
   ) {}
+
 
   @Get('fat/:id/splitagem')
   async getFatSplittingDiagram(
@@ -153,12 +157,40 @@ export class ProjetoController {
           cableTypeName: item.cableTypeName,
         })),
       };
+  @Get('ceo')
+  async listNearbyFiberSpliceEnclosures(
+    @Query() query: unknown,
+  ): Promise<NearbyFiberSpliceEnclosuresResponseDto> {
+    const parsed = this.parseNearbyQuery(query);
+    try {
+      const result = await this.listNearbyCeos.execute({
+        latitude: parsed.lat,
+        longitude: parsed.lng,
+        radiusMeters: parsed.radius,
+      });
+      return {
+        radiusMeters: result.radiusMeters,
+        items: result.items.map((item) => ({
+          id: item.id,
+          idErp: item.idErp,
+          name: item.name,
+          projectIdErp: item.projectIdErp,
+          location: {
+            latitude: item.location.latitude,
+            longitude: item.location.longitude,
+          },
+          distanceMeters: item.distanceMeters,
+          mapColorHex: item.mapColorHex,
+          traysCount: item.traysCount,
+        })),
+      };
     } catch (error) {
       this.rethrowProjectError(error);
     }
   }
 
   @Get('busca')
+
   async search(
     @Query() query: unknown,
   ): Promise<SearchProjectNetworkResponseDto> {

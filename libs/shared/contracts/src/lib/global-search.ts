@@ -19,6 +19,7 @@ export const globalSearchCategorySchema = z.enum([
   'customer',
   'fat',
   'cable',
+  'ceo',
   'demand',
   'user',
 ]);

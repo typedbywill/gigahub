@@ -1,6 +1,7 @@
 import type {
   NearbyFiberAccessTerminalsResponseDto,
   NearbyFiberCablesResponseDto,
+  NearbyFiberSpliceEnclosuresResponseDto,
   SearchProjectNetworkResponseDto,
   CtoSplittingDiagramResponseDto,
 } from '@gigahub/shared/contracts';
@@ -14,7 +15,7 @@ export interface NearbyProjectParams {
 
 export interface SearchProjectNetworkParams {
   q: string;
-  kind?: 'all' | 'fat' | 'cable';
+  kind?: 'all' | 'fat' | 'cable' | 'ceo';
   limit?: number;
 }
 
@@ -49,6 +50,23 @@ export function listNearbyCablesRequest(
     },
   });
 }
+
+export function listNearbyCeosRequest(
+  accessToken: string,
+  params: NearbyProjectParams,
+  signal?: AbortSignal,
+): Promise<NearbyFiberSpliceEnclosuresResponseDto> {
+  return apiFetch<NearbyFiberSpliceEnclosuresResponseDto>('/api/v1/projeto/ceo', {
+    accessToken,
+    signal,
+    query: {
+      lat: params.lat,
+      lng: params.lng,
+      radius: params.radius,
+    },
+  });
+}
+
 
 export function searchProjectNetworkRequest(
   accessToken: string,

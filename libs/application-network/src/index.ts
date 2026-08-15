@@ -3,9 +3,11 @@ export {
   ApplicationErrorCodes,
   type NearbyFiberAccessTerminalReadModel,
   type NearbyFiberCableReadModel,
+  type NearbyFiberSpliceEnclosureReadModel,
   type ProjectNetworkSearchHitReadModel,
   type FiberAccessTerminalNearbyQuery,
   type FiberCableNearbyQuery,
+  type FiberSpliceEnclosureNearbyQuery,
   type ProjectNetworkSearchQuery,
   type CtoDiagramPortReadModel,
   type CtoDiagramNodeReadModel,
@@ -24,6 +26,11 @@ export {
   type ListNearbyFiberCablesResult,
 } from './lib/list-nearby-fiber-cables.use-case';
 export {
+  ListNearbyFiberSpliceEnclosuresUseCase,
+  type ListNearbyFiberSpliceEnclosuresQuery,
+  type ListNearbyFiberSpliceEnclosuresResult,
+} from './lib/list-nearby-fiber-splice-enclosures.use-case';
+export {
   SearchProjectNetworkUseCase,
   type SearchProjectNetworkQuery as SearchProjectNetworkUseCaseQuery,
   type SearchProjectNetworkResult,
@@ -32,4 +39,5 @@ export {
   GetCtoSplittingDiagramUseCase,
   type GetCtoSplittingDiagramInput,
 } from './lib/get-cto-splitting-diagram.use-case';
+
 

@@ -92,6 +92,34 @@ export function mapColorFromCaixaEstilo(
   return DEFAULT_CAIXA_COLOR;
 }
 
+export const DEFAULT_CEO_COLOR = '#8b5cf6';
+
+export function mapColorFromCeoEstilo(
+  codigoEstilo: string | null | undefined,
+  nomeTipo?: string | null,
+  corAtiva?: string | null,
+): string {
+  if (corAtiva) {
+    const normalized = normalizeIxcHex(corAtiva, '');
+    if (normalized) {
+      return normalized;
+    }
+  }
+  const code = (codigoEstilo ?? '').trim();
+  if (code && CAIXA_ESTILO_HEX[code]) {
+    return CAIXA_ESTILO_HEX[code];
+  }
+  const nome = (nomeTipo ?? '').trim();
+  if (nome) {
+    for (const rule of NOME_TIPO_COLOR_RULES) {
+      if (rule.match.test(nome)) {
+        return rule.hex;
+      }
+    }
+  }
+  return DEFAULT_CEO_COLOR;
+}
+
 export function mapCableStrokeFromTipo(input: {
   corAtiva?: string | null;
   especuraLinha?: number | null;
@@ -113,3 +141,4 @@ export function mapCableStrokeFromTipo(input: {
     strokeDashed: String(input.pontilhada ?? 'N').toUpperCase() === 'S',
   };
 }
+

@@ -555,9 +555,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose })
               <span>fechar</span>
             </span>
           </div>
-          <span className="hidden text-[10px] text-muted/70 sm:inline-block">
-            GigaHub Global Search
-          </span>
         </div>
       </div>
     </div>
